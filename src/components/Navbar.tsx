@@ -44,18 +44,7 @@ export default function Navbar() {
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            <Link href="/" className="flex items-center gap-2 group">
-              <motion.img
-                src="/Logo Transparent.png"
-                alt="Crave"
-                className={cn(
-                  'h-8 md:h-10 w-auto transition-opacity duration-300',
-                )}
-                whileHover={{ scale: 1.05 }}
-              />
-            </Link>
-
+          <div className="grid grid-cols-3 items-center h-14 md:h-16">
             <div className="hidden md:flex items-center gap-8">
               {navLinks.map((link, i) => (
                 <motion.div
@@ -80,9 +69,22 @@ export default function Navbar() {
                   </Link>
                 </motion.div>
               ))}
+            </div>
 
+            <Link href="/" className="flex items-center justify-center group">
+              <motion.img
+                src="/Logo Transparent.png"
+                alt="Crave"
+                className={cn(
+                  'h-14 md:h-24 w-auto transition-opacity duration-300',
+                )}
+                whileHover={{ scale: 1.05 }}
+              />
+            </Link>
+
+            <div className="hidden md:flex items-center justify-end gap-2">
 {user ? (
-                <div className="flex items-center gap-2">
+                <>
                   <Link
                     href="/cart"
                     className={cn(
@@ -110,7 +112,7 @@ export default function Navbar() {
                   >
                     <LogOut className="w-5 h-5" />
                   </button>
-                </div>
+                </>
               ) : (
                 <Link
                   href="/auth"
