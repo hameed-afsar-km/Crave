@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Clock, ChevronRight, ShoppingBag } from 'lucide-react';
+import { Clock, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { formatPrice, generateTimeSlots, generateOrderId } from '@/lib/utils';
@@ -14,7 +14,6 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { items, subtotal, clearCart } = useCart();
   const { user } = useAuth();
-  const [step, setStep] = useState(1);
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -66,10 +65,10 @@ export default function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-24 flex items-center justify-center">
+      <div className="min-h-screen bg-black pt-24 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-bold text-gray-900">Your cart is empty</h2>
-          <Link href="/menu" className="text-orange-500 hover:underline mt-2 inline-block">
+          <h2 className="text-xl font-bold text-white">Your cart is empty</h2>
+          <Link href="/menu" className="text-orange-400 hover:underline mt-2 inline-block">
             Browse Menu
           </Link>
         </div>
@@ -78,11 +77,11 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-24">
+    <div className="min-h-screen bg-black pt-24">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Checkout</h1>
-          <p className="text-gray-500 mb-8">Complete your order</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Checkout</h1>
+          <p className="text-gray-400 mb-8">Complete your order</p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
@@ -91,38 +90,38 @@ export default function CheckoutPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="bg-white rounded-2xl p-6 border border-gray-100"
+              className="bg-gray-950 rounded-2xl p-6 border border-gray-800"
             >
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Contact Details</h2>
+              <h2 className="text-lg font-bold text-white mb-4">Contact Details</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Name *</label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your name"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100 transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-700 bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Phone *</label>
                   <input
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Your phone number"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100 transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-700 bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Your email (optional)"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100 transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-700 bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                   />
                 </div>
               </div>
@@ -132,33 +131,33 @@ export default function CheckoutPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-2xl p-6 border border-gray-100"
+              className="bg-gray-950 rounded-2xl p-6 border border-gray-800"
             >
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Pickup Time</h2>
+              <h2 className="text-lg font-bold text-white mb-4">Pickup Time</h2>
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <button
                   onClick={() => setPickupOption('asap')}
                   className={`p-4 rounded-xl border-2 text-center transition-all ${
                     pickupOption === 'asap'
-                      ? 'border-orange-500 bg-orange-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-orange-500 bg-orange-500/10'
+                      : 'border-gray-700 hover:border-gray-600'
                   }`}
                 >
-                  <Clock className="w-5 h-5 mx-auto mb-1 text-orange-500" />
-                  <span className="font-semibold text-sm">Pickup ASAP</span>
-                  <p className="text-xs text-gray-500 mt-1">~18 min wait</p>
+                  <Clock className="w-5 h-5 mx-auto mb-1 text-orange-400" />
+                  <span className="font-semibold text-sm text-white">Pickup ASAP</span>
+                  <p className="text-xs text-gray-400 mt-1">~18 min wait</p>
                 </button>
                 <button
                   onClick={() => setPickupOption('later')}
                   className={`p-4 rounded-xl border-2 text-center transition-all ${
                     pickupOption === 'later'
-                      ? 'border-orange-500 bg-orange-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-orange-500 bg-orange-500/10'
+                      : 'border-gray-700 hover:border-gray-600'
                   }`}
                 >
-                  <Clock className="w-5 h-5 mx-auto mb-1 text-orange-500" />
-                  <span className="font-semibold text-sm">Pickup Later</span>
-                  <p className="text-xs text-gray-500 mt-1">Choose a time</p>
+                  <Clock className="w-5 h-5 mx-auto mb-1 text-orange-400" />
+                  <span className="font-semibold text-sm text-white">Pickup Later</span>
+                  <p className="text-xs text-gray-400 mt-1">Choose a time</p>
                 </button>
               </div>
 
@@ -171,7 +170,7 @@ export default function CheckoutPage() {
                       className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${
                         selectedTime === slot.time
                           ? 'bg-orange-500 text-white'
-                          : 'bg-gray-50 text-gray-700 hover:bg-orange-50 hover:text-orange-500'
+                          : 'bg-gray-900 text-gray-300 hover:bg-orange-500/10 hover:text-orange-400'
                       }`}
                     >
                       {slot.label}
@@ -181,9 +180,9 @@ export default function CheckoutPage() {
               )}
 
               {pickupOption === 'asap' && selectedTime && (
-                <p className="text-sm text-gray-500 mt-3">
+                <p className="text-sm text-gray-400 mt-3">
                   Your order will be ready for pickup at approximately{' '}
-                  <span className="font-semibold text-gray-900">{selectedTime}</span>
+                  <span className="font-semibold text-white">{selectedTime}</span>
                 </p>
               )}
             </motion.div>
@@ -194,31 +193,31 @@ export default function CheckoutPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-white rounded-2xl p-6 border border-gray-100 sticky top-24"
+              className="bg-gray-950 rounded-2xl p-6 border border-gray-800 sticky top-24"
             >
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Order Summary</h2>
+              <h2 className="text-lg font-bold text-white mb-4">Order Summary</h2>
               <div className="space-y-3 max-h-60 overflow-y-auto mb-4">
                 {items.map(item => (
                   <div key={item.id} className="flex justify-between text-sm">
-                    <span className="text-gray-600">
+                    <span className="text-gray-400">
                       {item.quantity}x {item.name}
                     </span>
-                    <span className="font-medium">{formatPrice(item.price * item.quantity)}</span>
+                    <span className="font-medium text-gray-100">{formatPrice(item.price * item.quantity)}</span>
                   </div>
                 ))}
               </div>
-              <div className="border-t border-gray-100 pt-3 space-y-2">
-                <div className="flex justify-between text-gray-600 text-sm">
+              <div className="border-t border-gray-800 pt-3 space-y-2">
+                <div className="flex justify-between text-gray-400 text-sm">
                   <span>Subtotal</span>
                   <span>{formatPrice(subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-gray-600 text-sm">
+                <div className="flex justify-between text-gray-400 text-sm">
                   <span>Tax (5%)</span>
                   <span>{formatPrice(tax)}</span>
                 </div>
-                <div className="border-t border-gray-100 pt-2 flex justify-between text-lg font-bold text-gray-900">
+                <div className="border-t border-gray-800 pt-2 flex justify-between text-lg font-bold text-white">
                   <span>Total</span>
-                  <span className="text-orange-500">{formatPrice(total)}</span>
+                  <span className="text-orange-400">{formatPrice(total)}</span>
                 </div>
               </div>
 

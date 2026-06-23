@@ -46,7 +46,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex">
+    <div className="min-h-screen bg-black flex">
       <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-orange-500 to-red-500 items-center justify-center p-12 relative overflow-hidden">
         <div className="absolute inset-0 bg-black/20" />
         <div className="relative z-10 text-center text-white">
@@ -74,13 +74,13 @@ export default function AuthPage() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-sm"
         >
-          <Link href="/" className="inline-flex items-center gap-2 text-gray-600 hover:text-orange-500 transition-colors mb-8">
+          <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-orange-400 transition-colors mb-8">
             <ArrowLeft className="w-4 h-4" />
             Back
           </Link>
 
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome to Crave</h2>
-          <p className="text-gray-500 mb-8">Sign in to start ordering</p>
+          <h2 className="text-3xl font-bold text-white mb-2">Welcome to Crave</h2>
+          <p className="text-gray-400 mb-8">Sign in to start ordering</p>
 
           {mode === 'select' && (
             <div className="space-y-4">
@@ -88,16 +88,16 @@ export default function AuthPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleGoogleSignIn}
-                className="w-full flex items-center justify-center gap-3 py-3.5 border-2 border-gray-200 rounded-xl font-medium hover:border-orange-300 hover:bg-orange-50 transition-all"
+                className="w-full flex items-center justify-center gap-3 py-3.5 border-2 border-gray-700 rounded-xl font-medium text-gray-200 hover:border-orange-400 hover:bg-orange-500/10 transition-all"
               >
                 <Globe className="w-5 h-5" />
                 Continue with Google
               </motion.button>
 
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-gray-200" />
-                <span className="text-sm text-gray-400">or</span>
-                <div className="flex-1 h-px bg-gray-200" />
+                <div className="flex-1 h-px bg-gray-700" />
+                <span className="text-sm text-gray-500">or</span>
+                <div className="flex-1 h-px bg-gray-700" />
               </div>
 
               <motion.button
@@ -116,16 +116,16 @@ export default function AuthPage() {
             <div className="space-y-4">
               <button
                 onClick={() => { setMode('select'); setStep('phone'); }}
-                className="text-sm text-gray-500 hover:text-orange-500 transition-colors mb-2"
+                className="text-sm text-gray-400 hover:text-orange-400 transition-colors mb-2"
               >
                 ← Other options
               </button>
 
               {step === 'phone' ? (
                 <>
-                  <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                  <label className="block text-sm font-medium text-gray-300">Phone Number</label>
                   <div className="flex">
-                    <span className="inline-flex items-center px-4 bg-gray-50 border border-r-0 border-gray-200 rounded-l-xl text-gray-600">
+                    <span className="inline-flex items-center px-4 bg-gray-900 border border-r-0 border-gray-700 rounded-l-xl text-gray-400">
                       +91
                     </span>
                     <input
@@ -133,7 +133,7 @@ export default function AuthPage() {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                       placeholder="9876543210"
-                      className="flex-1 px-4 py-3 border border-gray-200 rounded-r-xl focus:outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
+                      className="flex-1 px-4 py-3 bg-gray-950 border border-gray-700 rounded-r-xl text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
                     />
                   </div>
                   <motion.button
@@ -148,13 +148,13 @@ export default function AuthPage() {
                 </>
               ) : (
                 <>
-                  <label className="block text-sm font-medium text-gray-700">Enter OTP</label>
+                  <label className="block text-sm font-medium text-gray-300">Enter OTP</label>
                   <input
                     type="text"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     placeholder="Enter 6-digit OTP"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100 text-center text-2xl tracking-widest"
+                    className="w-full px-4 py-3 bg-gray-950 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 text-center text-2xl tracking-widest"
                   />
                   <motion.button
                     whileHover={{ scale: 1.02 }}
@@ -167,7 +167,7 @@ export default function AuthPage() {
                   </motion.button>
                   <button
                     onClick={() => setStep('phone')}
-                    className="w-full text-sm text-gray-500 hover:text-orange-500 transition-colors"
+                    className="w-full text-sm text-gray-400 hover:text-orange-400 transition-colors"
                   >
                     Change phone number
                   </button>

@@ -48,10 +48,10 @@ export default function AdminDashboard() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
-          <p className="text-gray-500">Admin access only</p>
+          <h1 className="text-2xl font-bold text-white mb-2">Access Denied</h1>
+          <p className="text-gray-400">Admin access only</p>
           <Link href="/" className="text-orange-500 hover:underline mt-4 inline-block">Go Home</Link>
         </div>
       </div>
@@ -59,24 +59,24 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-100">
+    <div className="min-h-screen bg-black">
+      <div className="bg-gray-950 border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-500 mt-1">Welcome back, {user?.name || 'Admin'}</p>
+              <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
+              <p className="text-gray-400 mt-1">Welcome back, {user?.name || 'Admin'}</p>
             </div>
             <div className="flex gap-3">
               <Link
                 href="/admin/orders"
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-orange-500 border border-gray-200 rounded-full hover:border-orange-300 transition-all"
+                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-orange-400 border border-gray-700 rounded-full hover:border-orange-400 transition-all"
               >
                 Orders
               </Link>
               <Link
                 href="/admin/menu"
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-orange-500 border border-gray-200 rounded-full hover:border-orange-300 transition-all"
+                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-orange-400 border border-gray-700 rounded-full hover:border-orange-400 transition-all"
               >
                 Menu
               </Link>
@@ -99,7 +99,7 @@ export default function AdminDashboard() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              className="bg-white rounded-2xl p-6 border border-gray-100 hover:shadow-lg transition-shadow"
+              className="bg-gray-950 rounded-2xl p-6 border border-gray-800 hover:shadow-lg transition-shadow"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.color} p-2.5 flex items-center justify-center`}>
@@ -107,7 +107,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <AnimatedCounter value={card.value} suffix={card.suffix} />
-              <p className="text-gray-500 text-sm mt-1">{card.label}</p>
+              <p className="text-gray-400 text-sm mt-1">{card.label}</p>
             </motion.div>
           ))}
         </div>
@@ -117,9 +117,9 @@ export default function AdminDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-white rounded-2xl p-6 border border-gray-100"
+            className="bg-gray-950 rounded-2xl p-6 border border-gray-800"
           >
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Orders</h2>
+            <h2 className="text-lg font-bold text-white mb-4">Recent Orders</h2>
             <div className="space-y-3">
               {[
                 { id: '#CRV-048', customer: 'Rahul K.', items: 3, amount: 450, status: 'preparing' },
@@ -127,10 +127,10 @@ export default function AdminDashboard() {
                 { id: '#CRV-046', customer: 'Amit P.', items: 4, amount: 680, status: 'completed' },
                 { id: '#CRV-045', customer: 'Divya R.', items: 1, amount: 180, status: 'received' },
               ].map((order, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                <div key={i} className="flex items-center justify-between p-3 bg-black rounded-xl">
                   <div>
-                    <p className="font-semibold text-sm text-gray-900">{order.id}</p>
-                    <p className="text-xs text-gray-500">{order.customer} • {order.items} items</p>
+                    <p className="font-semibold text-sm text-gray-100">{order.id}</p>
+                    <p className="text-xs text-gray-400">{order.customer} • {order.items} items</p>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-sm">₹{order.amount}</p>
@@ -151,37 +151,37 @@ export default function AdminDashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-white rounded-2xl p-6 border border-gray-100"
+            className="bg-gray-950 rounded-2xl p-6 border border-gray-800"
           >
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h2>
+            <h2 className="text-lg font-bold text-white mb-4">Quick Actions</h2>
             <div className="grid grid-cols-2 gap-4">
               <Link
                 href="/admin/orders"
-                className="p-4 bg-orange-50 rounded-xl text-center hover:bg-orange-100 transition-colors"
+                className="p-4 bg-orange-500/10 rounded-xl text-center hover:bg-orange-500/20 transition-colors"
               >
-                <Package className="w-6 h-6 text-orange-500 mx-auto mb-2" />
-                <span className="text-sm font-medium text-gray-900">Manage Orders</span>
+                <Package className="w-6 h-6 text-orange-400 mx-auto mb-2" />
+                <span className="text-sm font-medium text-white">Manage Orders</span>
               </Link>
               <Link
                 href="/admin/menu"
-                className="p-4 bg-orange-50 rounded-xl text-center hover:bg-orange-100 transition-colors"
+                className="p-4 bg-orange-500/10 rounded-xl text-center hover:bg-orange-500/20 transition-colors"
               >
-                <ShoppingBag className="w-6 h-6 text-orange-500 mx-auto mb-2" />
-                <span className="text-sm font-medium text-gray-900">Edit Menu</span>
+                <ShoppingBag className="w-6 h-6 text-orange-400 mx-auto mb-2" />
+                <span className="text-sm font-medium text-white">Edit Menu</span>
               </Link>
               <Link
                 href="/"
-                className="p-4 bg-green-50 rounded-xl text-center hover:bg-green-100 transition-colors"
+                className="p-4 bg-green-500/10 rounded-xl text-center hover:bg-green-500/20 transition-colors"
               >
-                <TrendingUp className="w-6 h-6 text-green-500 mx-auto mb-2" />
-                <span className="text-sm font-medium text-gray-900">View Site</span>
+                <TrendingUp className="w-6 h-6 text-green-400 mx-auto mb-2" />
+                <span className="text-sm font-medium text-white">View Site</span>
               </Link>
               <Link
                 href="/menu"
-                className="p-4 bg-blue-50 rounded-xl text-center hover:bg-blue-100 transition-colors"
+                className="p-4 bg-blue-500/10 rounded-xl text-center hover:bg-blue-500/20 transition-colors"
               >
-                <Users className="w-6 h-6 text-blue-500 mx-auto mb-2" />
-                <span className="text-sm font-medium text-gray-900">Place Order</span>
+                <Users className="w-6 h-6 text-blue-400 mx-auto mb-2" />
+                <span className="text-sm font-medium text-white">Place Order</span>
               </Link>
             </div>
           </motion.div>

@@ -16,7 +16,7 @@ export default function AdminNav() {
   const { signOut } = useAuth();
 
   return (
-    <nav className="bg-white border-b border-gray-100">
+    <nav className="bg-gray-950 border-b border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
@@ -32,8 +32,8 @@ export default function AdminNav() {
                     href={link.href}
                     className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                       active
-                        ? 'bg-orange-50 text-orange-600'
-                        : 'text-gray-600 hover:text-orange-500 hover:bg-orange-50'
+                        ? 'bg-orange-500/10 text-orange-400'
+                        : 'text-gray-400 hover:text-orange-400 hover:bg-orange-500/10'
                     }`}
                   >
                     <link.icon className="w-4 h-4" />
@@ -44,12 +44,12 @@ export default function AdminNav() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-sm text-gray-500 hover:text-orange-500 transition-colors">
+            <Link href="/" className="text-sm text-gray-400 hover:text-orange-400 transition-colors">
               View Site
             </Link>
             <button
               onClick={signOut}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 rounded-full transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-full transition-colors"
             >
               <LogOut className="w-4 h-4" />
               Sign Out

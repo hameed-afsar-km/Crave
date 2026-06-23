@@ -40,21 +40,20 @@ export default function Navbar() {
           'fixed top-0 left-0 right-0 z-50 transition-all duration-500',
           isTransparent
             ? 'bg-transparent'
-            : 'bg-white/80 backdrop-blur-xl border-b border-white/20 shadow-lg shadow-black/5'
+            : 'bg-black/80 backdrop-blur-xl border-b border-white/10 shadow-lg shadow-black/5'
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             <Link href="/" className="flex items-center gap-2 group">
-              <motion.span
+              <motion.img
+                src="/Logo Transparent.png"
+                alt="Crave"
                 className={cn(
-                  'text-2xl md:text-3xl font-bold transition-colors duration-300',
-                  isTransparent ? 'text-white' : 'text-orange-500'
+                  'h-8 md:h-10 w-auto transition-opacity duration-300',
                 )}
                 whileHover={{ scale: 1.05 }}
-              >
-                CRAVE
-              </motion.span>
+              />
             </Link>
 
             <div className="hidden md:flex items-center gap-8">
@@ -69,8 +68,8 @@ export default function Navbar() {
                     href={link.href}
                     className={cn(
                       'text-sm font-medium transition-colors duration-200 relative group',
-                      isTransparent ? 'text-white/80 hover:text-white' : 'text-gray-700 hover:text-orange-500',
-                      pathname === link.href && (isTransparent ? 'text-white' : 'text-orange-500')
+                      isTransparent ? 'text-white/80 hover:text-white' : 'text-gray-300 hover:text-orange-400',
+                      pathname === link.href && (isTransparent ? 'text-white' : 'text-orange-400')
                     )}
                   >
                     {link.label}
@@ -82,43 +81,22 @@ export default function Navbar() {
                 </motion.div>
               ))}
 
-              <Link
-                href="/cart"
-                className={cn(
-                  'relative p-2 rounded-full transition-colors duration-200',
-                  isTransparent ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-gray-700 hover:text-orange-500 hover:bg-orange-50'
-                )}
-              >
-                <ShoppingCart className="w-5 h-5" />
-                {itemCount > 0 && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white text-xs rounded-full flex items-center justify-center font-bold"
+{user ? (
+                <div className="flex items-center gap-2">
+                  <Link
+                    href="/cart"
+                    className={cn(
+                      'relative p-2 rounded-full transition-colors duration-200',
+                      isTransparent ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-gray-300 hover:text-orange-400 hover:bg-white/5'
+                    )}
                   >
-                    {itemCount}
-                  </motion.span>
-                )}
-              </Link>
-
-              {user ? (
-                <div className="flex items-center gap-3">
-                  {isAdmin && (
-                    <Link
-                      href="/admin/dashboard"
-                      className={cn(
-                        'p-2 rounded-full transition-colors duration-200',
-                        isTransparent ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-gray-700 hover:text-orange-500 hover:bg-orange-50'
-                      )}
-                    >
-                      <LayoutDashboard className="w-5 h-5" />
-                    </Link>
-                  )}
+                    <LayoutDashboard className="w-5 h-5" />
+                  </Link>
                   <Link
                     href="/profile"
                     className={cn(
                       'p-2 rounded-full transition-colors duration-200',
-                      isTransparent ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-gray-700 hover:text-orange-500 hover:bg-orange-50'
+                      isTransparent ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-gray-300 hover:text-orange-400 hover:bg-white/5'
                     )}
                   >
                     <User className="w-5 h-5" />
@@ -127,7 +105,7 @@ export default function Navbar() {
                     onClick={signOut}
                     className={cn(
                       'p-2 rounded-full transition-colors duration-200',
-                      isTransparent ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-gray-700 hover:text-red-500 hover:bg-red-50'
+                      isTransparent ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-gray-300 hover:text-red-400 hover:bg-white/5'
                     )}
                   >
                     <LogOut className="w-5 h-5" />
@@ -152,7 +130,7 @@ export default function Navbar() {
               onClick={() => setMobileOpen(!mobileOpen)}
               className={cn(
                 'md:hidden p-2 rounded-lg transition-colors',
-                isTransparent ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-100'
+                isTransparent ? 'text-white hover:bg-white/10' : 'text-gray-300 hover:bg-white/5'
               )}
             >
               {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -172,7 +150,7 @@ export default function Navbar() {
           >
             <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
             <motion.div
-              className="absolute right-0 top-0 bottom-0 w-72 bg-white dark:bg-gray-900 shadow-2xl"
+              className="absolute right-0 top-0 bottom-0 w-72 bg-gray-950 shadow-2xl"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
@@ -184,7 +162,7 @@ export default function Navbar() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setMobileOpen(false)}
-                    className="text-lg font-medium text-gray-700 hover:text-orange-500 transition-colors py-2 border-b border-gray-100"
+                    className="text-lg font-medium text-gray-300 hover:text-orange-400 transition-colors py-2 border-b border-gray-800"
                   >
                     {link.label}
                   </Link>
@@ -192,7 +170,7 @@ export default function Navbar() {
                 <Link
                   href="/cart"
                   onClick={() => setMobileOpen(false)}
-                  className="text-lg font-medium text-gray-700 hover:text-orange-500 transition-colors py-2 border-b border-gray-100 flex items-center gap-2"
+                  className="text-lg font-medium text-gray-300 hover:text-orange-400 transition-colors py-2 border-b border-gray-800 flex items-center gap-2"
                 >
                   Cart
                   {itemCount > 0 && (
@@ -205,7 +183,7 @@ export default function Navbar() {
                       <Link
                         href="/admin/dashboard"
                         onClick={() => setMobileOpen(false)}
-                        className="text-lg font-medium text-gray-700 hover:text-orange-500 transition-colors py-2 border-b border-gray-100"
+                        className="text-lg font-medium text-gray-300 hover:text-orange-400 transition-colors py-2 border-b border-gray-800"
                       >
                         Admin
                       </Link>
@@ -213,7 +191,7 @@ export default function Navbar() {
                     <Link
                       href="/profile"
                       onClick={() => setMobileOpen(false)}
-                      className="text-lg font-medium text-gray-700 hover:text-orange-500 transition-colors py-2 border-b border-gray-100"
+                      className="text-lg font-medium text-gray-300 hover:text-orange-400 transition-colors py-2 border-b border-gray-800"
                     >
                       Profile
                     </Link>

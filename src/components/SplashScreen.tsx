@@ -52,13 +52,13 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
             transition={{ duration: 0.8, ease: 'easeOut' }}
             className="relative z-10 text-center"
           >
-            <motion.h1
-              className="text-7xl md:text-9xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent"
+            <motion.img
+              src="/Logo Transparent.png"
+              alt="Crave"
+              className="h-24 md:h-32 w-auto mx-auto"
               animate={{ scale: [1, 1.03, 1] }}
               transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              CRAVE
-            </motion.h1>
+            />
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

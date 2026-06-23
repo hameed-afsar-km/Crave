@@ -33,26 +33,26 @@ export default function QueueWidget() {
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
           className="fixed bottom-6 right-6 z-40"
         >
-          <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-orange-100 p-5 min-w-[200px]">
+          <div className="bg-gray-950/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-800 p-5 min-w-[200px]">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-xs font-semibold text-green-600 uppercase tracking-wider">Live Queue</span>
+              <span className="text-xs font-semibold text-green-400 uppercase tracking-wider">Live Queue</span>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-orange-500 mb-1">
+                <div className="flex items-center justify-center gap-1 text-orange-400 mb-1">
                   <Timer className="w-4 h-4" />
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{waitTime}</p>
-                <p className="text-xs text-gray-500">Minutes Wait</p>
+                <p className="text-2xl font-bold text-white">{waitTime}</p>
+                <p className="text-xs text-gray-400">Minutes Wait</p>
               </div>
               <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-orange-500 mb-1">
+                <div className="flex items-center justify-center gap-1 text-orange-400 mb-1">
                   <Users className="w-4 h-4" />
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{activeOrders}</p>
-                <p className="text-xs text-gray-500">Active Orders</p>
+                <p className="text-2xl font-bold text-white">{activeOrders}</p>
+                <p className="text-xs text-gray-400">Active Orders</p>
               </div>
             </div>
 

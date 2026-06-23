@@ -48,11 +48,11 @@ export default function FoodDetailPage() {
   }, 0);
 
   return (
-    <div className="min-h-screen bg-white pt-20">
+    <div className="min-h-screen bg-black pt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Link
           href="/menu"
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-orange-500 transition-colors mb-6"
+          className="inline-flex items-center gap-2 text-gray-400 hover:text-orange-400 transition-colors mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Menu
@@ -86,18 +86,18 @@ export default function FoodDetailPage() {
             transition={{ delay: 0.1 }}
             className="pb-24"
           >
-            <span className="inline-block px-3 py-1 bg-orange-100 text-orange-600 text-sm font-medium rounded-full mb-3">
+            <span className="inline-block px-3 py-1 bg-orange-500/10 text-orange-400 text-sm font-medium rounded-full mb-3">
               {item.category}
             </span>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{item.name}</h1>
-            <p className="text-gray-600 text-lg leading-relaxed mb-6">{item.description}</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">{item.name}</h1>
+            <p className="text-gray-400 text-lg leading-relaxed mb-6">{item.description}</p>
 
-            <div className="text-3xl font-bold text-orange-500 mb-8">
+            <div className="text-3xl font-bold text-orange-400 mb-8">
               {formatPrice(item.price)}
             </div>
 
-            <div className="border-t border-gray-100 pt-6 mb-8">
-              <h3 className="font-semibold text-gray-900 mb-4">Customize Your Order</h3>
+            <div className="border-t border-gray-800 pt-6 mb-8">
+              <h3 className="font-semibold text-white mb-4">Customize Your Order</h3>
               <div className="flex flex-col gap-3">
                 {extras.map(extra => (
                   <button
@@ -105,54 +105,54 @@ export default function FoodDetailPage() {
                     onClick={() => toggleExtra(extra.label)}
                     className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
                       selectedExtras.includes(extra.label)
-                        ? 'border-orange-500 bg-orange-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-orange-500 bg-orange-500/10'
+                        : 'border-gray-700 hover:border-gray-600'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
                         selectedExtras.includes(extra.label)
                           ? 'border-orange-500 bg-orange-500'
-                          : 'border-gray-300'
+                          : 'border-gray-600'
                       }`}>
                         {selectedExtras.includes(extra.label) && (
                           <Check className="w-3 h-3 text-white" />
                         )}
                       </div>
-                      <span className="font-medium text-gray-900">{extra.label}</span>
+                      <span className="font-medium text-gray-200">{extra.label}</span>
                     </div>
                     {extra.price > 0 && (
-                      <span className="text-sm text-gray-500">+{formatPrice(extra.price)}</span>
+                      <span className="text-sm text-gray-400">+{formatPrice(extra.price)}</span>
                     )}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="border-t border-gray-100 pt-6 mb-8">
-              <h3 className="font-semibold text-gray-900 mb-4">Quantity</h3>
+            <div className="border-t border-gray-800 pt-6 mb-8">
+              <h3 className="font-semibold text-white mb-4">Quantity</h3>
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-12 h-12 rounded-full border-2 border-gray-200 flex items-center justify-center hover:border-orange-300 transition-colors"
+                  className="w-12 h-12 rounded-full border-2 border-gray-700 flex items-center justify-center hover:border-orange-400 transition-colors"
                 >
-                  <Minus className="w-5 h-5" />
+                  <Minus className="w-5 h-5 text-gray-300" />
                 </button>
-                <span className="text-2xl font-bold w-8 text-center">{quantity}</span>
+                <span className="text-2xl font-bold w-8 text-center text-white">{quantity}</span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
-                  className="w-12 h-12 rounded-full border-2 border-gray-200 flex items-center justify-center hover:border-orange-300 transition-colors"
+                  className="w-12 h-12 rounded-full border-2 border-gray-700 flex items-center justify-center hover:border-orange-400 transition-colors"
                 >
-                  <Plus className="w-5 h-5" />
+                  <Plus className="w-5 h-5 text-gray-300" />
                 </button>
               </div>
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 md:relative bg-white border-t md:border-t-0 border-gray-100 p-4 md:p-0 z-30">
+            <div className="fixed bottom-0 left-0 right-0 md:relative bg-black border-t md:border-t-0 border-gray-800 p-4 md:p-0 z-30">
               <div className="max-w-6xl mx-auto flex items-center gap-4">
                 <div className="hidden md:block flex-1">
-                  <p className="text-sm text-gray-500">Total Price</p>
-                  <p className="text-2xl font-bold text-orange-500">{formatPrice(totalPrice * quantity)}</p>
+                  <p className="text-sm text-gray-400">Total Price</p>
+                  <p className="text-2xl font-bold text-orange-400">{formatPrice(totalPrice * quantity)}</p>
                 </div>
                 <motion.button
                   onClick={handleAddToCart}

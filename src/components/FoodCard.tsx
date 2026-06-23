@@ -38,7 +38,7 @@ export default function FoodCard({ item, index = 0, compact }: FoodCardProps) {
       className="group"
     >
       <Link href={`/menu/${item.id}`}>
-        <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100">
+        <div className="bg-gray-950 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-800">
           <div className="relative overflow-hidden aspect-[4/3]">
             <img
               src={item.image}
@@ -46,7 +46,7 @@ export default function FoodCard({ item, index = 0, compact }: FoodCardProps) {
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-semibold text-orange-500">
+            <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-semibold text-orange-400">
               ★ {item.rating}
             </div>
             {!compact && (
@@ -54,21 +54,21 @@ export default function FoodCard({ item, index = 0, compact }: FoodCardProps) {
                 onClick={handleAddToCart}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                className="absolute top-3 right-3 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-orange-500 hover:bg-orange-500 hover:text-white transition-colors shadow-lg"
+                className="absolute top-3 right-3 w-9 h-9 bg-black/80 backdrop-blur-sm rounded-full flex items-center justify-center text-orange-400 hover:bg-orange-500 hover:text-white transition-colors shadow-lg"
               >
                 <Plus className="w-5 h-5" />
               </motion.button>
             )}
           </div>
           <div className="p-4">
-            <h3 className="font-semibold text-gray-900 text-lg group-hover:text-orange-500 transition-colors">
+            <h3 className="font-semibold text-gray-100 text-lg group-hover:text-orange-400 transition-colors">
               {item.name}
             </h3>
             {!compact && (
-              <p className="text-gray-500 text-sm mt-1 line-clamp-2">{item.description}</p>
+              <p className="text-gray-400 text-sm mt-1 line-clamp-2">{item.description}</p>
             )}
             <div className="flex items-center justify-between mt-3">
-              <span className="text-lg font-bold text-orange-500">{formatPrice(item.price)}</span>
+              <span className="text-lg font-bold text-orange-400">{formatPrice(item.price)}</span>
               {compact && (
                 <motion.button
                   onClick={handleAddToCart}

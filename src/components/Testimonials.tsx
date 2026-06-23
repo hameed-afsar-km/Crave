@@ -28,7 +28,7 @@ export default function Testimonials() {
   const t = testimonials[current];
 
   return (
-    <section className="py-20 bg-white overflow-hidden">
+    <section className="py-20 bg-black overflow-hidden">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -36,10 +36,10 @@ export default function Testimonials() {
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <span className="inline-block px-3 py-1 bg-orange-100 text-orange-600 text-sm font-medium rounded-full mb-4">
+          <span className="inline-block px-3 py-1 bg-orange-500/10 text-orange-400 text-sm font-medium rounded-full mb-4">
             Testimonials
           </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+          <h2 className="text-3xl md:text-4xl font-bold text-white">
             What Our Customers Say
           </h2>
         </motion.div>
@@ -62,10 +62,10 @@ export default function Testimonials() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: direction * -100 }}
                   transition={{ duration: 0.4, ease: 'easeInOut' }}
-                  className="bg-gradient-to-br from-orange-50 to-red-50 rounded-3xl p-8 md:p-12 text-center"
+                  className="bg-gradient-to-br from-gray-900 to-black rounded-3xl p-8 md:p-12 text-center border border-gray-800"
                 >
-                  <Quote className="w-10 h-10 text-orange-300 mx-auto mb-6" />
-                  <p className="text-lg md:text-xl text-gray-700 leading-relaxed mb-6 italic">
+                  <Quote className="w-10 h-10 text-orange-400/50 mx-auto mb-6" />
+                  <p className="text-lg md:text-xl text-gray-300 leading-relaxed mb-6 italic">
                     &ldquo;{t.review}&rdquo;
                   </p>
                   <div className="flex items-center justify-center gap-1 mb-3">
@@ -76,7 +76,7 @@ export default function Testimonials() {
                       />
                     ))}
                   </div>
-                  <p className="font-semibold text-gray-900">{t.name}</p>
+                  <p className="font-semibold text-white">{t.name}</p>
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -94,7 +94,7 @@ export default function Testimonials() {
               <button
                 key={i}
                 onClick={() => { setDirection(i > current ? 1 : -1); setCurrent(i); }}
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${i === current ? 'bg-orange-500 w-8' : 'bg-gray-300'}`}
+                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${i === current ? 'bg-orange-500 w-8' : 'bg-gray-700'}`}
               />
             ))}
           </div>

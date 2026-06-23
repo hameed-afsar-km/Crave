@@ -7,10 +7,10 @@ import { ArrowLeft, Search, ChevronDown, CheckCircle, ChefHat, Package, Clock } 
 import { useAuth } from '@/context/AuthContext';
 
 const statusStyles: Record<string, string> = {
-  received: 'bg-blue-100 text-blue-700',
-  preparing: 'bg-yellow-100 text-yellow-700',
-  ready: 'bg-green-100 text-green-700',
-  completed: 'bg-gray-100 text-gray-700',
+  received: 'bg-blue-500/10 text-blue-400',
+  preparing: 'bg-yellow-500/10 text-yellow-400',
+  ready: 'bg-green-500/10 text-green-400',
+  completed: 'bg-gray-500/10 text-gray-400',
 };
 
 const initialOrders = [
@@ -41,23 +41,23 @@ export default function AdminOrders() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">Access Denied</p>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <p className="text-gray-400">Access Denied</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-100">
+    <div className="min-h-screen bg-black">
+      <div className="bg-gray-950 border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center gap-4 mb-4">
-            <Link href="/admin/dashboard" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-              <ArrowLeft className="w-5 h-5" />
+            <Link href="/admin/dashboard" className="p-2 hover:bg-white/5 rounded-full transition-colors">
+              <ArrowLeft className="w-5 h-5 text-gray-400" />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Order Management</h1>
-              <p className="text-gray-500 mt-1">Manage and update order status</p>
+              <h1 className="text-2xl font-bold text-white">Order Management</h1>
+              <p className="text-gray-400 mt-1">Manage and update order status</p>
             </div>
           </div>
 
@@ -69,13 +69,13 @@ export default function AdminOrders() {
                 placeholder="Search orders..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-orange-300 text-sm"
+                className="w-full pl-10 pr-4 py-2.5 bg-gray-950 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 text-sm"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-orange-300 bg-white"
+              className="px-4 py-2.5 border border-gray-700 rounded-xl text-sm focus:outline-none focus:border-orange-500 bg-gray-950 text-white"
             >
               <option value="all">All Status</option>
               <option value="received">Received</option>
@@ -88,18 +88,18 @@ export default function AdminOrders() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="bg-gray-950 rounded-2xl border border-gray-800 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Order ID</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Customer</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Items</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Amount</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Pickup</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Status</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-600">Actions</th>
+                <tr className="border-b border-gray-800 bg-black">
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Order ID</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Customer</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Items</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Amount</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Pickup</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Status</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -109,17 +109,17 @@ export default function AdminOrders() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.05 }}
-                    className="border-b border-gray-50 hover:bg-orange-50/50 transition-colors"
+                    className="border-b border-gray-800 hover:bg-orange-500/5 transition-colors"
                   >
-                    <td className="px-6 py-4 font-semibold text-sm text-gray-900">{order.id}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{order.customer}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 font-semibold text-sm text-white">{order.id}</td>
+                    <td className="px-6 py-4 text-sm text-gray-300">{order.customer}</td>
+                    <td className="px-6 py-4 text-sm text-gray-400">
                       {order.items.map((item, idx) => (
                         <span key={idx}>{item.qty}x {item.name}{idx < order.items.length - 1 ? ', ' : ''}</span>
                       ))}
                     </td>
                     <td className="px-6 py-4 font-semibold text-sm">₹{order.amount}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{order.pickupTime}</td>
+                    <td className="px-6 py-4 text-sm text-gray-400">{order.pickupTime}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${statusStyles[order.status]}`}>
                         {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
@@ -129,19 +129,19 @@ export default function AdminOrders() {
                       <div className="flex gap-1">
                         {order.status === 'received' && (
                           <button onClick={() => updateStatus(order.id, 'preparing')}
-                            className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors" title="Start Preparing">
+                            className="p-2 text-yellow-400 hover:bg-yellow-500/10 rounded-lg transition-colors" title="Start Preparing">
                             <ChefHat className="w-4 h-4" />
                           </button>
                         )}
                         {order.status === 'preparing' && (
                           <button onClick={() => updateStatus(order.id, 'ready')}
-                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Mark Ready">
+                            className="p-2 text-green-400 hover:bg-green-500/10 rounded-lg transition-colors" title="Mark Ready">
                             <CheckCircle className="w-4 h-4" />
                           </button>
                         )}
                         {order.status === 'ready' && (
                           <button onClick={() => updateStatus(order.id, 'completed')}
-                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title="Mark Completed">
+                            className="p-2 text-gray-400 hover:bg-gray-500/10 rounded-lg transition-colors" title="Mark Completed">
                             <Package className="w-4 h-4" />
                           </button>
                         )}
@@ -158,7 +158,7 @@ export default function AdminOrders() {
             </table>
           </div>
           {filtered.length === 0 && (
-            <div className="text-center py-12 text-gray-400">No orders found</div>
+            <div className="text-center py-12 text-gray-500">No orders found</div>
           )}
         </div>
       </div>

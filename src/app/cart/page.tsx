@@ -13,15 +13,15 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-24">
+      <div className="min-h-screen bg-black pt-24">
         <div className="max-w-3xl mx-auto px-4 py-20 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <ShoppingBag className="w-20 h-20 text-gray-300 mx-auto mb-6" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h1>
-            <p className="text-gray-500 mb-8">Looks like you haven&apos;t added anything yet</p>
+            <ShoppingBag className="w-20 h-20 text-gray-700 mx-auto mb-6" />
+            <h1 className="text-2xl font-bold text-white mb-2">Your cart is empty</h1>
+            <p className="text-gray-400 mb-8">Looks like you haven&apos;t added anything yet</p>
             <Link
               href="/menu"
               className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-full hover:shadow-lg transition-all"
@@ -36,16 +36,16 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-24">
+    <div className="min-h-screen bg-black pt-24">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Your Cart</h1>
-            <p className="text-gray-500 mt-1">{items.length} item{items.length !== 1 ? 's' : ''}</p>
+            <h1 className="text-3xl font-bold text-white">Your Cart</h1>
+            <p className="text-gray-400 mt-1">{items.length} item{items.length !== 1 ? 's' : ''}</p>
           </div>
           <button
             onClick={clearCart}
-            className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-50 rounded-full transition-colors text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 text-red-400 hover:bg-red-500/10 rounded-full transition-colors text-sm font-medium"
           >
             <Trash2 className="w-4 h-4" />
             Clear Cart
@@ -60,7 +60,7 @@ export default function CartPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="bg-white rounded-2xl p-4 flex gap-4 border border-gray-100 hover:shadow-md transition-shadow"
+                className="bg-gray-950 rounded-2xl p-4 flex gap-4 border border-gray-800 hover:shadow-md transition-shadow"
               >
                 <img
                   src={item.image}
@@ -70,14 +70,14 @@ export default function CartPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="font-semibold text-gray-900">{item.name}</h3>
-                      <p className="text-orange-500 font-bold mt-1">{formatPrice(item.price)}</p>
+                      <h3 className="font-semibold text-gray-100">{item.name}</h3>
+                      <p className="text-orange-400 font-bold mt-1">{formatPrice(item.price)}</p>
                     </div>
                     <button
                       onClick={() => removeItem(item.id)}
-                      className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                      className="p-1 hover:bg-white/5 rounded-full transition-colors"
                     >
-                      <X className="w-4 h-4 text-gray-400" />
+                      <X className="w-4 h-4 text-gray-500" />
                     </button>
                   </div>
                   {item.options && item.options.length > 0 && (
@@ -86,18 +86,18 @@ export default function CartPage() {
                   <div className="flex items-center gap-3 mt-3">
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-orange-50 hover:border-orange-300 transition-colors"
+                      className="w-8 h-8 rounded-full border border-gray-700 flex items-center justify-center hover:bg-orange-500/10 hover:border-orange-400 transition-colors"
                     >
-                      <Minus className="w-3 h-3" />
+                      <Minus className="w-3 h-3 text-gray-300" />
                     </button>
-                    <span className="font-semibold w-6 text-center">{item.quantity}</span>
+                    <span className="font-semibold w-6 text-center text-white">{item.quantity}</span>
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-orange-50 hover:border-orange-300 transition-colors"
+                      className="w-8 h-8 rounded-full border border-gray-700 flex items-center justify-center hover:bg-orange-500/10 hover:border-orange-400 transition-colors"
                     >
-                      <Plus className="w-3 h-3" />
+                      <Plus className="w-3 h-3 text-gray-300" />
                     </button>
-                    <span className="ml-auto font-semibold text-gray-900">
+                    <span className="ml-auto font-semibold text-gray-100">
                       {formatPrice(item.price * item.quantity)}
                     </span>
                   </div>
@@ -111,21 +111,21 @@ export default function CartPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-2xl p-6 border border-gray-100 sticky top-24"
+              className="bg-gray-950 rounded-2xl p-6 border border-gray-800 sticky top-24"
             >
-              <h2 className="text-lg font-bold text-gray-900 mb-6">Order Summary</h2>
+              <h2 className="text-lg font-bold text-white mb-6">Order Summary</h2>
               <div className="space-y-3">
-                <div className="flex justify-between text-gray-600">
+                <div className="flex justify-between text-gray-400">
                   <span>Subtotal</span>
                   <span>{formatPrice(subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-gray-600">
+                <div className="flex justify-between text-gray-400">
                   <span>Tax (5%)</span>
                   <span>{formatPrice(tax)}</span>
                 </div>
-                <div className="border-t border-gray-100 pt-3 flex justify-between text-lg font-bold text-gray-900">
+                <div className="border-t border-gray-800 pt-3 flex justify-between text-lg font-bold text-white">
                   <span>Total</span>
-                  <span className="text-orange-500">{formatPrice(total)}</span>
+                  <span className="text-orange-400">{formatPrice(total)}</span>
                 </div>
               </div>
               <Link
@@ -137,7 +137,7 @@ export default function CartPage() {
               </Link>
               <Link
                 href="/menu"
-                className="mt-3 flex items-center justify-center gap-2 w-full py-3 text-gray-600 font-medium hover:text-orange-500 transition-colors"
+                className="mt-3 flex items-center justify-center gap-2 w-full py-3 text-gray-400 font-medium hover:text-orange-400 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Continue Shopping
