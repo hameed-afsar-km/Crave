@@ -48,120 +48,135 @@ export default function FoodDetailPage() {
   }, 0);
 
   return (
-    <div className="min-h-screen bg-black pt-20">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-[#06060A] pt-28 pb-20 relative overflow-hidden">
+      {/* Dynamic ambient lights */}
+      <div className="absolute top-[20%] right-[-10%] w-[400px] h-[400px] bg-[radial-gradient(circle,rgba(212,175,55,0.06)_0%,transparent_70%)] pointer-events-none" />
+      <div className="absolute bottom-[20%] left-[-10%] w-[400px] h-[400px] bg-[radial-gradient(circle,rgba(184,150,15,0.04)_0%,transparent_70%)] pointer-events-none" />
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <Link
           href="/menu"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-gold transition-colors mb-6"
+          className="inline-flex items-center gap-2 text-zinc-400 hover:text-gold transition-colors mb-8 text-sm font-semibold tracking-wide"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Menu
         </Link>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          {/* Item Image Sticky Panel */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="relative"
           >
-            <div className="sticky top-24">
-              <div className="relative rounded-3xl overflow-hidden">
+            <div className="sticky top-28">
+              <div className="relative rounded-[32px] overflow-hidden border border-white/5 shadow-2xl">
                 <img
                   src={item.image}
                   alt={item.name}
                   className="w-full aspect-square object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-semibold text-gold flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  {item.rating}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                
+                {/* Translucent Rating Badge */}
+                <div className="absolute top-4 left-4 bg-black/60 border border-gold/20 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-bold text-gold flex items-center gap-1.5">
+                  <Star className="w-3.5 h-3.5 fill-gold text-gold" />
+                  <span>{item.rating}</span>
                 </div>
               </div>
             </div>
           </motion.div>
 
+          {/* Details & Customization Options */}
           <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="pb-24"
           >
-            <span className="inline-block px-3 py-1 bg-gold/10 text-gold text-sm font-medium rounded-full mb-3">
+            <span className="inline-block px-3 py-1 bg-gold/8 text-gold text-[10px] font-black rounded-full mb-4 border border-gold/20 uppercase tracking-widest">
               {item.category}
             </span>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">{item.name}</h1>
-            <p className="text-gray-400 text-lg leading-relaxed mb-6">{item.description}</p>
+            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-4 leading-tight">{item.name}</h1>
+            <p className="text-zinc-400 text-sm md:text-base leading-relaxed mb-6">{item.description}</p>
 
-            <div className="text-3xl font-bold text-gold mb-8">
+            <div className="text-3xl font-black text-gradient-gold mb-8 tracking-tight">
               {formatPrice(item.price)}
             </div>
 
-            <div className="border-t border-gray-800 pt-6 mb-8">
-              <h3 className="font-semibold text-white mb-4">Customize Your Order</h3>
+            {/* Customize Section */}
+            <div className="border-t border-white/5 pt-6 mb-8">
+              <h3 className="font-bold text-white text-base tracking-wide mb-4">Customize Your Order</h3>
               <div className="flex flex-col gap-3">
-                {extras.map(extra => (
-                  <button
-                    key={extra.label}
-                    onClick={() => toggleExtra(extra.label)}
-                    className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
-                      selectedExtras.includes(extra.label)
-                        ? 'border-gold bg-gold/10'
-                        : 'border-gray-700 hover:border-gray-600'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
-                        selectedExtras.includes(extra.label)
-                          ? 'border-gold bg-gold'
-                          : 'border-gray-600'
-                      }`}>
-                        {selectedExtras.includes(extra.label) && (
-                          <Check className="w-3 h-3 text-white" />
-                        )}
+                {extras.map(extra => {
+                  const isSelected = selectedExtras.includes(extra.label);
+                  return (
+                    <button
+                      key={extra.label}
+                      onClick={() => toggleExtra(extra.label)}
+                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 ${
+                        isSelected
+                          ? 'border-gold/40 bg-gold/[0.04] shadow-[0_0_15px_rgba(212,175,55,0.06)]'
+                          : 'border-white/[0.06] bg-white/[0.02] backdrop-blur-sm hover:border-white/15'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all duration-300 ${
+                          isSelected
+                            ? 'border-gold bg-gold text-black'
+                            : 'border-white/20 bg-black/40'
+                        }`}>
+                          {isSelected && (
+                            <Check className="w-3.5 h-3.5 stroke-[3.5px] text-black" />
+                          )}
+                        </div>
+                        <span className="font-bold text-sm text-zinc-200">{extra.label}</span>
                       </div>
-                      <span className="font-medium text-gray-200">{extra.label}</span>
-                    </div>
-                    {extra.price > 0 && (
-                      <span className="text-sm text-gray-400">+{formatPrice(extra.price)}</span>
-                    )}
-                  </button>
-                ))}
+                      {extra.price > 0 && (
+                        <span className="text-xs font-black text-gold">+{formatPrice(extra.price)}</span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            <div className="border-t border-gray-800 pt-6 mb-8">
-              <h3 className="font-semibold text-white mb-4">Quantity</h3>
-              <div className="flex items-center gap-4">
+            {/* Quantity Selector */}
+            <div className="border-t border-white/5 pt-6 mb-8">
+              <h3 className="font-bold text-white text-base tracking-wide mb-4">Quantity</h3>
+              <div className="flex items-center gap-5">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-className="w-12 h-12 rounded-full border-2 border-gray-700 flex items-center justify-center hover:border-gold transition-colors"
-                  >
-                    <Minus className="w-5 h-5 text-gray-300" />
-                  </button>
-                  <span className="text-2xl font-bold w-8 text-center text-white">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="w-12 h-12 rounded-full border-2 border-gray-700 flex items-center justify-center hover:border-gold transition-colors"
+                  className="w-11 h-11 rounded-full border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm flex items-center justify-center hover:border-gold/45 hover:text-gold hover:bg-gold/8 hover:shadow-[0_0_12px_rgba(212,175,55,0.1)] transition-all duration-300"
                 >
-                  <Plus className="w-5 h-5 text-gray-300" />
+                  <Minus className="w-4 h-4 text-zinc-300" />
+                </button>
+                <span className="text-xl font-bold w-6 text-center text-white">{quantity}</span>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-11 h-11 rounded-full border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm flex items-center justify-center hover:border-gold/45 hover:text-gold hover:bg-gold/8 hover:shadow-[0_0_12px_rgba(212,175,55,0.1)] transition-all duration-300"
+                >
+                  <Plus className="w-4 h-4 text-zinc-300" />
                 </button>
               </div>
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 md:relative bg-black border-t md:border-t-0 border-gray-800 p-4 md:p-0 z-30">
-              <div className="max-w-6xl mx-auto flex items-center gap-4">
+            {/* Floating Action Bar */}
+            <div className="fixed bottom-0 left-0 right-0 md:relative bg-[rgba(10,9,16,0.85)] backdrop-blur-xl border-t md:border-t-0 border-white/[0.06] p-5 md:p-0 z-30">
+              <div className="max-w-6xl mx-auto flex items-center gap-6">
                 <div className="hidden md:block flex-1">
-                  <p className="text-sm text-gray-400">Total Price</p>
-                  <p className="text-2xl font-bold text-gold">{formatPrice(totalPrice * quantity)}</p>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">Total Price</p>
+                  <p className="text-2xl font-black text-gradient-gold tracking-tight">{formatPrice(totalPrice * quantity)}</p>
                 </div>
                 <motion.button
                   onClick={handleAddToCart}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-gold to-amber-600 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all"
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2.5 px-8 py-4 bg-gradient-to-r from-gold via-amber-500 to-amber-600 text-white font-black uppercase tracking-widest text-xs rounded-full shadow-lg shadow-gold/10 hover:shadow-gold/25 transition-all duration-300 hover:brightness-110"
                 >
                   <ShoppingCart className="w-5 h-5" />
-                  Add to Cart - {formatPrice(totalPrice * quantity)}
+                  <span>Add to Cart — {formatPrice(totalPrice * quantity)}</span>
                 </motion.button>
               </div>
             </div>

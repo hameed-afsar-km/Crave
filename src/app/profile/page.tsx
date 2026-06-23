@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { User, Phone, Mail, Package, LogOut, ArrowLeft } from 'lucide-react';
+import { User, Phone, Mail, Package, LogOut, ArrowLeft, Star, ShoppingBag } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 
@@ -17,91 +17,132 @@ export default function ProfilePage() {
   const router = useRouter();
 
   if (loading) return null;
+  if (!user) { router.push('/auth'); return null; }
 
-  if (!user) {
-    router.push('/auth');
-    return null;
-  }
+  const totalSpent = pastOrders.reduce((sum, o) => sum + o.total, 0);
+  const totalOrders = pastOrders.length;
 
   return (
-    <div className="min-h-screen bg-black pt-24">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-[#06060A] pt-28 pb-20 relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-[radial-gradient(circle,rgba(212,175,55,0.04)_0%,transparent_65%)] pointer-events-none" />
+
+      <div className="max-w-3xl mx-auto px-5 sm:px-8 relative z-10">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-gold transition-colors mb-6"
+          className="inline-flex items-center gap-2 text-zinc-500 hover:text-gold transition-colors mb-7 text-sm font-semibold group"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           Back to Home
         </Link>
 
+        {/* Profile hero card */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-950 rounded-3xl p-8 border border-gray-800 shadow-sm mb-6"
+          transition={{ duration: 0.55 }}
+          className="rounded-[28px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6 md:p-8 mb-5 relative overflow-hidden"
         >
-          <div className="flex items-center gap-6">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gold to-amber-600 flex items-center justify-center">
-              <User className="w-10 h-10 text-white" />
+          {/* Top glow */}
+          <div className="absolute top-0 right-0 w-40 h-40 bg-[radial-gradient(circle,rgba(212,175,55,0.06)_0%,transparent_65%)] rounded-full pointer-events-none" />
+
+          {/* User header */}
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 pb-6 border-b border-white/5">
+            <div className="relative shrink-0">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-gold to-amber-600 flex items-center justify-center shadow-xl shadow-gold/15 border border-white/10">
+                <User className="w-9 h-9 text-white" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-400 border-2 border-[#06060A] shadow-md" />
             </div>
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-white">{user.name || 'Customer'}</h1>
-              <p className="text-gray-400">{user.email || 'No email'}</p>
+
+            <div className="flex-1 text-center sm:text-left">
+              <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">{user.name || 'Customer'}</h1>
+              <p className="text-zinc-500 text-sm mt-1">{user.email || 'No email linked'}</p>
+              <div className="flex items-center justify-center sm:justify-start gap-1.5 mt-2.5">
+                <Star className="w-3.5 h-3.5 text-gold fill-gold" />
+                <span className="text-xs font-bold text-zinc-400">Loyal customer</span>
+              </div>
             </div>
+
             <button
               onClick={signOut}
-              className="p-3 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all"
+              className="p-2.5 text-zinc-600 hover:text-red-400 hover:bg-red-500/8 rounded-xl transition-all border border-transparent hover:border-red-500/15"
+              title="Sign Out"
             >
               <LogOut className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
-            <div className="flex items-center gap-3 p-4 bg-black rounded-xl">
-              <Phone className="w-5 h-5 text-gold" />
-              <div>
-                <p className="text-sm text-gray-400">Phone</p>
-                <p className="font-medium text-white">{user.phone || 'Not set'}</p>
+          {/* Stats row */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 mt-6">
+            {[
+              { label: 'Total Orders', value: totalOrders, icon: ShoppingBag },
+              { label: 'Amount Spent', value: `₹${totalSpent}`, icon: Package },
+              { label: 'Loyalty Points', value: '240 pts', icon: Star },
+            ].map(({ label, value, icon: Icon }) => (
+              <div key={label} className="p-4 rounded-2xl bg-black/30 border border-white/5">
+                <Icon className="w-4 h-4 text-gold mb-2" />
+                <p className="text-lg font-black text-white">{value}</p>
+                <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-bold mt-0.5">{label}</p>
               </div>
-            </div>
-            <div className="flex items-center gap-3 p-4 bg-black rounded-xl">
-              <Mail className="w-5 h-5 text-gold" />
-              <div>
-                <p className="text-sm text-gray-400">Email</p>
-                <p className="font-medium text-white">{user.email || 'Not set'}</p>
+            ))}
+          </div>
+
+          {/* Contact fields */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-5">
+            {[
+              { icon: Phone, label: 'Phone', value: user.phone || 'Not configured' },
+              { icon: Mail, label: 'Email', value: user.email || 'Not configured' },
+            ].map(({ icon: Icon, label, value }) => (
+              <div key={label} className="flex items-center gap-3.5 p-4 bg-black/30 border border-white/5 rounded-2xl">
+                <div className="p-2 bg-gold/8 rounded-xl border border-gold/15 shrink-0">
+                  <Icon className="w-4 h-4 text-gold" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{label}</p>
+                  <p className="font-bold text-zinc-200 text-sm mt-0.5">{value}</p>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         </motion.div>
 
+        {/* Order history */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-gray-950 rounded-3xl p-8 border border-gray-800 shadow-sm"
+          transition={{ delay: 0.1, duration: 0.55 }}
+          className="rounded-[28px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6 md:p-8"
         >
-          <div className="flex items-center gap-2 mb-6">
-            <Package className="w-5 h-5 text-gold" />
-            <h2 className="text-lg font-bold text-white">Past Orders</h2>
+          <div className="flex items-center gap-2.5 mb-6 pb-4 border-b border-white/5">
+            <div className="w-8 h-8 rounded-lg bg-gold/8 border border-gold/15 flex items-center justify-center">
+              <Package className="w-4 h-4 text-gold" />
+            </div>
+            <h2 className="text-base font-black text-white">Order History</h2>
           </div>
 
           {pastOrders.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No orders yet</p>
+            <p className="text-zinc-600 text-center py-10 font-semibold text-sm">No orders yet.</p>
           ) : (
             <div className="space-y-3">
-              {pastOrders.map(order => (
-                <div
+              {pastOrders.map((order, i) => (
+                <motion.div
                   key={order.id}
-                  className="flex items-center justify-between p-4 bg-black rounded-xl hover:bg-gold/5 transition-colors"
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.15 + i * 0.06 }}
+                  className="flex items-center justify-between p-4 bg-black/30 border border-white/5 rounded-2xl hover:border-gold/20 hover:bg-gold/[0.02] transition-all duration-300 group"
                 >
                   <div>
-                    <p className="font-semibold text-white">{order.id}</p>
-                    <p className="text-sm text-gray-400">{order.date} • {order.items} items</p>
+                    <p className="font-black text-white text-sm group-hover:text-gold transition-colors">{order.id}</p>
+                    <p className="text-xs text-zinc-600 mt-0.5 font-semibold">{order.date} • {order.items} items</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-white">₹{order.total}</p>
-                    <span className="text-xs text-green-400 font-medium">Completed</span>
+                    <p className="font-black text-white">₹{order.total}</p>
+                    <span className="text-[10px] text-emerald-400 font-black uppercase tracking-wider block mt-0.5">
+                      ✓ Completed
+                    </span>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}

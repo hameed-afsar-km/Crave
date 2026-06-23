@@ -3,14 +3,14 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft, Search, ChevronDown, CheckCircle, ChefHat, Package, Clock } from 'lucide-react';
+import { ArrowLeft, Search, ChefHat, Package, CheckCircle, Clock } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
-const statusStyles: Record<string, string> = {
-  received: 'bg-blue-500/10 text-blue-400',
-  preparing: 'bg-yellow-500/10 text-yellow-400',
-  ready: 'bg-green-500/10 text-green-400',
-  completed: 'bg-gray-500/10 text-gray-400',
+const statusConfig: Record<string, { label: string; pill: string; dot: string }> = {
+  received: { label: 'Received', pill: 'bg-blue-500/8 text-blue-400 border border-blue-500/15', dot: 'bg-blue-400' },
+  preparing: { label: 'Preparing', pill: 'bg-amber-500/8 text-amber-400 border border-amber-500/15', dot: 'bg-amber-400' },
+  ready: { label: 'Ready ✓', pill: 'bg-emerald-500/8 text-emerald-400 border border-emerald-500/15', dot: 'bg-emerald-400' },
+  completed: { label: 'Completed', pill: 'bg-zinc-800/30 text-zinc-500 border border-white/5', dot: 'bg-zinc-600' },
 };
 
 const initialOrders = [
@@ -18,7 +18,7 @@ const initialOrders = [
   { id: 'CRV-047', customer: 'Priya Sharma', items: [{ name: 'Beef Burger', qty: 1 }, { name: 'Lemon Mint', qty: 1 }], amount: 330, pickupTime: '18:15', status: 'ready' as const },
   { id: 'CRV-046', customer: 'Amit Patel', items: [{ name: 'Chicken Combo', qty: 1 }, { name: 'Brownie Sundae', qty: 1 }], amount: 550, pickupTime: '18:00', status: 'completed' as const },
   { id: 'CRV-045', customer: 'Divya Rajan', items: [{ name: 'Chicken Shawarma', qty: 1 }], amount: 180, pickupTime: '18:45', status: 'received' as const },
-  { id: 'CRV-044', customer: 'Vikram Singh', items: [{ name: 'Veg Shawarma', qty: 2 }, { name: 'Fries', qty: 1 }, { name: 'Chocolate Milkshake', qty: 1 }], amount: 530, pickupTime: '19:00', status: 'received' as const },
+  { id: 'CRV-044', customer: 'Vikram Singh', items: [{ name: 'Veg Shawarma', qty: 2 }, { name: 'Fries', qty: 1 }], amount: 530, pickupTime: '19:00', status: 'received' as const },
   { id: 'CRV-043', customer: 'Ananya Patel', items: [{ name: 'Chicken Burger', qty: 2 }], amount: 400, pickupTime: '19:15', status: 'preparing' as const },
 ];
 
@@ -41,124 +41,157 @@ export default function AdminOrders() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <p className="text-gray-400">Access Denied</p>
+      <div className="min-h-screen bg-[#06060A] flex items-center justify-center">
+        <p className="text-zinc-500 font-black">Access Denied</p>
       </div>
     );
   }
 
+  const filterTabs = ['all', 'received', 'preparing', 'ready', 'completed'];
+
   return (
-    <div className="min-h-screen bg-black">
-      <div className="bg-gray-950 border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center gap-4 mb-4">
-            <Link href="/admin/dashboard" className="p-2 hover:bg-white/5 rounded-full transition-colors">
-              <ArrowLeft className="w-5 h-5 text-gray-400" />
+    <div className="min-h-screen bg-[#06060A] pt-16 pb-16 relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[radial-gradient(circle,rgba(212,175,55,0.04)_0%,transparent_65%)] pointer-events-none" />
+
+      {/* Page header */}
+      <div className="bg-[rgba(8,8,14,0.6)] backdrop-blur-xl border-b border-white/[0.05] relative z-10">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-7">
+          <div className="flex items-center gap-4 mb-6">
+            <Link
+              href="/admin/dashboard"
+              className="p-2 rounded-xl border border-white/6 bg-white/3 hover:bg-white/6 hover:border-gold/22 text-zinc-400 hover:text-gold transition-all"
+            >
+              <ArrowLeft className="w-4 h-4" />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-white">Order Management</h1>
-              <p className="text-gray-400 mt-1">Manage and update order status</p>
+              <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">Order Management</h1>
+              <p className="text-zinc-500 text-sm mt-0.5">Manage and track live customer orders</p>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search orders..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-950 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold text-sm"
-              />
-            </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2.5 border border-gray-700 rounded-xl text-sm focus:outline-none focus:border-gold bg-gray-950 text-white"
-            >
-              <option value="all">All Status</option>
-              <option value="received">Received</option>
-              <option value="preparing">Preparing</option>
-              <option value="ready">Ready</option>
-              <option value="completed">Completed</option>
-            </select>
+          {/* Search bar */}
+          <div className="relative max-w-md">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search by order ID or customer..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 input-dark rounded-xl text-sm font-medium"
+            />
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-gray-950 rounded-2xl border border-gray-800 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 py-8 relative z-10">
+        {/* Status filter tabs */}
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-7 [scrollbar-width:none]">
+          {filterTabs.map(tab => (
+            <button
+              key={tab}
+              onClick={() => setStatusFilter(tab)}
+              className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
+                statusFilter === tab
+                  ? 'bg-gold/10 text-gold border-gold/22'
+                  : 'bg-white/3 text-zinc-600 border-white/5 hover:text-zinc-300 hover:border-white/10'
+              }`}
+            >
+              {tab === 'all' ? 'All Orders' : tab}
+            </button>
+          ))}
+        </div>
+
+        {/* Orders table */}
+        <div className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-800 bg-black">
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Order ID</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Customer</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Items</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Amount</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Pickup</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Status</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Actions</th>
+                <tr className="border-b border-white/[0.05] bg-black/30">
+                  {['Order ID', 'Customer', 'Items', 'Amount', 'Pickup', 'Status', 'Actions'].map(h => (
+                    <th key={h} className="text-left px-5 py-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((order, i) => (
-                  <motion.tr
-                    key={order.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="border-b border-gray-800 hover:bg-gold/5 transition-colors"
-                  >
-                    <td className="px-6 py-4 font-semibold text-sm text-white">{order.id}</td>
-                    <td className="px-6 py-4 text-sm text-gray-300">{order.customer}</td>
-                    <td className="px-6 py-4 text-sm text-gray-400">
-                      {order.items.map((item, idx) => (
-                        <span key={idx}>{item.qty}x {item.name}{idx < order.items.length - 1 ? ', ' : ''}</span>
-                      ))}
-                    </td>
-                    <td className="px-6 py-4 font-semibold text-sm">₹{order.amount}</td>
-                    <td className="px-6 py-4 text-sm text-gray-400">{order.pickupTime}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${statusStyles[order.status]}`}>
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-1">
-                        {order.status === 'received' && (
-                          <button onClick={() => updateStatus(order.id, 'preparing')}
-                            className="p-2 text-yellow-400 hover:bg-yellow-500/10 rounded-lg transition-colors" title="Start Preparing">
-                            <ChefHat className="w-4 h-4" />
-                          </button>
-                        )}
-                        {order.status === 'preparing' && (
-                          <button onClick={() => updateStatus(order.id, 'ready')}
-                            className="p-2 text-green-400 hover:bg-green-500/10 rounded-lg transition-colors" title="Mark Ready">
-                            <CheckCircle className="w-4 h-4" />
-                          </button>
-                        )}
-                        {order.status === 'ready' && (
-                          <button onClick={() => updateStatus(order.id, 'completed')}
-                            className="p-2 text-gray-400 hover:bg-gray-500/10 rounded-lg transition-colors" title="Mark Completed">
-                            <Package className="w-4 h-4" />
-                          </button>
-                        )}
-                        {order.status !== 'completed' && order.status !== 'received' || (
-                          <span className="text-xs text-gray-400 px-2 py-2">
-                            {order.status === 'received' ? 'Awaiting' : 'Done'}
+                {filtered.map((order, i) => {
+                  const sc = statusConfig[order.status];
+                  return (
+                    <motion.tr
+                      key={order.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.04 }}
+                      className="border-b border-white/[0.04] hover:bg-gold/[0.015] transition-colors group"
+                    >
+                      <td className="px-5 py-4 font-black text-sm text-white">{order.id}</td>
+                      <td className="px-5 py-4 text-sm font-semibold text-zinc-300 group-hover:text-white transition-colors">{order.customer}</td>
+                      <td className="px-5 py-4 text-xs text-zinc-500 max-w-[200px]">
+                        {order.items.map((item, idx) => (
+                          <span key={idx} className="inline-block">
+                            <span className="text-gold font-black">{item.qty}×</span> {item.name}
+                            {idx < order.items.length - 1 ? ', ' : ''}
                           </span>
-                        )}
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))}
+                        ))}
+                      </td>
+                      <td className="px-5 py-4 font-black text-sm text-zinc-200">₹{order.amount}</td>
+                      <td className="px-5 py-4 text-xs text-zinc-500 font-bold">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-gold/50" />
+                          {order.pickupTime}
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${sc.pill}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
+                          {sc.label}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex gap-1.5">
+                          {order.status === 'received' && (
+                            <button
+                              onClick={() => updateStatus(order.id, 'preparing')}
+                              title="Start Preparing"
+                              className="p-2 text-amber-400 border border-amber-500/12 hover:border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/12 rounded-xl transition-all"
+                            >
+                              <ChefHat className="w-4 h-4" />
+                            </button>
+                          )}
+                          {order.status === 'preparing' && (
+                            <button
+                              onClick={() => updateStatus(order.id, 'ready')}
+                              title="Mark Ready"
+                              className="p-2 text-emerald-400 border border-emerald-500/12 hover:border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/12 rounded-xl transition-all"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </button>
+                          )}
+                          {order.status === 'ready' && (
+                            <button
+                              onClick={() => updateStatus(order.id, 'completed')}
+                              title="Mark Collected"
+                              className="p-2 text-zinc-400 border border-white/8 hover:border-white/18 bg-white/4 hover:bg-white/8 rounded-xl transition-all"
+                            >
+                              <Package className="w-4 h-4" />
+                            </button>
+                          )}
+                          {order.status === 'completed' && (
+                            <span className="px-2 py-2 text-[10px] text-zinc-700 font-black uppercase tracking-wider">Done</span>
+                          )}
+                        </div>
+                      </td>
+                    </motion.tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
           {filtered.length === 0 && (
-            <div className="text-center py-12 text-gray-500">No orders found</div>
+            <div className="text-center py-16 text-zinc-600 font-black text-sm uppercase tracking-wider">
+              No orders found
+            </div>
           )}
         </div>
       </div>

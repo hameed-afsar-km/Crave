@@ -66,105 +66,116 @@ export default function AdminMenu() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <p className="text-gray-400">Access Denied</p>
+      <div className="min-h-screen bg-[#06060A] flex items-center justify-center">
+        <p className="text-zinc-500 font-black">Access Denied</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="bg-gray-950 border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between mb-4">
+    <div className="min-h-screen bg-[#06060A] pt-16 pb-16 relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[radial-gradient(circle,rgba(212,175,55,0.04)_0%,transparent_65%)] pointer-events-none" />
+
+      <div className="bg-[rgba(8,8,14,0.6)] backdrop-blur-xl border-b border-white/[0.05] relative z-10">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-7">
+          <div className="flex items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-4">
-              <Link href="/admin/dashboard" className="p-2 hover:bg-white/5 rounded-full transition-colors">
-                <ArrowLeft className="w-5 h-5 text-gray-400" />
+              <Link href="/admin/dashboard" className="p-2 rounded-xl border border-white/6 bg-white/3 hover:bg-white/6 hover:border-gold/22 text-zinc-400 hover:text-gold transition-all">
+                <ArrowLeft className="w-4 h-4" />
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-white">Menu Management</h1>
-                <p className="text-gray-400 mt-1">Add, edit, or remove menu items</p>
+                <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">Menu Management</h1>
+                <p className="text-zinc-500 text-sm mt-0.5">Add, edit, or remove catalog items</p>
               </div>
             </div>
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={openAdd}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-gold to-amber-600 text-white font-medium rounded-full text-sm"
+              className="flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-gold via-amber-500 to-amber-600 text-white font-black uppercase tracking-widest text-xs rounded-full shadow-lg shadow-gold/10 hover:shadow-gold/20 hover:brightness-110 transition-all duration-300"
             >
-              <Plus className="w-4 h-4" />
-              Add Item
+              <Plus className="w-4 h-4 text-white" />
+              <span>Add Item</span>
             </motion.button>
           </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <div className="relative max-w-md">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
             <input
               type="text"
               placeholder="Search menu items..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-950 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold text-sm"
+              className="w-full pl-11 pr-4 py-3 input-dark rounded-xl text-sm font-medium"
             />
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-gray-950 rounded-2xl border border-gray-800 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 py-8 relative z-10">
+        <div className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-800 bg-black">
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Item</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Category</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Price</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Rating</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Status</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-400">Actions</th>
+                <tr className="border-b border-white/[0.05] bg-black/30">
+                  <th className="text-left px-6 py-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">Item</th>
+                  <th className="text-left px-6 py-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">Category</th>
+                  <th className="text-left px-6 py-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">Price</th>
+                  <th className="text-left px-6 py-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">Rating</th>
+                  <th className="text-left px-6 py-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">Status</th>
+                  <th className="text-left px-6 py-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((item, i) => (
                   <motion.tr
                     key={item.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.03 }}
-                    className="border-b border-gray-800 hover:bg-gold/5 transition-colors"
+                    className="border-b border-white/[0.04] hover:bg-gold/[0.015] transition-colors group"
                   >
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover" />
+                      <div className="flex items-center gap-4">
+                        <img src={item.image} alt={item.name} className="w-12 h-12 rounded-xl object-cover border border-white/5 shadow-inner" />
                         <div>
-                          <p className="font-semibold text-sm text-white">{item.name}</p>
-                          <p className="text-xs text-gray-400 truncate max-w-[200px]">{item.description}</p>
+                          <p className="font-bold text-sm text-white group-hover:text-gold transition-colors">{item.name}</p>
+                          <p className="text-xs text-zinc-500 truncate max-w-[220px]">{item.description}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-400">{item.category}</td>
-                    <td className="px-6 py-4 font-semibold text-sm">₹{item.price}</td>
-                    <td className="px-6 py-4 text-sm">{item.rating > 0 ? `★ ${item.rating}` : '—'}</td>
+                    <td className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-widest">{item.category}</td>
+                    <td className="px-6 py-4 font-black text-sm text-zinc-200">₹{item.price}</td>
+                    <td className="px-6 py-4 text-xs font-bold text-gold">
+                      {item.rating > 0 ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-gold glow-text-sm">★</span>
+                          <span>{item.rating}</span>
+                        </div>
+                      ) : (
+                        <span className="text-zinc-600">—</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                        item.available ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                        item.available ? 'bg-emerald-500/8 text-emerald-400 border border-emerald-500/15' : 'bg-rose-500/8 text-rose-400 border border-rose-500/15'
                       }`}>
                         {item.available ? 'Available' : 'Unavailable'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex gap-1">
+                      <div className="flex gap-2">
                         <button onClick={() => toggleAvailability(item.id)}
-                          className="p-2 text-gray-400 hover:bg-white/5 rounded-lg transition-colors"
+                          className="p-2 text-zinc-400 border border-white/8 hover:border-white/18 bg-white/4 hover:bg-white/8 rounded-xl transition-all"
                           title={item.available ? 'Disable' : 'Enable'}>
-                          {item.available ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          {item.available ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                         </button>
                         <button onClick={() => openEdit(item)}
-                          className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors" title="Edit">
-                          <Edit2 className="w-4 h-4" />
+                          className="p-2 text-gold border border-gold/12 hover:border-gold/30 bg-gold/5 hover:bg-gold/12 rounded-xl transition-all" title="Edit">
+                          <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button onClick={() => deleteItem(item.id)}
-                          className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" title="Delete">
-                          <Trash2 className="w-4 h-4" />
+                          className="p-2 text-rose-400 border border-rose-500/12 hover:border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/12 rounded-xl transition-all" title="Delete">
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>
@@ -174,65 +185,74 @@ export default function AdminMenu() {
             </table>
           </div>
           {filtered.length === 0 && (
-            <div className="text-center py-12 text-gray-400">No items found</div>
+            <div className="text-center py-16 text-zinc-600 font-black text-sm uppercase tracking-wider">
+              No items found
+            </div>
           )}
         </div>
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowForm(false)} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowForm(false)} />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative bg-gray-950 border border-gray-800 rounded-3xl p-8 w-full max-w-lg mx-4 shadow-2xl"
+            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="relative bg-[rgba(15,14,24,0.9)] backdrop-blur-2xl border border-white/[0.08] rounded-[28px] p-8 w-full max-w-lg shadow-[0_0_50px_rgba(0,0,0,0.8)] z-10"
           >
-            <h2 className="text-xl font-bold text-white mb-6">
-              {editingItem ? 'Edit Item' : 'Add New Item'}
+            <h2 className="text-xl font-black text-white uppercase tracking-wider mb-6">
+              {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Name</label>
+                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1.5">Item Name</label>
                 <input type="text" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})}
-                  className="w-full px-4 py-2.5 bg-black border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold" />
+                  className="w-full px-4 py-3 input-dark rounded-xl text-sm font-medium" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Description</label>
+                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1.5">Description</label>
                 <textarea value={form.description} onChange={(e) => setForm({...form, description: e.target.value})}
-                  className="w-full px-4 py-2.5 bg-black border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold" rows={3} />
+                  className="w-full px-4 py-3 input-dark rounded-xl text-sm font-medium resize-none" rows={3} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Price (₹)</label>
+                  <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1.5">Price (₹)</label>
                   <input type="number" value={form.price} onChange={(e) => setForm({...form, price: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-black border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold" />
+                    className="w-full px-4 py-3 input-dark rounded-xl text-sm font-medium" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Category</label>
+                  <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1.5">Category</label>
                   <select value={form.category} onChange={(e) => setForm({...form, category: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-black border border-gray-700 rounded-xl text-white focus:outline-none focus:border-gold">
-                    <option>Burgers</option>
-                    <option>Shawarma</option>
-                    <option>Fries</option>
-                    <option>Drinks</option>
-                    <option>Combos</option>
-                    <option>Desserts</option>
+                    className="w-full px-4 py-3 input-dark rounded-xl text-sm font-medium appearance-none bg-[image:var(--select-arrow)]"
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(255,255,255,0.4)' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E")`,
+                      backgroundPosition: 'right 16px center',
+                      backgroundSize: '16px',
+                      backgroundRepeat: 'no-repeat',
+                    }}
+                  >
+                    <option className="bg-zinc-950 text-white">Burgers</option>
+                    <option className="bg-zinc-950 text-white">Shawarma</option>
+                    <option className="bg-zinc-950 text-white">Fries</option>
+                    <option className="bg-zinc-950 text-white">Drinks</option>
+                    <option className="bg-zinc-950 text-white">Combos</option>
+                    <option className="bg-zinc-950 text-white">Desserts</option>
                   </select>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Image URL</label>
+                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1.5">Image URL</label>
                 <input type="text" value={form.image} onChange={(e) => setForm({...form, image: e.target.value})}
-                  className="w-full px-4 py-2.5 bg-black border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold" />
+                  className="w-full px-4 py-3 input-dark rounded-xl text-sm font-medium" />
               </div>
             </div>
             <div className="flex gap-3 mt-8">
               <button onClick={() => setShowForm(false)}
-                className="flex-1 py-3 border border-gray-700 rounded-full text-gray-300 font-medium hover:bg-white/5 transition-colors">
+                className="flex-1 py-3.5 border border-white/10 hover:border-white/20 bg-white/3 hover:bg-white/6 text-zinc-300 font-bold uppercase tracking-widest text-[10px] rounded-full transition-all duration-300">
                 Cancel
               </button>
               <button onClick={saveItem}
-                className="flex-1 py-3 bg-gradient-to-r from-gold to-amber-600 text-white rounded-full font-medium hover:shadow-lg transition-all">
+                className="flex-1 py-3.5 bg-gradient-to-r from-gold via-amber-500 to-amber-600 text-white font-bold uppercase tracking-widest text-[10px] rounded-full shadow-lg shadow-gold/10 hover:shadow-gold/25 hover:brightness-110 transition-all duration-300">
                 {editingItem ? 'Save Changes' : 'Add Item'}
               </button>
             </div>
