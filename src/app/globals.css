@@ -5,9 +5,18 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-steelfish: "Steelfish Rg", sans-serif;
   --color-gold: #D4AF37;
   --color-gold-dark: #B8960F;
   --color-gold-light: #F5D87A;
+}
+
+@font-face {
+  font-family: "Steelfish Rg";
+  src: url("/Font/Steelfish Rg.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
 }
 
 :root {
@@ -35,8 +44,12 @@ html { scroll-behavior: smooth; }
 body {
   background: #06060A;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(212,175,55,0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(120,80,10,0.04) 0%, transparent 55%);
+    radial-gradient(ellipse 80% 40% at 50% -5%, rgba(212,175,55,0.09) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 30% at 20% 80%, rgba(180,140,30,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 30% at 80% 90%, rgba(120,80,10,0.03) 0%, transparent 50%),
+    repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(255,255,255,0.008) 1px, rgba(255,255,255,0.008) 2px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 4px;
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-sans), 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;

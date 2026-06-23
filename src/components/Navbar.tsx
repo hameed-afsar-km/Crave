@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ShoppingCart, Menu, X, User, LogOut, LayoutDashboard, Flame } from 'lucide-react';
@@ -32,6 +32,9 @@ export default function Navbar() {
 
   const isHome = pathname === '/';
   const isTransparent = isHome && !scrolled;
+
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 80, damping: 30, restDelta: 0.001 });
 
   return (
     <>
@@ -112,18 +115,20 @@ export default function Navbar() {
 
             {/* Right: Actions */}
             <div className="hidden md:flex items-center gap-1.5">
+              {isAdmin && (
+                <NavIconBtn href="/admin/dashboard" title="Admin Dashboard" isTransparent={isTransparent}>
+                  <LayoutDashboard className="w-[18px] h-[18px]" />
+                </NavIconBtn>
+              )}
+
+              <div className="mr-4">
+                <NavIconBtn href="/cart" title="Cart" isTransparent={isTransparent} badge={itemCount}>
+                  <ShoppingCart className="w-[18px] h-[18px]" />
+                </NavIconBtn>
+              </div>
+
               {user ? (
                 <>
-                  {isAdmin && (
-                    <NavIconBtn href="/admin/dashboard" title="Admin Dashboard" isTransparent={isTransparent}>
-                      <LayoutDashboard className="w-[18px] h-[18px]" />
-                    </NavIconBtn>
-                  )}
-
-                  <NavIconBtn href="/cart" title="Cart" isTransparent={isTransparent} badge={itemCount}>
-                    <ShoppingCart className="w-[18px] h-[18px]" />
-                  </NavIconBtn>
-
                   <NavIconBtn href="/profile" title="Profile" isTransparent={isTransparent}>
                     <User className="w-[18px] h-[18px]" />
                   </NavIconBtn>
@@ -176,6 +181,12 @@ export default function Navbar() {
             </button>
           </div>
         </div>
+
+        {/* Scroll progress bar */}
+        <motion.div
+          className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-gold-light via-gold to-amber-600 origin-left"
+          style={{ scaleX }}
+        />
       </motion.nav>
 
       {/* Mobile Drawer */}
