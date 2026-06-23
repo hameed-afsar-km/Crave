@@ -29,7 +29,7 @@ export default function FinalCTA() {
         >
           Hungry?
           <br />
-          <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-gold to-amber-600 bg-clip-text text-transparent">
             Order Now & Skip The Queue.
           </span>
         </motion.h2>
@@ -52,7 +52,7 @@ export default function FinalCTA() {
         >
           <Link
             href="/menu"
-            className="group inline-flex items-center gap-3 px-10 py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-full text-lg hover:shadow-2xl hover:shadow-orange-500/30 transition-all duration-300"
+            className="group inline-flex items-center gap-3 px-10 py-4 bg-gradient-to-r from-gold to-amber-600 text-white font-bold rounded-full text-lg hover:shadow-2xl hover:shadow-gold/30 transition-all duration-300"
           >
             Start Ordering
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

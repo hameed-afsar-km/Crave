@@ -72,7 +72,7 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
           <div className="relative z-10 mt-16 w-64">
             <div className="h-1 bg-white/10 rounded-full overflow-hidden">
               <motion.div
-                className="h-full bg-gradient-to-r from-orange-400 to-red-500 rounded-full"
+                className="h-full bg-gradient-to-r from-gold to-amber-600 rounded-full"
                 style={{ width: `${Math.min(progress, 100)}%` }}
                 transition={{ duration: 0.1 }}
               />

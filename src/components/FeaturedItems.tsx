@@ -16,7 +16,7 @@ export default function FeaturedItems() {
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <span className="inline-block px-3 py-1 bg-orange-500/10 text-orange-400 text-sm font-medium rounded-full mb-4">
+          <span className="inline-block px-3 py-1 bg-gold/10 text-gold text-sm font-medium rounded-full mb-4">
             Featured Items
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-white">

@@ -41,14 +41,14 @@ export default function QueueWidget() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-orange-400 mb-1">
+                <div className="flex items-center justify-center gap-1 text-gold mb-1">
                   <Timer className="w-4 h-4" />
                 </div>
                 <p className="text-2xl font-bold text-white">{waitTime}</p>
                 <p className="text-xs text-gray-400">Minutes Wait</p>
               </div>
               <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-orange-400 mb-1">
+                <div className="flex items-center justify-center gap-1 text-gold mb-1">
                   <Users className="w-4 h-4" />
                 </div>
                 <p className="text-2xl font-bold text-white">{activeOrders}</p>
@@ -59,7 +59,7 @@ export default function QueueWidget() {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="mt-4 w-full bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm font-semibold py-2.5 rounded-xl"
+              className="mt-4 w-full bg-gradient-to-r from-gold to-amber-600 text-white text-sm font-semibold py-2.5 rounded-xl"
             >
               Order Now & Skip Queue
             </motion.button>

@@ -68,7 +68,7 @@ export default function CheckoutPage() {
       <div className="min-h-screen bg-black pt-24 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-bold text-white">Your cart is empty</h2>
-          <Link href="/menu" className="text-orange-400 hover:underline mt-2 inline-block">
+          <Link href="/menu" className="text-gold hover:underline mt-2 inline-block">
             Browse Menu
           </Link>
         </div>
@@ -101,7 +101,7 @@ export default function CheckoutPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your name"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-700 bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-700 bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition-all"
                   />
                 </div>
                 <div>
@@ -111,7 +111,7 @@ export default function CheckoutPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Your phone number"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-700 bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-700 bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition-all"
                   />
                 </div>
                 <div>
@@ -121,7 +121,7 @@ export default function CheckoutPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Your email (optional)"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-700 bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-700 bg-gray-900 text-white placeholder-gray-500 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition-all"
                   />
                 </div>
               </div>
@@ -139,11 +139,11 @@ export default function CheckoutPage() {
                   onClick={() => setPickupOption('asap')}
                   className={`p-4 rounded-xl border-2 text-center transition-all ${
                     pickupOption === 'asap'
-                      ? 'border-orange-500 bg-orange-500/10'
+                      ? 'border-gold bg-gold/10'
                       : 'border-gray-700 hover:border-gray-600'
                   }`}
                 >
-                  <Clock className="w-5 h-5 mx-auto mb-1 text-orange-400" />
+                  <Clock className="w-5 h-5 mx-auto mb-1 text-gold" />
                   <span className="font-semibold text-sm text-white">Pickup ASAP</span>
                   <p className="text-xs text-gray-400 mt-1">~18 min wait</p>
                 </button>
@@ -151,11 +151,11 @@ export default function CheckoutPage() {
                   onClick={() => setPickupOption('later')}
                   className={`p-4 rounded-xl border-2 text-center transition-all ${
                     pickupOption === 'later'
-                      ? 'border-orange-500 bg-orange-500/10'
+                      ? 'border-gold bg-gold/10'
                       : 'border-gray-700 hover:border-gray-600'
                   }`}
                 >
-                  <Clock className="w-5 h-5 mx-auto mb-1 text-orange-400" />
+                  <Clock className="w-5 h-5 mx-auto mb-1 text-gold" />
                   <span className="font-semibold text-sm text-white">Pickup Later</span>
                   <p className="text-xs text-gray-400 mt-1">Choose a time</p>
                 </button>
@@ -169,8 +169,8 @@ export default function CheckoutPage() {
                       onClick={() => setSelectedTime(slot.time)}
                       className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${
                         selectedTime === slot.time
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-gray-900 text-gray-300 hover:bg-orange-500/10 hover:text-orange-400'
+                          ? 'bg-gold text-white'
+                          : 'bg-gray-900 text-gray-300 hover:bg-gold/10 hover:text-gold'
                       }`}
                     >
                       {slot.label}
@@ -217,7 +217,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="border-t border-gray-800 pt-2 flex justify-between text-lg font-bold text-white">
                   <span>Total</span>
-                  <span className="text-orange-400">{formatPrice(total)}</span>
+                  <span className="text-gold">{formatPrice(total)}</span>
                 </div>
               </div>
 
@@ -226,7 +226,7 @@ export default function CheckoutPage() {
                 disabled={processing || !name || !phone}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="mt-6 flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-full hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="mt-6 flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-gold to-amber-600 text-white font-semibold rounded-full hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {processing ? (
                   'Placing Order...'

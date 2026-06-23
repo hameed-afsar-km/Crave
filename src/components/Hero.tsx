@@ -19,7 +19,7 @@ export default function Hero() {
         {[...Array(6)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-2 h-2 bg-orange-400/30 rounded-full"
+            className="absolute w-2 h-2 bg-gold/30 rounded-full"
             style={{
               left: `${10 + i * 18}%`,
               top: `${20 + (i % 3) * 30}%`,
@@ -56,11 +56,11 @@ export default function Hero() {
           className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white leading-[1.1] tracking-tight"
         >
           <span className="block">Skip The Queue.</span>
-          <span className="block mt-2 bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+          <span className="block mt-2 bg-gradient-to-r from-gold to-amber-600 bg-clip-text text-transparent">
             Order Online.
           </span>
           <span className="block mt-2">
-            Pick Up Fresh. <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">Enjoy Faster.</span>
+            Pick Up Fresh. <span className="bg-gradient-to-r from-gold to-amber-600 bg-clip-text text-transparent">Enjoy Faster.</span>
           </span>
         </motion.h1>
 
@@ -81,10 +81,10 @@ export default function Hero() {
         >
           <Link
             href="/menu"
-            className="group relative inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-full text-lg overflow-hidden"
-          >
-            <motion.span
-              className="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-600"
+            className="group relative inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-gold to-amber-600 text-white font-semibold rounded-full text-lg overflow-hidden"
+            >
+              <motion.span
+                className="absolute inset-0 bg-gradient-to-r from-gold-dark to-amber-700"
               initial={{ x: '100%' }}
               whileHover={{ x: 0 }}
               transition={{ duration: 0.3 }}
