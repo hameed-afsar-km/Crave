@@ -15,16 +15,8 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   const isAuth = pathname?.startsWith('/auth');
   const isAdmin = pathname?.startsWith('/admin');
 
-  useEffect(() => {
-    const hasSeen = sessionStorage.getItem('crave-splash');
-    if (hasSeen) {
-      setSplashDone(true);
-    }
-  }, []);
-
   const handleSplashFinish = () => {
     setSplashDone(true);
-    sessionStorage.setItem('crave-splash', 'true');
   };
 
   return (
