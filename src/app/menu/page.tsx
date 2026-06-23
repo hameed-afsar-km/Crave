@@ -38,7 +38,7 @@ export default function MenuPage() {
             placeholder="Search Shawarma, Burger, Fries..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3.5 bg-gray-950 border border-gray-800 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            className="w-full pl-12 pr-4 py-3.5 bg-gray-950 border border-gray-800 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition-all"
           />
         </div>
 
@@ -52,8 +52,8 @@ export default function MenuPage() {
               onClick={() => setActiveCategory(cat)}
               className={`px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-300 ${
                 activeCategory === cat
-                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/20'
-                  : 'bg-gray-950 text-gray-400 hover:text-orange-400 border border-gray-800 hover:border-orange-500/30'
+                  ? 'bg-gradient-to-r from-gold to-amber-600 text-white shadow-lg shadow-gold/20'
+                  : 'bg-gray-950 text-gray-400 hover:text-gold border border-gray-800 hover:border-gold/30'
               }`}
             >
               {cat}

@@ -36,7 +36,7 @@ export default function Testimonials() {
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <span className="inline-block px-3 py-1 bg-orange-500/10 text-orange-400 text-sm font-medium rounded-full mb-4">
+          <span className="inline-block px-3 py-1 bg-gold/10 text-gold text-sm font-medium rounded-full mb-4">
             Testimonials
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-white">
@@ -48,7 +48,7 @@ export default function Testimonials() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate(-1)}
-              className="hidden md:flex w-12 h-12 rounded-full border border-gray-200 items-center justify-center hover:bg-orange-50 hover:border-orange-200 transition-colors"
+              className="hidden md:flex w-12 h-12 rounded-full border border-gray-200 items-center justify-center hover:bg-gold/10 hover:border-gold/20 transition-colors"
             >
               <ChevronLeft className="w-5 h-5 text-gray-600" />
             </button>
@@ -64,7 +64,7 @@ export default function Testimonials() {
                   transition={{ duration: 0.4, ease: 'easeInOut' }}
                   className="bg-gradient-to-br from-gray-900 to-black rounded-3xl p-8 md:p-12 text-center border border-gray-800"
                 >
-                  <Quote className="w-10 h-10 text-orange-400/50 mx-auto mb-6" />
+                  <Quote className="w-10 h-10 text-gold/50 mx-auto mb-6" />
                   <p className="text-lg md:text-xl text-gray-300 leading-relaxed mb-6 italic">
                     &ldquo;{t.review}&rdquo;
                   </p>
@@ -83,7 +83,7 @@ export default function Testimonials() {
 
             <button
               onClick={() => navigate(1)}
-              className="hidden md:flex w-12 h-12 rounded-full border border-gray-200 items-center justify-center hover:bg-orange-50 hover:border-orange-200 transition-colors"
+              className="hidden md:flex w-12 h-12 rounded-full border border-gray-200 items-center justify-center hover:bg-gold/10 hover:border-gold/20 transition-colors"
             >
               <ChevronRight className="w-5 h-5 text-gray-600" />
             </button>
@@ -94,7 +94,7 @@ export default function Testimonials() {
               <button
                 key={i}
                 onClick={() => { setDirection(i > current ? 1 : -1); setCurrent(i); }}
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${i === current ? 'bg-orange-500 w-8' : 'bg-gray-700'}`}
+                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${i === current ? 'bg-gold w-8' : 'bg-gray-700'}`}
               />
             ))}
           </div>

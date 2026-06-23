@@ -28,7 +28,7 @@ export default function ProfilePage() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-orange-400 transition-colors mb-6"
+          className="inline-flex items-center gap-2 text-gray-400 hover:text-gold transition-colors mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Home
@@ -40,7 +40,7 @@ export default function ProfilePage() {
           className="bg-gray-950 rounded-3xl p-8 border border-gray-800 shadow-sm mb-6"
         >
           <div className="flex items-center gap-6">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gold to-amber-600 flex items-center justify-center">
               <User className="w-10 h-10 text-white" />
             </div>
             <div className="flex-1">
@@ -57,14 +57,14 @@ export default function ProfilePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
             <div className="flex items-center gap-3 p-4 bg-black rounded-xl">
-              <Phone className="w-5 h-5 text-orange-400" />
+              <Phone className="w-5 h-5 text-gold" />
               <div>
                 <p className="text-sm text-gray-400">Phone</p>
                 <p className="font-medium text-white">{user.phone || 'Not set'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-4 bg-black rounded-xl">
-              <Mail className="w-5 h-5 text-orange-400" />
+              <Mail className="w-5 h-5 text-gold" />
               <div>
                 <p className="text-sm text-gray-400">Email</p>
                 <p className="font-medium text-white">{user.email || 'Not set'}</p>
@@ -80,7 +80,7 @@ export default function ProfilePage() {
           className="bg-gray-950 rounded-3xl p-8 border border-gray-800 shadow-sm"
         >
           <div className="flex items-center gap-2 mb-6">
-            <Package className="w-5 h-5 text-orange-400" />
+            <Package className="w-5 h-5 text-gold" />
             <h2 className="text-lg font-bold text-white">Past Orders</h2>
           </div>
 
@@ -91,7 +91,7 @@ export default function ProfilePage() {
               {pastOrders.map(order => (
                 <div
                   key={order.id}
-                  className="flex items-center justify-between p-4 bg-black rounded-xl hover:bg-orange-500/5 transition-colors"
+                  className="flex items-center justify-between p-4 bg-black rounded-xl hover:bg-gold/5 transition-colors"
                 >
                   <div>
                     <p className="font-semibold text-white">{order.id}</p>

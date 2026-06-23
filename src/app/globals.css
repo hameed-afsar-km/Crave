@@ -5,6 +5,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-gold: #D4AF37;
+  --color-gold-dark: #B8960F;
 }
 
 :root {
@@ -30,13 +32,13 @@ body {
 }
 
 ::selection {
-  background: #f97316;
+  background: #D4AF37;
   color: white;
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(249, 115, 22, 0.3); }
-  50% { box-shadow: 0 0 40px rgba(249, 115, 22, 0.6); }
+  0%, 100% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(212, 175, 55, 0.6); }
 }
 
 @keyframes float {

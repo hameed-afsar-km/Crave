@@ -44,8 +44,8 @@ export default function Navbar() {
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-3 items-center h-14 md:h-16">
-            <div className="hidden md:flex items-center gap-8">
+          <div className="flex items-center justify-center md:grid md:grid-cols-3 md:items-center relative h-[66px] md:h-[74px]">
+            <div className="hidden md:flex items-center gap-8 self-center">
               {navLinks.map((link, i) => (
                 <motion.div
                   key={link.href}
@@ -57,13 +57,13 @@ export default function Navbar() {
                     href={link.href}
                     className={cn(
                       'text-sm font-medium transition-colors duration-200 relative group',
-                      isTransparent ? 'text-white/80 hover:text-white' : 'text-gray-300 hover:text-orange-400',
-                      pathname === link.href && (isTransparent ? 'text-white' : 'text-orange-400')
+                      isTransparent ? 'text-white/80 hover:text-white' : 'text-gray-300 hover:text-gold',
+                      pathname === link.href && (isTransparent ? 'text-white' : 'text-gold')
                     )}
                   >
                     {link.label}
                     <span className={cn(
-                      'absolute -bottom-1 left-0 h-0.5 bg-orange-500 transition-all duration-300',
+                      'absolute -bottom-1 left-0 h-0.5 bg-gold transition-all duration-300',
                       pathname === link.href ? 'w-full' : 'w-0 group-hover:w-full'
                     )} />
                   </Link>
@@ -71,34 +71,34 @@ export default function Navbar() {
               ))}
             </div>
 
-            <Link href="/" className="flex items-center justify-center group">
+            <Link href="/" className="flex items-center justify-center group self-center">
               <motion.img
                 src="/Logo Transparent.png"
                 alt="Crave"
                 className={cn(
-                  'h-14 md:h-24 w-auto transition-opacity duration-300',
+                  'h-8 md:h-10 w-auto transition-opacity duration-300',
                 )}
                 whileHover={{ scale: 1.05 }}
               />
             </Link>
 
-            <div className="hidden md:flex items-center justify-end gap-2">
+            <div className="hidden md:flex items-center justify-end gap-2 self-center">
 {user ? (
                 <>
-                  <Link
+                    <Link
                     href="/cart"
                     className={cn(
                       'relative p-2 rounded-full transition-colors duration-200',
-                      isTransparent ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-gray-300 hover:text-orange-400 hover:bg-white/5'
+                      isTransparent ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-gray-300 hover:text-gold hover:bg-white/5'
                     )}
                   >
                     <LayoutDashboard className="w-5 h-5" />
                   </Link>
-                  <Link
+                    <Link
                     href="/profile"
                     className={cn(
                       'p-2 rounded-full transition-colors duration-200',
-                      isTransparent ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-gray-300 hover:text-orange-400 hover:bg-white/5'
+                      isTransparent ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-gray-300 hover:text-gold hover:bg-white/5'
                     )}
                   >
                     <User className="w-5 h-5" />
@@ -120,7 +120,7 @@ export default function Navbar() {
                     'px-5 py-2 text-sm font-semibold rounded-full transition-all duration-200',
                     isTransparent
                       ? 'bg-white text-black hover:bg-gray-100'
-                      : 'bg-orange-500 text-white hover:bg-orange-600'
+                      : 'bg-gold text-white hover:bg-gold-dark'
                   )}
                 >
                   Order Now
@@ -131,7 +131,7 @@ export default function Navbar() {
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
               className={cn(
-                'md:hidden p-2 rounded-lg transition-colors',
+                'absolute right-4 top-1/2 -translate-y-1/2 md:hidden p-2 rounded-lg transition-colors',
                 isTransparent ? 'text-white hover:bg-white/10' : 'text-gray-300 hover:bg-white/5'
               )}
             >
@@ -164,7 +164,7 @@ export default function Navbar() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setMobileOpen(false)}
-                    className="text-lg font-medium text-gray-300 hover:text-orange-400 transition-colors py-2 border-b border-gray-800"
+                    className="text-lg font-medium text-gray-300 hover:text-gold transition-colors py-2 border-b border-gray-800"
                   >
                     {link.label}
                   </Link>
@@ -172,11 +172,11 @@ export default function Navbar() {
                 <Link
                   href="/cart"
                   onClick={() => setMobileOpen(false)}
-                  className="text-lg font-medium text-gray-300 hover:text-orange-400 transition-colors py-2 border-b border-gray-800 flex items-center gap-2"
+                  className="text-lg font-medium text-gray-300 hover:text-gold transition-colors py-2 border-b border-gray-800 flex items-center gap-2"
                 >
                   Cart
                   {itemCount > 0 && (
-                    <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">{itemCount}</span>
+                    <span className="bg-gold text-white text-xs px-2 py-0.5 rounded-full">{itemCount}</span>
                   )}
                 </Link>
                 {user ? (
@@ -185,7 +185,7 @@ export default function Navbar() {
                       <Link
                         href="/admin/dashboard"
                         onClick={() => setMobileOpen(false)}
-                        className="text-lg font-medium text-gray-300 hover:text-orange-400 transition-colors py-2 border-b border-gray-800"
+                        className="text-lg font-medium text-gray-300 hover:text-gold transition-colors py-2 border-b border-gray-800"
                       >
                         Admin
                       </Link>
@@ -193,7 +193,7 @@ export default function Navbar() {
                     <Link
                       href="/profile"
                       onClick={() => setMobileOpen(false)}
-                      className="text-lg font-medium text-gray-300 hover:text-orange-400 transition-colors py-2 border-b border-gray-800"
+                      className="text-lg font-medium text-gray-300 hover:text-gold transition-colors py-2 border-b border-gray-800"
                     >
                       Profile
                     </Link>
@@ -208,7 +208,7 @@ export default function Navbar() {
                   <Link
                     href="/auth"
                     onClick={() => setMobileOpen(false)}
-                    className="mt-4 bg-orange-500 text-white text-center py-3 rounded-full font-semibold hover:bg-orange-600 transition-colors"
+                    className="mt-4 bg-gold text-white text-center py-3 rounded-full font-semibold hover:bg-gold-dark transition-colors"
                   >
                     Sign In
                   </Link>

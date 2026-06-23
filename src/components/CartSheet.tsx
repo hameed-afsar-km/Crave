@@ -34,7 +34,7 @@ export default function CartSheet({ open, onClose }: CartSheetProps) {
           >
             <div className="flex items-center justify-between p-6 border-b border-gray-800">
               <div className="flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5 text-orange-400" />
+                <ShoppingBag className="w-5 h-5 text-gold" />
                 <h2 className="text-lg font-bold text-white">Your Cart</h2>
                 <span className="text-sm text-gray-400">({items.length} items)</span>
               </div>
@@ -68,18 +68,18 @@ export default function CartSheet({ open, onClose }: CartSheetProps) {
                       />
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-gray-100 truncate">{item.name}</h4>
-                        <p className="text-orange-400 font-bold mt-1">{formatPrice(item.price)}</p>
+                        <p className="text-gold font-bold mt-1">{formatPrice(item.price)}</p>
                         <div className="flex items-center gap-3 mt-2">
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="w-7 h-7 rounded-full border border-gray-700 flex items-center justify-center hover:bg-orange-500/10 hover:border-orange-400 transition-colors"
+                            className="w-7 h-7 rounded-full border border-gray-700 flex items-center justify-center hover:bg-gold/10 hover:border-gold transition-colors"
                           >
                             <Minus className="w-3 h-3 text-gray-300" />
                           </button>
                           <span className="font-semibold text-sm w-5 text-center text-white">{item.quantity}</span>
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="w-7 h-7 rounded-full border border-gray-700 flex items-center justify-center hover:bg-orange-500/10 hover:border-orange-400 transition-colors"
+                            className="w-7 h-7 rounded-full border border-gray-700 flex items-center justify-center hover:bg-gold/10 hover:border-gold transition-colors"
                           >
                             <Plus className="w-3 h-3 text-gray-300" />
                           </button>
@@ -106,7 +106,7 @@ export default function CartSheet({ open, onClose }: CartSheetProps) {
                 <Link
                   href="/checkout"
                   onClick={onClose}
-                  className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-full hover:shadow-lg transition-all"
+                  className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-gold to-amber-600 text-white font-semibold rounded-full hover:shadow-lg transition-all"
                 >
                   Proceed to Checkout
                   <ArrowRight className="w-4 h-4" />

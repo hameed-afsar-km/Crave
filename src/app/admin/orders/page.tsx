@@ -69,13 +69,13 @@ export default function AdminOrders() {
                 placeholder="Search orders..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-950 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 text-sm"
+                className="w-full pl-10 pr-4 py-2.5 bg-gray-950 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold text-sm"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2.5 border border-gray-700 rounded-xl text-sm focus:outline-none focus:border-orange-500 bg-gray-950 text-white"
+              className="px-4 py-2.5 border border-gray-700 rounded-xl text-sm focus:outline-none focus:border-gold bg-gray-950 text-white"
             >
               <option value="all">All Status</option>
               <option value="received">Received</option>
@@ -109,7 +109,7 @@ export default function AdminOrders() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.05 }}
-                    className="border-b border-gray-800 hover:bg-orange-500/5 transition-colors"
+                    className="border-b border-gray-800 hover:bg-gold/5 transition-colors"
                   >
                     <td className="px-6 py-4 font-semibold text-sm text-white">{order.id}</td>
                     <td className="px-6 py-4 text-sm text-gray-300">{order.customer}</td>

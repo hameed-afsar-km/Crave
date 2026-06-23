@@ -52,7 +52,7 @@ export default function FoodDetailPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Link
           href="/menu"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-orange-400 transition-colors mb-6"
+          className="inline-flex items-center gap-2 text-gray-400 hover:text-gold transition-colors mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Menu
@@ -72,7 +72,7 @@ export default function FoodDetailPage() {
                   className="w-full aspect-square object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-semibold text-orange-500 flex items-center gap-1">
+                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-semibold text-gold flex items-center gap-1">
                   <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                   {item.rating}
                 </div>
@@ -86,13 +86,13 @@ export default function FoodDetailPage() {
             transition={{ delay: 0.1 }}
             className="pb-24"
           >
-            <span className="inline-block px-3 py-1 bg-orange-500/10 text-orange-400 text-sm font-medium rounded-full mb-3">
+            <span className="inline-block px-3 py-1 bg-gold/10 text-gold text-sm font-medium rounded-full mb-3">
               {item.category}
             </span>
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">{item.name}</h1>
             <p className="text-gray-400 text-lg leading-relaxed mb-6">{item.description}</p>
 
-            <div className="text-3xl font-bold text-orange-400 mb-8">
+            <div className="text-3xl font-bold text-gold mb-8">
               {formatPrice(item.price)}
             </div>
 
@@ -105,14 +105,14 @@ export default function FoodDetailPage() {
                     onClick={() => toggleExtra(extra.label)}
                     className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
                       selectedExtras.includes(extra.label)
-                        ? 'border-orange-500 bg-orange-500/10'
+                        ? 'border-gold bg-gold/10'
                         : 'border-gray-700 hover:border-gray-600'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
                         selectedExtras.includes(extra.label)
-                          ? 'border-orange-500 bg-orange-500'
+                          ? 'border-gold bg-gold'
                           : 'border-gray-600'
                       }`}>
                         {selectedExtras.includes(extra.label) && (
@@ -134,14 +134,14 @@ export default function FoodDetailPage() {
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-12 h-12 rounded-full border-2 border-gray-700 flex items-center justify-center hover:border-orange-400 transition-colors"
-                >
-                  <Minus className="w-5 h-5 text-gray-300" />
-                </button>
-                <span className="text-2xl font-bold w-8 text-center text-white">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-12 h-12 rounded-full border-2 border-gray-700 flex items-center justify-center hover:border-orange-400 transition-colors"
+className="w-12 h-12 rounded-full border-2 border-gray-700 flex items-center justify-center hover:border-gold transition-colors"
+                  >
+                    <Minus className="w-5 h-5 text-gray-300" />
+                  </button>
+                  <span className="text-2xl font-bold w-8 text-center text-white">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="w-12 h-12 rounded-full border-2 border-gray-700 flex items-center justify-center hover:border-gold transition-colors"
                 >
                   <Plus className="w-5 h-5 text-gray-300" />
                 </button>
@@ -152,13 +152,13 @@ export default function FoodDetailPage() {
               <div className="max-w-6xl mx-auto flex items-center gap-4">
                 <div className="hidden md:block flex-1">
                   <p className="text-sm text-gray-400">Total Price</p>
-                  <p className="text-2xl font-bold text-orange-400">{formatPrice(totalPrice * quantity)}</p>
+                  <p className="text-2xl font-bold text-gold">{formatPrice(totalPrice * quantity)}</p>
                 </div>
                 <motion.button
                   onClick={handleAddToCart}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all"
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-gold to-amber-600 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all"
                 >
                   <ShoppingCart className="w-5 h-5" />
                   Add to Cart - {formatPrice(totalPrice * quantity)}

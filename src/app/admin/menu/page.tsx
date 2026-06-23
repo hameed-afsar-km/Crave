@@ -90,7 +90,7 @@ export default function AdminMenu() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={openAdd}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium rounded-full text-sm"
+              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-gold to-amber-600 text-white font-medium rounded-full text-sm"
             >
               <Plus className="w-4 h-4" />
               Add Item
@@ -103,7 +103,7 @@ export default function AdminMenu() {
               placeholder="Search menu items..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-950 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 text-sm"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-950 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold text-sm"
             />
           </div>
         </div>
@@ -130,7 +130,7 @@ export default function AdminMenu() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.03 }}
-                    className="border-b border-gray-800 hover:bg-orange-500/5 transition-colors"
+                    className="border-b border-gray-800 hover:bg-gold/5 transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -194,23 +194,23 @@ export default function AdminMenu() {
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Name</label>
                 <input type="text" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})}
-                  className="w-full px-4 py-2.5 bg-black border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-orange-500" />
+                  className="w-full px-4 py-2.5 bg-black border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Description</label>
                 <textarea value={form.description} onChange={(e) => setForm({...form, description: e.target.value})}
-                  className="w-full px-4 py-2.5 bg-black border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-orange-500" rows={3} />
+                  className="w-full px-4 py-2.5 bg-black border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold" rows={3} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-1">Price (₹)</label>
                   <input type="number" value={form.price} onChange={(e) => setForm({...form, price: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-black border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-orange-500" />
+                    className="w-full px-4 py-2.5 bg-black border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-1">Category</label>
                   <select value={form.category} onChange={(e) => setForm({...form, category: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-black border border-gray-700 rounded-xl text-white focus:outline-none focus:border-orange-500">
+                    className="w-full px-4 py-2.5 bg-black border border-gray-700 rounded-xl text-white focus:outline-none focus:border-gold">
                     <option>Burgers</option>
                     <option>Shawarma</option>
                     <option>Fries</option>
@@ -223,7 +223,7 @@ export default function AdminMenu() {
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Image URL</label>
                 <input type="text" value={form.image} onChange={(e) => setForm({...form, image: e.target.value})}
-                  className="w-full px-4 py-2.5 bg-black border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-orange-500" />
+                  className="w-full px-4 py-2.5 bg-black border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold" />
               </div>
             </div>
             <div className="flex gap-3 mt-8">
@@ -232,7 +232,7 @@ export default function AdminMenu() {
                 Cancel
               </button>
               <button onClick={saveItem}
-                className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full font-medium hover:shadow-lg transition-all">
+                className="flex-1 py-3 bg-gradient-to-r from-gold to-amber-600 text-white rounded-full font-medium hover:shadow-lg transition-all">
                 {editingItem ? 'Save Changes' : 'Add Item'}
               </button>
             </div>

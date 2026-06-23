@@ -24,7 +24,7 @@ export default function CartPage() {
             <p className="text-gray-400 mb-8">Looks like you haven&apos;t added anything yet</p>
             <Link
               href="/menu"
-              className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-full hover:shadow-lg transition-all"
+              className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-gold to-amber-600 text-white font-semibold rounded-full hover:shadow-lg transition-all"
             >
               Browse Menu
               <ArrowRight className="w-4 h-4" />
@@ -71,7 +71,7 @@ export default function CartPage() {
                   <div className="flex items-start justify-between">
                     <div>
                       <h3 className="font-semibold text-gray-100">{item.name}</h3>
-                      <p className="text-orange-400 font-bold mt-1">{formatPrice(item.price)}</p>
+                      <p className="text-gold font-bold mt-1">{formatPrice(item.price)}</p>
                     </div>
                     <button
                       onClick={() => removeItem(item.id)}
@@ -86,14 +86,14 @@ export default function CartPage() {
                   <div className="flex items-center gap-3 mt-3">
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className="w-8 h-8 rounded-full border border-gray-700 flex items-center justify-center hover:bg-orange-500/10 hover:border-orange-400 transition-colors"
+                      className="w-8 h-8 rounded-full border border-gray-700 flex items-center justify-center hover:bg-gold/10 hover:border-gold transition-colors"
                     >
                       <Minus className="w-3 h-3 text-gray-300" />
                     </button>
                     <span className="font-semibold w-6 text-center text-white">{item.quantity}</span>
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className="w-8 h-8 rounded-full border border-gray-700 flex items-center justify-center hover:bg-orange-500/10 hover:border-orange-400 transition-colors"
+                      className="w-8 h-8 rounded-full border border-gray-700 flex items-center justify-center hover:bg-gold/10 hover:border-gold transition-colors"
                     >
                       <Plus className="w-3 h-3 text-gray-300" />
                     </button>
@@ -125,19 +125,19 @@ export default function CartPage() {
                 </div>
                 <div className="border-t border-gray-800 pt-3 flex justify-between text-lg font-bold text-white">
                   <span>Total</span>
-                  <span className="text-orange-400">{formatPrice(total)}</span>
+                  <span className="text-gold">{formatPrice(total)}</span>
                 </div>
               </div>
               <Link
                 href="/checkout"
-                className="mt-6 flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-full hover:shadow-lg transition-all"
+                className="mt-6 flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-gold to-amber-600 text-white font-semibold rounded-full hover:shadow-lg transition-all"
               >
                 Proceed to Checkout
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 href="/menu"
-                className="mt-3 flex items-center justify-center gap-2 w-full py-3 text-gray-400 font-medium hover:text-orange-400 transition-colors"
+                className="mt-3 flex items-center justify-center gap-2 w-full py-3 text-gray-400 font-medium hover:text-gold transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Continue Shopping

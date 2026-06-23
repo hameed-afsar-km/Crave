@@ -57,7 +57,7 @@ export default function OrderTrackingPage() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-orange-400 transition-colors mb-6"
+          className="inline-flex items-center gap-2 text-gray-400 hover:text-gold transition-colors mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Home
@@ -103,7 +103,7 @@ export default function OrderTrackingPage() {
                     transition={{ duration: 0.3 }}
                     className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center ${
                       i <= currentStepIndex
-                        ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/20'
+                        ? 'bg-gradient-to-r from-gold to-amber-600 text-white shadow-lg shadow-gold/20'
                         : 'bg-gray-800 text-gray-500'
                     }`}
                   >
@@ -128,7 +128,7 @@ export default function OrderTrackingPage() {
                       initial={{ width: 0 }}
                       animate={{ width: '100%' }}
                       transition={{ duration: 2, delay: i * 0.5 }}
-                      className="hidden md:block h-0.5 bg-gradient-to-r from-orange-500 to-red-500 mt-5"
+                      className="hidden md:block h-0.5 bg-gradient-to-r from-gold to-amber-600 mt-5"
                     />
                   )}
                 </motion.div>
@@ -144,7 +144,7 @@ export default function OrderTrackingPage() {
             transition={{ delay: 0.2 }}
             className="bg-gray-950 rounded-2xl p-5 border border-gray-800 text-center"
           >
-            <Clock className="w-6 h-6 text-orange-400 mx-auto mb-2" />
+            <Clock className="w-6 h-6 text-gold mx-auto mb-2" />
             <p className="text-2xl font-bold text-white">{order.estimatedWaitTime || 18}m</p>
             <p className="text-xs text-gray-400">Est. Wait Time</p>
           </motion.div>
@@ -154,7 +154,7 @@ export default function OrderTrackingPage() {
             transition={{ delay: 0.25 }}
             className="bg-gray-950 rounded-2xl p-5 border border-gray-800 text-center"
           >
-            <Clock className="w-6 h-6 text-orange-400 mx-auto mb-2" />
+            <Clock className="w-6 h-6 text-gold mx-auto mb-2" />
             <p className="text-lg font-bold text-white">{order.pickupTime}</p>
             <p className="text-xs text-gray-400">Pickup Time</p>
           </motion.div>
@@ -164,7 +164,7 @@ export default function OrderTrackingPage() {
             transition={{ delay: 0.3 }}
             className="bg-gray-950 rounded-2xl p-5 border border-gray-800 text-center"
           >
-            <Package className="w-6 h-6 text-orange-400 mx-auto mb-2" />
+            <Package className="w-6 h-6 text-gold mx-auto mb-2" />
             <p className="text-2xl font-bold text-white">{formatPrice(order.amount)}</p>
             <p className="text-xs text-gray-400">Total</p>
           </motion.div>

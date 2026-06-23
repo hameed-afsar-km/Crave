@@ -37,9 +37,9 @@ function AnimatedCounter({ value, suffix = '' }: { value: number; suffix?: strin
 }
 
 const statsCards = [
-  { label: 'Orders Today', value: 48, icon: ShoppingBag, color: 'from-orange-400 to-red-500', suffix: '' },
+  { label: 'Orders Today', value: 48, icon: ShoppingBag, color: 'from-gold to-amber-600', suffix: '' },
   { label: 'Revenue Today', value: 12450, icon: IndianRupee, color: 'from-green-400 to-emerald-500', suffix: '' },
-  { label: 'Pending Orders', value: 12, icon: Clock, color: 'from-yellow-400 to-orange-500', suffix: '' },
+  { label: 'Pending Orders', value: 12, icon: Clock, color: 'from-yellow-400 to-gold', suffix: '' },
   { label: 'Completed Today', value: 36, icon: CheckCircle, color: 'from-blue-400 to-purple-500', suffix: '' },
 ];
 
@@ -52,7 +52,7 @@ export default function AdminDashboard() {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-white mb-2">Access Denied</h1>
           <p className="text-gray-400">Admin access only</p>
-          <Link href="/" className="text-orange-500 hover:underline mt-4 inline-block">Go Home</Link>
+          <Link href="/" className="text-gold hover:underline mt-4 inline-block">Go Home</Link>
         </div>
       </div>
     );
@@ -70,19 +70,19 @@ export default function AdminDashboard() {
             <div className="flex gap-3">
               <Link
                 href="/admin/orders"
-                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-orange-400 border border-gray-700 rounded-full hover:border-orange-400 transition-all"
+                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-gold border border-gray-700 rounded-full hover:border-gold transition-all"
               >
                 Orders
               </Link>
               <Link
                 href="/admin/menu"
-                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-orange-400 border border-gray-700 rounded-full hover:border-orange-400 transition-all"
+                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-gold border border-gray-700 rounded-full hover:border-gold transition-all"
               >
                 Menu
               </Link>
               <Link
                 href="/"
-                className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full hover:shadow-lg transition-all"
+                className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-gold to-amber-600 text-white rounded-full hover:shadow-lg transition-all"
               >
                 View Site
               </Link>
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
                     <span className={`text-xs font-medium capitalize ${
                       order.status === 'completed' ? 'text-green-600' :
                       order.status === 'preparing' ? 'text-yellow-600' :
-                      order.status === 'ready' ? 'text-blue-600' : 'text-orange-600'
+                      order.status === 'ready' ? 'text-blue-600' : 'text-gold-dark'
                     }`}>
                       {order.status}
                     </span>
@@ -157,16 +157,16 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-2 gap-4">
               <Link
                 href="/admin/orders"
-                className="p-4 bg-orange-500/10 rounded-xl text-center hover:bg-orange-500/20 transition-colors"
+                className="p-4 bg-gold/10 rounded-xl text-center hover:bg-gold/20 transition-colors"
               >
-                <Package className="w-6 h-6 text-orange-400 mx-auto mb-2" />
+                <Package className="w-6 h-6 text-gold mx-auto mb-2" />
                 <span className="text-sm font-medium text-white">Manage Orders</span>
               </Link>
               <Link
                 href="/admin/menu"
-                className="p-4 bg-orange-500/10 rounded-xl text-center hover:bg-orange-500/20 transition-colors"
+                className="p-4 bg-gold/10 rounded-xl text-center hover:bg-gold/20 transition-colors"
               >
-                <ShoppingBag className="w-6 h-6 text-orange-400 mx-auto mb-2" />
+                <ShoppingBag className="w-6 h-6 text-gold mx-auto mb-2" />
                 <span className="text-sm font-medium text-white">Edit Menu</span>
               </Link>
               <Link
