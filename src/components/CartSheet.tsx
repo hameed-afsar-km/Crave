@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { X, Minus, Plus, ShoppingBag, ArrowRight } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { formatPrice } from '@/lib/utils';
@@ -63,10 +64,12 @@ export default function CartSheet({ open, onClose }: CartSheetProps) {
                       exit={{ opacity: 0, y: -20 }}
                       className="flex gap-4 p-4 rounded-2xl border border-white/[0.05] bg-white/[0.02] hover:border-white/[0.1] hover:bg-white/[0.04] transition-all duration-300"
                     >
-                      <img
+                      <Image
                         src={item.image}
                         alt={item.name}
-                        className="w-20 h-20 rounded-lg object-cover"
+                        width={80}
+                        height={80}
+                        className="rounded-lg object-cover"
                       />
                       <div className="flex-1 min-w-0">
                         <h4 className="font-bold text-white tracking-wide truncate">{item.name}</h4>

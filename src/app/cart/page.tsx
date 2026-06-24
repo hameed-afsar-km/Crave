@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Minus, Plus, X, ShoppingBag, ArrowLeft, ArrowRight, Trash2 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { formatPrice } from '@/lib/utils';
@@ -83,10 +84,12 @@ export default function CartPage() {
                 transition={{ delay: i * 0.05, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                 className="flex gap-4 p-4 rounded-[22px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] hover:border-gold/18 transition-all duration-300 group"
               >
-                <img
+                <Image
                   src={item.image}
                   alt={item.name}
-                  className="w-20 h-20 rounded-xl object-cover shrink-0 group-hover:scale-105 transition-transform duration-300"
+                  width={80}
+                  height={80}
+                  className="rounded-xl object-cover shrink-0 group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="flex-1 min-w-0 flex flex-col justify-between">
                   <div className="flex items-start justify-between gap-3">

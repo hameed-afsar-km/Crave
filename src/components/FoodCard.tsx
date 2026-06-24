@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Star, Plus, ShoppingCart } from 'lucide-react';
 import { MenuItem } from '@/types';
 import { formatPrice } from '@/lib/utils';
@@ -42,10 +43,12 @@ export default function FoodCard({ item, index = 0, compact }: FoodCardProps) {
 
           {/* Image section */}
           <div className="relative overflow-hidden aspect-[4/3] m-2 rounded-[20px]">
-            <img
+            <Image
               src={item.image}
               alt={item.name}
-              className="w-full h-full object-cover group-hover:scale-107 transition-transform duration-700"
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover group-hover:scale-107 transition-transform duration-700"
             />
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />

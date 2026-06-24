@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
   useEffect(() => {
@@ -46,13 +47,18 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
           animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
           transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
         >
-          <motion.img
-            src="/Logo Transparent.png"
-            alt="Crave"
+          <motion.div
             animate={{ y: [0, -3, 0] }}
             transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            className="w-[150px] sm:w-[180px] h-auto"
-          />
+          >
+            <Image
+              src="/logo.webp"
+              alt="Crave"
+              width={180}
+              height={45}
+              className="w-[150px] sm:w-[180px] h-auto"
+            />
+          </motion.div>
         </motion.div>
 
         {/* Gold line */}

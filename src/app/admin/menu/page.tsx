@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowLeft, Plus, Edit2, Trash2, Search, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { menuItems as initialItems } from '@/lib/data';
@@ -136,7 +137,7 @@ export default function AdminMenu() {
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        <img src={item.image} alt={item.name} className="w-12 h-12 rounded-xl object-cover border border-white/5 shadow-inner" />
+                        <Image src={item.image} alt={item.name} width={48} height={48} className="rounded-xl object-cover border border-white/5 shadow-inner" />
                         <div>
                           <p className="font-bold text-sm text-white group-hover:text-gold transition-colors">{item.name}</p>
                           <p className="text-xs text-zinc-500 truncate max-w-[220px]">{item.description}</p>

@@ -4,14 +4,6 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowRight, Star, Clock } from 'lucide-react';
 
-const PARTICLES = Array.from({ length: 12 }, (_, i) => ({
-  x: `${8 + i * 8}%`,
-  y: `${12 + (i % 5) * 18}%`,
-  size: i % 3 === 0 ? 'w-2 h-2' : 'w-1.5 h-1.5',
-  duration: 3.5 + i * 0.6,
-  delay: i * 0.25,
-}));
-
 export default function Hero() {
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-[#06060A]">
@@ -20,7 +12,7 @@ export default function Hero() {
       <div
         className="absolute right-0 top-0 w-full md:w-[55%] h-full bg-cover bg-left opacity-40"
         aria-hidden
-        style={{ backgroundImage: "url('/images/Crave Store 1.png')" }}
+        style={{ backgroundImage: "url('/images/crave-hero.webp')" }}
       />
 
       {/* Dark overlay layers */}
@@ -30,28 +22,6 @@ export default function Hero() {
       {/* Large ambient glow center */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[600px] h-[600px] pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(212,175,55,0.09)_0%,rgba(212,175,55,0.04)_40%,transparent_70%)] rounded-full" />
-      </div>
-
-      {/* Floating particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {PARTICLES.map((p, i) => (
-          <motion.div
-            key={i}
-            className={`absolute ${p.size} rounded-full bg-gradient-to-br from-gold-light to-amber-500`}
-            style={{ left: p.x, top: p.y, opacity: 0.25 }}
-            animate={{
-              y: [0, -35, 0],
-              opacity: [0.15, 0.55, 0.15],
-              scale: [1, 1.4, 1],
-            }}
-            transition={{
-              duration: p.duration,
-              repeat: Infinity,
-              delay: p.delay,
-              ease: 'easeInOut',
-            }}
-          />
-        ))}
       </div>
 
       {/* Content */}

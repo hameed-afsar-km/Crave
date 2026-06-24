@@ -12,7 +12,7 @@ const links = [
 ];
 
 const contact = [
-  { icon: MapPin, text: 'Near LIC Metro, Chennai' },
+  { icon: MapPin, text: 'Near LIC Metro, Chennai', href: 'https://google.com/maps?vet=10CAAQoqAOahcKEwjo7a_8rZ-VAxUAAAAAHQAAAAAQBg..i&pvq=Cg0vZy8xMXczM33ZrbnZ2IhMKDWNyYXZlIGNoZW5uYWkQAhgD&lqi=Cg1jcmF2ZSBjaGVubmFpSNqmo72Mu4CACFodEAAQARgAGAEiDWNyYXZlIGNoZW5uYWkqBAgCEACSARNhbWVyaWNhbl9yZXN0YXVyYW50&fvr=1&cs=1&um=1&ie=UTF-8&fb=1&gl=in&sa=X&ftid=0x3a5267002704c237:0xe2a90d500edeccc3' },
   { icon: Phone, text: '+91 98765 43210' },
   { icon: Mail, text: 'hello@craveexpress.in' },
 ];
@@ -82,10 +82,16 @@ export default function Footer() {
           <div className="bg-[#06060A] rounded-lg sm:rounded-none p-4 sm:p-5 md:p-6 space-y-3">
             <h4 className="text-[10px] font-bold text-gold uppercase tracking-widest">Contact</h4>
             <ul className="space-y-2.5">
-              {contact.map(({ icon: Icon, text }) => (
+              {contact.map(({ icon: Icon, text, href }) => (
                 <li key={text} className="flex items-start gap-2.5 text-zinc-500 text-sm">
                   <Icon className="w-3.5 h-3.5 text-gold/60 shrink-0 mt-0.5" />
-                  <span className="leading-tight">{text}</span>
+                  {href ? (
+                    <a href={href} target="_blank" rel="noopener noreferrer" className="leading-tight hover:text-white transition-colors duration-200">
+                      {text}
+                    </a>
+                  ) : (
+                    <span className="leading-tight">{text}</span>
+                  )}
                 </li>
               ))}
             </ul>

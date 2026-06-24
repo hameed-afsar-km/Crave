@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { ShoppingCart, Menu, X, User, LogOut, LayoutDashboard, Flame } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
@@ -105,9 +106,11 @@ export default function Navbar() {
                 className="relative"
               >
                 <div className="absolute -inset-2 bg-gold/10 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <img
-                  src="/Logo Transparent.png"
+                <Image
+                  src="/logo.webp"
                   alt="Crave"
+                  width={160}
+                  height={40}
                   className="h-8 md:h-10 w-auto relative z-10 drop-shadow-[0_2px_8px_rgba(212,175,55,0.2)]"
                 />
               </motion.div>
