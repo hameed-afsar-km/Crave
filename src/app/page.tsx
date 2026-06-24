@@ -6,7 +6,6 @@ import WhyOnline from '@/components/WhyOnline';
 const HowItWorks = dynamic(() => import('@/components/HowItWorks'));
 const Testimonials = dynamic(() => import('@/components/Testimonials'));
 const FinalCTA = dynamic(() => import('@/components/FinalCTA'));
-
 export default function Home() {
   return (
     <>

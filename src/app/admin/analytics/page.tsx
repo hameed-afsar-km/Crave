@@ -5,7 +5,7 @@ import { motion, useInView } from 'framer-motion';
 import Link from 'next/link';
 import {
   BarChart3, TrendingUp, IndianRupee, ShoppingBag, Clock,
-  ArrowLeft, ChevronRight, Users, Zap
+  ArrowLeft, Users, Zap
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getStoredOrders } from '@/lib/seed-data';
@@ -27,10 +27,10 @@ function AnimatedCounter({ value, prefix = '', suffix = '' }: { value: number; p
     }, duration / steps);
     return () => clearInterval(timer);
   }, [value, inView]);
-  return <span ref={ref} className="text-3xl font-black text-white tabular-nums tracking-tight">{prefix}{count}{suffix}</span>;
+  return <span ref={ref} className="text-2xl font-bold text-gray-900 tabular-nums tracking-tight">{prefix}{count}{suffix}</span>;
 }
 
-function BarChart({ data, color = '#D4AF37' }: { data: { label: string; value: number }[]; color?: string }) {
+function BarChart({ data, color = '#4B5563' }: { data: { label: string; value: number }[]; color?: string }) {
   const max = Math.max(...data.map(d => d.value), 1);
   const barW = 28;
   const gap = 10;
@@ -40,7 +40,7 @@ function BarChart({ data, color = '#D4AF37' }: { data: { label: string; value: n
       <defs>
         <linearGradient id={`barGrad_${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.9" />
-          <stop offset="100%" stopColor={color} stopOpacity="0.15" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.1" />
         </linearGradient>
       </defs>
       {data.map((d, i) => {
@@ -50,7 +50,7 @@ function BarChart({ data, color = '#D4AF37' }: { data: { label: string; value: n
         return (
           <g key={i}>
             <rect x={x} y={y} width={barW} height={barH} rx="3" fill={`url(#barGrad_${color.replace('#', '')})`} className="hover:opacity-80 transition-opacity" />
-            <text x={x + barW / 2} y={chartH + 12} textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize="8" fontWeight="700">{d.label}</text>
+            <text x={x + barW / 2} y={chartH + 12} textAnchor="middle" fill="#9CA3AF" fontSize="8" fontWeight="600">{d.label}</text>
           </g>
         );
       })}
@@ -113,152 +113,150 @@ export default function AdminAnalytics() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-[#06060A] flex items-center justify-center">
-        <p className="text-zinc-500 font-black">Access Denied</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-500 font-medium">Access Denied</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#06060A] relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(212,175,55,0.04)_0%,transparent_65%)] pointer-events-none" />
-
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-[rgba(8,8,14,0.6)] backdrop-blur-xl border-b border-white/[0.05] relative z-10">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-7">
-          <div className="flex items-center gap-4 mb-4">
-            <Link href="/admin/dashboard" className="p-2 rounded-xl border border-white/6 bg-white/3 hover:bg-white/6 hover:border-gold/22 text-zinc-400 hover:text-gold transition-all">
+      <div className="bg-white border-b border-gray-100">
+        <div className="px-6 sm:px-8 py-5">
+          <div className="flex items-center gap-3">
+            <Link href="/admin/dashboard" className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all">
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <div>
-              <div className="flex items-center gap-2.5 mb-1">
-                <BarChart3 className="w-5 h-5 text-gold" />
-                <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">Analytics</h1>
+              <div className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-gray-600" />
+                <h1 className="text-xl font-bold text-gray-900">Analytics</h1>
               </div>
-              <p className="text-zinc-500 text-sm">Key metrics at a glance</p>
+              <p className="text-gray-500 text-sm">Key metrics at a glance</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 py-10 relative z-10 space-y-8">
+      <div className="px-6 sm:px-8 py-8 max-w-7xl mx-auto space-y-6">
         {/* Summary cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Total Revenue', value: data.revenue, icon: IndianRupee, color: 'from-emerald-400 to-green-500', prefix: '₹' },
-            { label: 'Total Orders', value: data.totalOrders, icon: ShoppingBag, color: 'from-gold to-amber-600', prefix: '' },
-            { label: 'Avg Order Value', value: data.avgOrderValue, icon: TrendingUp, color: 'from-blue-400 to-violet-500', prefix: '₹' },
-            { label: 'Completed', value: data.completedOrders.length, icon: Clock, color: 'from-amber-400 to-orange-500', prefix: '' },
+            { label: 'Total Revenue', value: data.revenue, icon: IndianRupee, prefix: '₹' },
+            { label: 'Total Orders', value: data.totalOrders, icon: ShoppingBag, prefix: '' },
+            { label: 'Avg Order Value', value: data.avgOrderValue, icon: TrendingUp, prefix: '₹' },
+            { label: 'Completed', value: data.completedOrders.length, icon: Clock, prefix: '' },
           ].map((card, i) => (
             <motion.div
               key={card.label}
-              initial={{ opacity: 0, y: 18 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
-              className="rounded-[22px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-5"
+              transition={{ delay: i * 0.06 }}
+              className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm"
             >
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center shadow-md mb-4`}>
-                <card.icon className="w-4.5 h-4.5 text-white" />
+              <div className="w-9 h-9 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center mb-3">
+                <card.icon className="w-4 h-4 text-gray-600" />
               </div>
               <AnimatedCounter value={card.value} prefix={card.prefix} />
-              <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mt-1.5">{card.label}</p>
+              <p className="text-xs text-gray-500 mt-1">{card.label}</p>
             </motion.div>
           ))}
         </div>
 
         {/* Revenue + Orders trend */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
-            className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6">
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+            className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-50">
               <div>
-                <h2 className="text-sm font-black text-white uppercase tracking-wider">Revenue Trend</h2>
-                <p className="text-[10px] text-zinc-600 font-bold mt-0.5">Weekly · ₹{data.revenue.toLocaleString('en-IN')} total</p>
+                <h2 className="text-sm font-semibold text-gray-900">Revenue Trend</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Weekly · ₹{data.revenue.toLocaleString('en-IN')} total</p>
               </div>
             </div>
-            <BarChart data={weeklyRevenue} color="#D4AF37" />
+            <BarChart data={weeklyRevenue} color="#4B5563" />
           </motion.div>
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}
-            className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6">
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}
+            className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-50">
               <div>
-                <h2 className="text-sm font-black text-white uppercase tracking-wider">Orders Trend</h2>
-                <p className="text-[10px] text-zinc-600 font-bold mt-0.5">Weekly · {data.totalOrders} orders</p>
+                <h2 className="text-sm font-semibold text-gray-900">Orders Trend</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Weekly · {data.totalOrders} orders</p>
               </div>
             </div>
-            <BarChart data={weeklyOrders} color="#34D399" />
+            <BarChart data={weeklyOrders} color="#059669" />
           </motion.div>
         </div>
 
         {/* Top Items + Peak Hours + Customer Insights */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Top Selling Items */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6">
-            <h2 className="text-sm font-black text-white uppercase tracking-wider mb-6 pb-4 border-b border-white/5">Top Items</h2>
-            <div className="space-y-4">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
+            className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+            <h2 className="text-sm font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-50">Top Items</h2>
+            <div className="space-y-3">
               {data.sortedItems.slice(0, 5).map((item, i) => {
                 const maxC = data.sortedItems[0]?.count || 1;
                 return (
                   <div key={item.name}>
-                    <div className="flex items-center justify-between text-sm mb-1.5">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-[10px] font-black text-zinc-600 w-4">{i + 1}</span>
-                        <span className="font-bold text-zinc-200">{item.name}</span>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-gray-400 w-4">{i + 1}</span>
+                        <span className="font-medium text-gray-800">{item.name}</span>
                       </div>
-                      <span className="font-black text-gold text-xs">{item.count}</span>
+                      <span className="font-semibold text-gray-900 text-xs">{item.count}</span>
                     </div>
-                    <div className="h-1.5 bg-black/40 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full bg-gradient-to-r from-gold to-amber-500" style={{ width: `${(item.count / maxC) * 100}%` }} />
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-gray-800" style={{ width: `${(item.count / maxC) * 100}%` }} />
                     </div>
                   </div>
                 );
               })}
               {data.sortedItems.length === 0 && (
-                <p className="text-zinc-600 text-sm font-semibold text-center py-4">No order data yet</p>
+                <p className="text-gray-400 text-sm text-center py-4">No order data yet</p>
               )}
             </div>
           </motion.div>
 
           {/* Peak Hours */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}
-            className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6">
-            <h2 className="text-sm font-black text-white uppercase tracking-wider mb-6 pb-4 border-b border-white/5">Peak Hours</h2>
-            <div className="space-y-2.5">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
+            className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+            <h2 className="text-sm font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-50">Peak Hours</h2>
+            <div className="space-y-2">
               {data.peakHours.length > 0 ? data.peakHours.map((h) => {
                 const maxVal = Math.max(...data.peakHours.map(d => d.value));
                 return (
                   <div key={h.label} className="flex items-center gap-3">
-                    <span className="text-[10px] font-black text-zinc-600 w-9 text-right">{h.label}</span>
-                    <div className="flex-1 h-4 bg-black/40 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full bg-gradient-to-r from-gold to-amber-500" style={{ width: `${(h.value / maxVal) * 100}%` }} />
+                    <span className="text-xs font-medium text-gray-500 w-9 text-right">{h.label}</span>
+                    <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-gray-800" style={{ width: `${(h.value / maxVal) * 100}%` }} />
                     </div>
-                    <span className="text-xs font-black text-zinc-200 tabular-nums w-6 text-right">{h.value}</span>
+                    <span className="text-xs font-semibold text-gray-700 tabular-nums w-6 text-right">{h.value}</span>
                   </div>
                 );
               }) : (
-                <p className="text-zinc-600 text-sm font-semibold text-center py-4">No peak data yet</p>
+                <p className="text-gray-400 text-sm text-center py-4">No peak data yet</p>
               )}
             </div>
           </motion.div>
 
           {/* Customer Insights */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}
-            className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6">
-            <h2 className="text-sm font-black text-white uppercase tracking-wider mb-6 pb-4 border-b border-white/5">Customer Insights</h2>
-            <div className="space-y-5">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}
+            className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+            <h2 className="text-sm font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-50">Customer Insights</h2>
+            <div className="space-y-4">
               {[
-                { label: 'Total Customers', value: data.orders.length, icon: Users, color: 'text-blue-400' },
-                { label: 'Avg Order Value', value: `₹${data.avgOrderValue}`, icon: IndianRupee, color: 'text-emerald-400' },
-                { label: 'Repeat Rate', value: `${data.returningRate}%`, icon: TrendingUp, color: 'text-gold' },
-                { label: 'Peak Hour Avg', value: data.peakHours.length ? `${Math.round(data.peakHours.reduce((s, d) => s + d.value, 0) / data.peakHours.length)}` : '0', icon: Zap, color: 'text-amber-400' },
+                { label: 'Total Customers', value: data.orders.length, icon: Users },
+                { label: 'Avg Order Value', value: `₹${data.avgOrderValue}`, icon: IndianRupee },
+                { label: 'Repeat Rate', value: `${data.returningRate}%`, icon: TrendingUp },
+                { label: 'Peak Hour Avg', value: data.peakHours.length ? `${Math.round(data.peakHours.reduce((s, d) => s + d.value, 0) / data.peakHours.length)}` : '0', icon: Zap },
               ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
-                  <div className="flex items-center gap-2.5">
-                    <item.icon className={`w-4 h-4 ${item.color}`} />
-                    <span className="text-xs font-semibold text-zinc-400">{item.label}</span>
+                <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                  <div className="flex items-center gap-2">
+                    <item.icon className={`w-4 h-4 text-gray-400`} />
+                    <span className="text-xs text-gray-500">{item.label}</span>
                   </div>
-                  <span className="text-sm font-black text-white">{item.value}</span>
+                  <span className="text-sm font-medium text-gray-900">{item.value}</span>
                 </div>
               ))}
             </div>

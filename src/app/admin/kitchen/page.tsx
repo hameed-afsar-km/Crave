@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CookingPot, Clock, Phone, AlertTriangle, ChevronRight, ChefHat, CheckCircle, Package, X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { CookingPot, Clock, Phone, AlertTriangle, ChefHat, CheckCircle, Package } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getStoredOrders, saveOrders } from '@/lib/seed-data';
 
@@ -24,10 +24,10 @@ interface Order {
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string; border: string; dot: string; next: string | null; nextAction: string | null }> = {
-  received: { label: 'Received', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', dot: 'bg-blue-400', next: 'preparing', nextAction: 'Start Preparing' },
-  preparing: { label: 'Preparing', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', dot: 'bg-amber-400', next: 'ready', nextAction: 'Mark Ready' },
-  ready: { label: 'Ready ✓', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', dot: 'bg-emerald-400', next: 'completed', nextAction: 'Collected' },
-  completed: { label: 'Collected', color: 'text-zinc-600', bg: 'bg-zinc-800/30', border: 'border-zinc-700/20', dot: 'bg-zinc-600', next: null, nextAction: null },
+  received: { label: 'Received', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-500', next: 'preparing', nextAction: 'Start' },
+  preparing: { label: 'Preparing', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', dot: 'bg-amber-500', next: 'ready', nextAction: 'Ready' },
+  ready: { label: 'Ready', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', dot: 'bg-emerald-500', next: 'completed', nextAction: 'Collect' },
+  completed: { label: 'Collected', color: 'text-gray-400', bg: 'bg-gray-50', border: 'border-gray-100', dot: 'bg-gray-300', next: null, nextAction: null },
 };
 
 function timeSince(createdAt: string): string {
@@ -97,48 +97,45 @@ export default function KitchenPage() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-[#06060A] flex items-center justify-center">
-        <p className="text-zinc-500 font-black">Access Denied</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-500 font-medium">Access Denied</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#06060A] relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[radial-gradient(circle,rgba(212,175,55,0.03)_0%,transparent_65%)] pointer-events-none" />
-
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-[rgba(8,8,14,0.6)] backdrop-blur-xl border-b border-white/[0.05] relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+      <div className="bg-white border-b border-gray-100">
+        <div className="px-6 sm:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md">
-                <CookingPot className="w-4.5 h-4.5 text-white" />
+              <div className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center">
+                <CookingPot className="w-4 h-4 text-gray-600" />
               </div>
               <div>
-                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">Kitchen</h1>
-                <p className="text-[10px] text-zinc-500 font-bold">
+                <h1 className="text-lg font-bold text-gray-900">Kitchen</h1>
+                <p className="text-xs text-gray-500">
                   {now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                   {' · '}{filtered.length} active
                 </p>
               </div>
             </div>
 
-            {/* Filter tabs */}
-            <div className="flex gap-1.5 overflow-x-auto [scrollbar-width:none]">
+            <div className="flex gap-1.5 overflow-x-auto">
               {filterTabs.map(tab => (
                 <button
                   key={tab}
                   onClick={() => setFilter(tab)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border ${
                     filter === tab
-                      ? 'bg-gold/10 text-gold border-gold/22'
-                      : 'bg-white/3 text-zinc-600 border-white/5 hover:text-zinc-300 hover:border-white/10'
+                      ? 'bg-gray-900 text-white border-gray-900'
+                      : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
                   }`}
                 >
                   {tab === 'all' ? 'All' : statusConfig[tab].label}
-                  <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${
-                    filter === tab ? 'bg-gold/20 text-gold' : 'bg-white/5 text-zinc-600'
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                    filter === tab ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
                   }`}>
                     {counts[tab as keyof typeof counts]}
                   </span>
@@ -150,121 +147,96 @@ export default function KitchenPage() {
       </div>
 
       {/* Kitchen grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 relative z-10">
+      <div className="px-6 sm:px-8 py-6 max-w-7xl mx-auto">
         {filtered.length === 0 ? (
-          <div className="text-center py-24">
-            <CookingPot className="w-16 h-16 text-zinc-800 mx-auto mb-4" />
-            <p className="text-zinc-600 font-black text-sm uppercase tracking-wider">No active orders</p>
-            <p className="text-zinc-700 text-xs font-semibold mt-1">New orders will appear here automatically</p>
+          <div className="text-center py-20">
+            <CookingPot className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 font-medium text-sm">No active orders</p>
+            <p className="text-gray-400 text-xs mt-1">New orders will appear here automatically</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filtered.map((order, i) => {
               const priority = getPriority(order, nowMinutes);
               const sc = statusConfig[order.status];
-              const priorityBorder = priority === 'late' ? 'border-rose-500/40' : priority === 'urgent' ? 'border-amber-500/30' : priority === 'upcoming' ? 'border-blue-500/20' : 'border-white/[0.06]';
-              const priorityGlow = priority === 'late' ? 'shadow-[0_0_20px_rgba(244,63,94,0.12)]' : priority === 'urgent' ? 'shadow-[0_0_20px_rgba(245,158,11,0.08)]' : '';
+              const priorityBorder = priority === 'late' ? 'border-red-300' : priority === 'urgent' ? 'border-amber-300' : priority === 'upcoming' ? 'border-blue-200' : 'border-gray-100';
 
               return (
                 <motion.div
                   key={order.id}
-                  initial={{ opacity: 0, y: 12 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03 }}
-                  className={`relative rounded-[20px] bg-[rgba(10,9,18,0.7)] backdrop-blur-lg border ${priorityBorder} ${priorityGlow} hover:border-white/[0.12] transition-all duration-300 overflow-hidden`}
+                  className={`bg-white rounded-xl border ${priorityBorder} shadow-sm hover:shadow transition-all duration-200 overflow-hidden`}
                 >
-                  {/* Priority bar */}
+                  {/* Priority indicator */}
                   {priority !== 'normal' && (
-                    <div className={`absolute top-0 left-0 right-0 h-0.5 ${
-                      priority === 'late' ? 'bg-rose-500' : priority === 'urgent' ? 'bg-amber-500' : 'bg-blue-500'
+                    <div className={`h-0.5 ${
+                      priority === 'late' ? 'bg-red-500' : priority === 'urgent' ? 'bg-amber-500' : 'bg-blue-500'
                     }`} />
                   )}
 
-                  <div className="p-4 sm:p-5">
-                    {/* Header row */}
-                    <div className="flex items-start justify-between mb-3">
+                  <div className="p-4">
+                    <div className="flex items-start justify-between mb-2.5">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-black text-lg text-white">{order.id}</span>
-                          {priority === 'late' && <AlertTriangle className="w-4 h-4 text-rose-400" />}
+                          <span className="font-bold text-sm text-gray-900">{order.id}</span>
+                          {priority === 'late' && <AlertTriangle className="w-3.5 h-3.5 text-red-500" />}
                         </div>
-                        <p className="text-sm font-semibold text-zinc-400 mt-0.5">{order.customer}</p>
+                        <p className="text-sm text-gray-600 mt-0.5">{order.customer}</p>
                       </div>
                       <div className="flex flex-col items-end gap-1">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${sc.bg} ${sc.color} ${sc.border}`}>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium border ${sc.bg} ${sc.color} ${sc.border}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
                           {sc.label}
                         </span>
-                        <span className="text-[10px] font-bold text-zinc-600 tabular-nums">
-                          <Clock className="w-3 h-3 inline mr-0.5 text-zinc-700" />
+                        <span className="text-xs text-gray-400">
+                          <Clock className="w-3 h-3 inline mr-0.5" />
                           {timeSince(order.createdAt)}
                         </span>
                       </div>
                     </div>
 
-                    {/* Pickup time */}
-                    <div className="flex items-center gap-2 mb-3 text-xs">
-                      <Clock className="w-3.5 h-3.5 text-gold/50" />
-                      <span className="font-bold text-zinc-300">Pickup {order.pickupTime}</span>
-                      {priority === 'late' && (
-                        <span className="text-[10px] font-black text-rose-400 uppercase tracking-wider">Late</span>
-                      )}
-                      {priority === 'urgent' && (
-                        <span className="text-[10px] font-black text-amber-400 uppercase tracking-wider">Soon</span>
-                      )}
+                    <div className="flex items-center gap-1.5 mb-2.5 text-xs">
+                      <Clock className="w-3.5 h-3.5 text-gray-400" />
+                      <span className="font-medium text-gray-700">{order.pickupTime}</span>
+                      {priority === 'late' && <span className="text-[10px] font-semibold text-red-600">Late</span>}
+                      {priority === 'urgent' && <span className="text-[10px] font-semibold text-amber-600">Soon</span>}
                     </div>
 
-                    {/* Items */}
-                    <div className="space-y-1 mb-4 bg-black/30 rounded-xl p-3">
+                    <div className="space-y-1 mb-3 bg-gray-50 rounded-lg p-2.5">
                       {order.items.map((item, idx) => (
                         <div key={idx} className="flex items-center gap-2 text-sm">
-                          <span className="font-black text-gold text-xs">{item.qty}×</span>
-                          <span className="font-semibold text-zinc-200">{item.name}</span>
+                          <span className="font-semibold text-gray-500 text-xs">{item.qty}×</span>
+                          <span className="text-gray-700">{item.name}</span>
                         </div>
                       ))}
                     </div>
 
-                    {/* Notes */}
                     {order.notes && (
-                      <div className="mb-4 text-xs text-amber-300/80 bg-amber-500/8 border border-amber-500/15 rounded-xl px-3 py-2 font-semibold">
-                        📝 {order.notes}
+                      <div className="mb-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5">
+                        {order.notes}
                       </div>
                     )}
 
-                    {/* Action buttons */}
                     {order.status !== 'completed' && (
                       <div className="flex gap-2">
                         {order.status === 'received' && (
-                          <button
-                            onClick={() => updateStatus(order.id, 'preparing')}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-gradient-to-r from-amber-400 to-orange-500 text-white font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg shadow-amber-500/15 hover:shadow-amber-500/25 hover:scale-[1.02] transition-all duration-200"
-                          >
-                            <ChefHat className="w-3.5 h-3.5" />
-                            Start
+                          <button onClick={() => updateStatus(order.id, 'preparing')} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-medium text-xs rounded-lg transition-all">
+                            <ChefHat className="w-3.5 h-3.5" /> Start
                           </button>
                         )}
                         {order.status === 'preparing' && (
-                          <button
-                            onClick={() => updateStatus(order.id, 'ready')}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-gradient-to-r from-emerald-400 to-green-500 text-white font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg shadow-emerald-500/15 hover:shadow-emerald-500/25 hover:scale-[1.02] transition-all duration-200"
-                          >
-                            <CheckCircle className="w-3.5 h-3.5" />
-                            Ready
+                          <button onClick={() => updateStatus(order.id, 'ready')} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-lg transition-all">
+                            <CheckCircle className="w-3.5 h-3.5" /> Ready
                           </button>
                         )}
                         {order.status === 'ready' && (
-                          <button
-                            onClick={() => updateStatus(order.id, 'completed')}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-gradient-to-r from-blue-400 to-violet-500 text-white font-black uppercase tracking-widest text-[10px] rounded-xl shadow-lg shadow-blue-500/15 hover:shadow-blue-500/25 hover:scale-[1.02] transition-all duration-200"
-                          >
-                            <Package className="w-3.5 h-3.5" />
-                            Collect
+                          <button onClick={() => updateStatus(order.id, 'completed')} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-lg transition-all">
+                            <Package className="w-3.5 h-3.5" /> Collect
                           </button>
                         )}
-                        <a
-                          href={`tel:${order.phone}`}
-                          className="flex items-center justify-center w-11 py-3 rounded-xl border border-white/8 hover:border-gold/22 bg-white/3 hover:bg-gold/5 text-zinc-400 hover:text-gold transition-all"
-                        >
+                        <a href={`tel:${order.phone}`} className="flex items-center justify-center w-10 py-2.5 rounded-lg border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all">
                           <Phone className="w-3.5 h-3.5" />
                         </a>
                       </div>

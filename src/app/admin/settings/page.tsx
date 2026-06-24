@@ -5,8 +5,8 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
   Settings as SettingsIcon, ArrowLeft, Store, Clock, Bell, Shield,
-  Save, ToggleLeft, ToggleRight, IndianRupee, AlertTriangle, X, Trash2,
-  CookingPot, Users, Phone, Calendar
+  Save, IndianRupee, AlertTriangle, X, Trash2,
+  CookingPot, Users, Calendar
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { loadSettings, saveSettings, StoreSettings } from '@/lib/store';
@@ -66,74 +66,62 @@ export default function AdminSettings() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-[#06060A] flex items-center justify-center">
-        <p className="text-zinc-500 font-black">Access Denied</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-500 font-medium">Access Denied</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#06060A] relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[radial-gradient(circle,rgba(212,175,55,0.04)_0%,transparent_65%)] pointer-events-none" />
-
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-[rgba(8,8,14,0.6)] backdrop-blur-xl border-b border-white/[0.05] relative z-10">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-7">
-          <div className="flex items-center gap-4">
-            <Link href="/admin/dashboard" className="p-2 rounded-xl border border-white/6 bg-white/3 hover:bg-white/6 hover:border-gold/22 text-zinc-400 hover:text-gold transition-all">
+      <div className="bg-white border-b border-gray-100">
+        <div className="px-6 sm:px-8 py-5">
+          <div className="flex items-center gap-3">
+            <Link href="/admin/dashboard" className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all">
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <div>
-              <div className="flex items-center gap-2.5 mb-1">
-                <SettingsIcon className="w-5 h-5 text-gold" />
-                <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">Settings</h1>
+              <div className="flex items-center gap-2">
+                <SettingsIcon className="w-5 h-5 text-gray-600" />
+                <h1 className="text-xl font-bold text-gray-900">Settings</h1>
               </div>
-              <p className="text-zinc-500 text-sm">Manage store preferences and configuration</p>
+              <p className="text-gray-500 text-sm">Manage store preferences and configuration</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10 relative z-10 space-y-6">
+      <div className="px-6 sm:px-8 py-8 max-w-4xl mx-auto space-y-5">
         {/* Store Status */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6"
+          className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm"
         >
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
-            <Store className="w-5 h-5 text-gold/70" />
-            <h2 className="text-sm font-black text-white uppercase tracking-wider">Store Status</h2>
+          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-50">
+            <Store className="w-4 h-4 text-gray-500" />
+            <h2 className="text-sm font-semibold text-gray-900">Store Status</h2>
           </div>
-
-          <div className="space-y-5">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-bold text-white">Store {form.storeOpen ? 'Open' : 'Closed'}</p>
-                <p className="text-xs text-zinc-500 font-semibold mt-0.5">
-                  {form.storeOpen ? 'Customers can browse and order' : 'Menu and ordering hidden from customers'}
-                </p>
+                <p className="text-sm font-medium text-gray-900">Store {form.storeOpen ? 'Open' : 'Closed'}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{form.storeOpen ? 'Customers can browse and order' : 'Menu hidden from customers'}</p>
               </div>
-              <button
-                onClick={() => update('storeOpen', !form.storeOpen)}
-                className={`relative w-14 h-7 rounded-full transition-all duration-300 ${form.storeOpen ? 'bg-emerald-500/30' : 'bg-zinc-800'}`}
-              >
-                <div className={`absolute top-0.5 w-6 h-6 rounded-full shadow-md transition-all duration-300 ${form.storeOpen ? 'left-7 bg-emerald-400' : 'left-0.5 bg-zinc-500'}`} />
+              <button onClick={() => update('storeOpen', !form.storeOpen)}
+                className={`relative w-11 h-6 rounded-full transition-all ${form.storeOpen ? 'bg-gray-800' : 'bg-gray-200'}`}>
+                <div className={`absolute top-0.5 w-5 h-5 rounded-full shadow-sm transition-all ${form.storeOpen ? 'left-5.5 bg-white' : 'left-0.5 bg-white'}`} />
               </button>
             </div>
-
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-bold text-white">Accept Online Orders</p>
-                <p className="text-xs text-zinc-500 font-semibold mt-0.5">
-                  {form.acceptingOrders ? 'Orders can be placed' : 'Customers see "temporarily unavailable" message'}
-                </p>
+                <p className="text-sm font-medium text-gray-900">Accept Online Orders</p>
+                <p className="text-xs text-gray-500 mt-0.5">{form.acceptingOrders ? 'Orders can be placed' : 'Customers see unavailable message'}</p>
               </div>
-              <button
-                onClick={() => update('acceptingOrders', !form.acceptingOrders)}
-                className={`relative w-14 h-7 rounded-full transition-all duration-300 ${form.acceptingOrders ? 'bg-emerald-500/30' : 'bg-zinc-800'}`}
-              >
-                <div className={`absolute top-0.5 w-6 h-6 rounded-full shadow-md transition-all duration-300 ${form.acceptingOrders ? 'left-7 bg-emerald-400' : 'left-0.5 bg-zinc-500'}`} />
+              <button onClick={() => update('acceptingOrders', !form.acceptingOrders)}
+                className={`relative w-11 h-6 rounded-full transition-all ${form.acceptingOrders ? 'bg-gray-800' : 'bg-gray-200'}`}>
+                <div className={`absolute top-0.5 w-5 h-5 rounded-full shadow-sm transition-all ${form.acceptingOrders ? 'left-5.5 bg-white' : 'left-0.5 bg-white'}`} />
               </button>
             </div>
           </div>
@@ -141,45 +129,31 @@ export default function AdminSettings() {
 
         {/* Store Details */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.06 }}
-          className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6"
+          transition={{ delay: 0.05 }}
+          className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm"
         >
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
-            <Store className="w-5 h-5 text-gold/70" />
-            <h2 className="text-sm font-black text-white uppercase tracking-wider">Store Details</h2>
+          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-50">
+            <Store className="w-4 h-4 text-gray-500" />
+            <h2 className="text-sm font-semibold text-gray-900">Store Details</h2>
           </div>
-
-          <div className="space-y-5">
+          <div className="space-y-4">
             <div>
-              <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1.5">Store Name</label>
-              <input
-                type="text"
-                value={form.storeName}
-                onChange={(e) => update('storeName', e.target.value)}
-                className="w-full max-w-md px-4 py-3 input-dark rounded-xl text-sm font-medium"
-              />
+              <label className="block text-xs font-medium text-gray-500 mb-1">Store Name</label>
+              <input type="text" value={form.storeName} onChange={(e) => update('storeName', e.target.value)}
+                className="w-full max-w-md px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300" />
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1.5">Opening Time</label>
-                <input
-                  type="time"
-                  value={form.openingTime}
-                  onChange={(e) => update('openingTime', e.target.value)}
-                  className="w-full max-w-[200px] px-4 py-3 input-dark rounded-xl text-sm font-medium"
-                />
+                <label className="block text-xs font-medium text-gray-500 mb-1">Opening Time</label>
+                <input type="time" value={form.openingTime} onChange={(e) => update('openingTime', e.target.value)}
+                  className="w-full max-w-[200px] px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1.5">Closing Time</label>
-                <input
-                  type="time"
-                  value={form.closingTime}
-                  onChange={(e) => update('closingTime', e.target.value)}
-                  className="w-full max-w-[200px] px-4 py-3 input-dark rounded-xl text-sm font-medium"
-                />
+                <label className="block text-xs font-medium text-gray-500 mb-1">Closing Time</label>
+                <input type="time" value={form.closingTime} onChange={(e) => update('closingTime', e.target.value)}
+                  className="w-full max-w-[200px] px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300" />
               </div>
             </div>
           </div>
@@ -187,83 +161,51 @@ export default function AdminSettings() {
 
         {/* Slot Capacity */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.09 }}
-          className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6"
+          transition={{ delay: 0.08 }}
+          className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm"
         >
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
-            <Calendar className="w-5 h-5 text-gold/70" />
-            <h2 className="text-sm font-black text-white uppercase tracking-wider">Slot Capacity Management</h2>
+          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-50">
+            <Calendar className="w-4 h-4 text-gray-500" />
+            <h2 className="text-sm font-semibold text-gray-900">Slot Capacity Management</h2>
           </div>
-
-          <div className="space-y-5">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1.5">Max Orders Per Slot</label>
-                <input
-                  type="number"
-                  value={form.maxOrdersPerSlot}
-                  onChange={(e) => update('maxOrdersPerSlot', Number(e.target.value))}
-                  className="w-full px-4 py-3 input-dark rounded-xl text-sm font-medium"
-                  min="1"
-                  max="100"
-                />
+                <label className="block text-xs font-medium text-gray-500 mb-1">Max Orders Per Slot</label>
+                <input type="number" value={form.maxOrdersPerSlot} onChange={(e) => update('maxOrdersPerSlot', Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300" min="1" max="100" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1.5">Slot Duration (minutes)</label>
-                <input
-                  type="number"
-                  value={form.slotDurationMinutes}
-                  onChange={(e) => update('slotDurationMinutes', Number(e.target.value))}
-                  className="w-full px-4 py-3 input-dark rounded-xl text-sm font-medium"
-                  min="5"
-                  max="60"
-                  step="5"
-                />
+                <label className="block text-xs font-medium text-gray-500 mb-1">Slot Duration (min)</label>
+                <input type="number" value={form.slotDurationMinutes} onChange={(e) => update('slotDurationMinutes', Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300" min="5" max="60" step="5" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1.5">Avg Prep Time (minutes)</label>
-                <input
-                  type="number"
-                  value={form.averagePrepTime}
-                  onChange={(e) => update('averagePrepTime', Number(e.target.value))}
-                  className="w-full px-4 py-3 input-dark rounded-xl text-sm font-medium"
-                  min="1"
-                  max="60"
-                />
+                <label className="block text-xs font-medium text-gray-500 mb-1">Avg Prep Time (min)</label>
+                <input type="number" value={form.averagePrepTime} onChange={(e) => update('averagePrepTime', Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300" min="1" max="60" />
               </div>
             </div>
-
-            {/* Slot visualization */}
             <div>
-              <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">Slot Preview</p>
-              <div className="overflow-x-auto pb-2">
-                <div className="flex gap-3 min-w-max">
+              <p className="text-xs font-medium text-gray-500 mb-2">Slot Preview</p>
+              <div className="overflow-x-auto pb-1">
+                <div className="flex gap-2 min-w-max">
                   {slots.slice(0, maxSlotsToShow).map((slot, i) => {
                     const booked = Math.floor(Math.random() * form.maxOrdersPerSlot);
                     const full = booked >= form.maxOrdersPerSlot;
                     return (
-                      <div
-                        key={i}
-                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border min-w-[90px] ${
-                          full
-                            ? 'bg-rose-500/10 border-rose-500/25'
-                            : 'bg-black/30 border-white/10'
-                        }`}
-                      >
-                        <span className="text-xs font-bold text-zinc-300">{slot.label}</span>
-                        <div className="flex items-center gap-1">
-                          <span className={`text-sm font-black ${full ? 'text-rose-400' : 'text-gold'}`}>{booked}</span>
-                          <span className="text-[10px] text-zinc-600 font-semibold">/ {form.maxOrdersPerSlot}</span>
+                      <div key={i} className={`flex flex-col items-center gap-1 p-2.5 rounded-lg border min-w-[80px] ${full ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'}`}>
+                        <span className="text-xs font-medium text-gray-700">{slot.label}</span>
+                        <div className="flex items-center gap-0.5">
+                          <span className={`text-sm font-semibold ${full ? 'text-red-600' : 'text-gray-900'}`}>{booked}</span>
+                          <span className="text-[10px] text-gray-400">/ {form.maxOrdersPerSlot}</span>
                         </div>
-                        <div className="w-full h-1 bg-black/40 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${full ? 'bg-rose-500' : 'bg-gold/50'}`}
-                            style={{ width: `${(booked / form.maxOrdersPerSlot) * 100}%` }}
-                          />
+                        <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${full ? 'bg-red-500' : 'bg-gray-400'}`} style={{ width: `${(booked / form.maxOrdersPerSlot) * 100}%` }} />
                         </div>
-                        {full && <span className="text-[8px] font-black text-rose-400 uppercase tracking-wider">Full</span>}
+                        {full && <span className="text-[9px] font-semibold text-red-600">Full</span>}
                       </div>
                     );
                   })}
@@ -275,74 +217,58 @@ export default function AdminSettings() {
 
         {/* Pickup Window */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.12 }}
-          className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6"
+          transition={{ delay: 0.1 }}
+          className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm"
         >
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
-            <Clock className="w-5 h-5 text-gold/70" />
-            <h2 className="text-sm font-black text-white uppercase tracking-wider">Pickup & Timing</h2>
+          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-50">
+            <Clock className="w-4 h-4 text-gray-500" />
+            <h2 className="text-sm font-semibold text-gray-900">Pickup & Timing</h2>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1.5">Pickup Window (minutes)</label>
-              <input
-                type="number"
-                value={form.pickupWindowMinutes}
-                onChange={(e) => update('pickupWindowMinutes', Number(e.target.value))}
-                className="w-full px-4 py-3 input-dark rounded-xl text-sm font-medium"
-                min="5"
-                max="60"
-              />
-              <p className="text-[10px] text-zinc-600 font-semibold mt-1">Customers must pick up within this window after ready time</p>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Pickup Window (minutes)</label>
+              <input type="number" value={form.pickupWindowMinutes} onChange={(e) => update('pickupWindowMinutes', Number(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300" min="5" max="60" />
+              <p className="text-xs text-gray-400 mt-1">Customers must pick up within this window</p>
             </div>
             <div>
-              <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1.5">Est. Wait Time (minutes)</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Est. Wait Time (minutes)</label>
               <div className="relative">
-                <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
-                <input
-                  type="number"
-                  value={form.estimatedWaitTime}
-                  onChange={(e) => update('estimatedWaitTime', Number(e.target.value))}
-                  className="w-full pl-11 pr-4 py-3 input-dark rounded-xl text-sm font-medium"
-                  min="1"
-                  max="120"
-                />
+                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                <input type="number" value={form.estimatedWaitTime} onChange={(e) => update('estimatedWaitTime', Number(e.target.value))}
+                  className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300" min="1" max="120" />
               </div>
-              <p className="text-[10px] text-zinc-600 font-semibold mt-1">Displayed to customers during checkout</p>
+              <p className="text-xs text-gray-400 mt-1">Displayed during checkout</p>
             </div>
           </div>
         </motion.div>
 
         {/* Notifications */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6"
+          transition={{ delay: 0.12 }}
+          className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm"
         >
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
-            <Bell className="w-5 h-5 text-gold/70" />
-            <h2 className="text-sm font-black text-white uppercase tracking-wider">Notifications</h2>
+          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-50">
+            <Bell className="w-4 h-4 text-gray-500" />
+            <h2 className="text-sm font-semibold text-gray-900">Notifications</h2>
           </div>
-
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[
               { label: 'New Order Alerts', desc: 'Alert when a new order comes in', key: 'notifyNewOrders' as const },
               { label: 'Ready for Pickup', desc: 'Alert when order is marked ready', key: 'notifyReady' as const },
             ].map((item) => (
-              <div key={item.key} className="flex items-center justify-between py-3 border-b border-white/[0.04] last:border-0">
+              <div key={item.key} className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0">
                 <div>
-                  <p className="text-sm font-bold text-zinc-200">{item.label}</p>
-                  <p className="text-xs text-zinc-600 font-semibold mt-0.5">{item.desc}</p>
+                  <p className="text-sm font-medium text-gray-900">{item.label}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
                 </div>
-                <button
-                  onClick={() => update(item.key, !form[item.key])}
-                  className={form[item.key] ? 'text-gold' : 'text-zinc-700'}
-                >
-                  {form[item.key] ? <ToggleRight className="w-8 h-8" /> : <ToggleLeft className="w-8 h-8" />}
+                <button onClick={() => update(item.key, !form[item.key])}
+                  className={`relative w-11 h-6 rounded-full transition-all ${form[item.key] ? 'bg-gray-800' : 'bg-gray-200'}`}>
+                  <div className={`absolute top-0.5 w-5 h-5 rounded-full shadow-sm transition-all ${form[item.key] ? 'left-5.5 bg-white' : 'left-0.5 bg-white'}`} />
                 </button>
               </div>
             ))}
@@ -351,57 +277,46 @@ export default function AdminSettings() {
 
         {/* Danger Zone */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.18 }}
-          className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-rose-500/10 p-6"
+          transition={{ delay: 0.14 }}
+          className="bg-white rounded-xl border border-red-200 p-5 shadow-sm"
         >
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-rose-500/10">
-            <Shield className="w-5 h-5 text-rose-400/70" />
-            <h2 className="text-sm font-black text-rose-400 uppercase tracking-wider">Danger Zone</h2>
+          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-red-100">
+            <Shield className="w-4 h-4 text-red-500" />
+            <h2 className="text-sm font-semibold text-red-600">Danger Zone</h2>
           </div>
-
-          <div className="flex items-center justify-between pb-5 border-b border-rose-500/10 mb-5">
+          <div className="flex items-center justify-between pb-4 border-b border-red-100 mb-4">
             <div>
-              <p className="text-sm font-bold text-zinc-200">Reset All Settings</p>
-              <p className="text-xs text-zinc-600 font-semibold mt-0.5">Restore all settings to factory defaults</p>
+              <p className="text-sm font-medium text-gray-900">Reset All Settings</p>
+              <p className="text-xs text-gray-500 mt-0.5">Restore all settings to factory defaults</p>
             </div>
-            <button
-              onClick={() => setShowResetConfirm(true)}
-              className="px-5 py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all"
-            >
+            <button onClick={() => setShowResetConfirm(true)} className="px-4 py-1.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 rounded-lg text-xs font-medium transition-all">
               Reset
             </button>
           </div>
-
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-zinc-200">Clear All Data</p>
-              <p className="text-xs text-zinc-600 font-semibold mt-0.5">Remove all orders, menu items, and seeded data</p>
+              <p className="text-sm font-medium text-gray-900">Clear All Data</p>
+              <p className="text-xs text-gray-500 mt-0.5">Remove all orders, menu items, and seeded data</p>
             </div>
-            <button
-              onClick={() => setShowClearDataConfirm(true)}
-              className="flex items-center gap-1.5 px-5 py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Clear
+            <button onClick={() => setShowClearDataConfirm(true)} className="flex items-center gap-1.5 px-4 py-1.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 rounded-lg text-xs font-medium transition-all">
+              <Trash2 className="w-3.5 h-3.5" /> Clear
             </button>
           </div>
         </motion.div>
 
         {/* Save button */}
-        <div className="flex justify-end pt-2">
+        <div className="flex justify-end pt-1">
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleSave}
-            className={`flex items-center gap-2.5 px-8 py-3.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all duration-300 shadow-lg ${
-              saved
-                ? 'bg-emerald-500 text-white shadow-emerald-500/20'
-                : 'bg-gradient-to-r from-gold via-amber-500 to-amber-600 text-white shadow-gold/15 hover:shadow-gold/30'
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-medium transition-all shadow-sm ${
+              saved ? 'bg-emerald-600 text-white' : 'bg-gray-900 hover:bg-gray-800 text-white'
             }`}
           >
-            <Save className="w-4 h-4" />
+            <Save className="w-3.5 h-3.5" />
             {saved ? 'Saved!' : 'Save Settings'}
           </motion.button>
         </div>
@@ -410,37 +325,24 @@ export default function AdminSettings() {
       {/* Clear data confirmation modal */}
       {showClearDataConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setShowClearDataConfirm(false)} />
+          <div className="absolute inset-0 bg-black/20" onClick={() => setShowClearDataConfirm(false)} />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="relative bg-[rgba(15,14,24,0.95)] backdrop-blur-2xl border border-white/[0.08] rounded-[28px] p-8 w-full max-w-md shadow-[0_0_60px_rgba(0,0,0,0.8)] z-10 text-center"
+            className="relative bg-white border border-gray-200 rounded-2xl p-6 w-full max-w-md shadow-xl z-10 text-center"
           >
-            <div className="w-14 h-14 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto mb-5">
-              <AlertTriangle className="w-6 h-6 text-rose-400" />
+            <div className="w-12 h-12 rounded-full bg-red-50 border border-red-200 flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
             </div>
-            <h2 className="text-xl font-black text-white mb-2">Clear All Data?</h2>
-            <p className="text-zinc-400 text-sm leading-relaxed mb-8">
-              This will permanently delete all orders, menu items, and seeded sample data. Settings are not affected.
+            <h2 className="text-lg font-bold text-gray-900 mb-1">Clear All Data?</h2>
+            <p className="text-gray-500 text-sm leading-relaxed mb-6">
+              This will permanently delete all orders, menu items, and seeded sample data.
             </p>
             <div className="flex gap-3">
-              <button
-                onClick={() => setShowClearDataConfirm(false)}
-                className="flex-1 py-3.5 border border-white/10 hover:border-white/20 bg-white/3 hover:bg-white/6 text-zinc-300 font-bold uppercase tracking-widest text-[10px] rounded-full transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleClearData}
-                className="flex-1 py-3.5 bg-rose-500 hover:bg-rose-600 text-white font-bold uppercase tracking-widest text-[10px] rounded-full shadow-lg shadow-rose-500/20 transition-all"
-              >
-                Clear Everything
-              </button>
+              <button onClick={() => setShowClearDataConfirm(false)} className="flex-1 py-2.5 border border-gray-200 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition-all">Cancel</button>
+              <button onClick={handleClearData} className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-all">Clear Everything</button>
             </div>
-            <button
-              onClick={() => setShowClearDataConfirm(false)}
-              className="absolute top-4 right-4 p-2 rounded-xl text-zinc-500 hover:text-white hover:bg-white/5 transition-all"
-            >
+            <button onClick={() => setShowClearDataConfirm(false)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all">
               <X className="w-4 h-4" />
             </button>
           </motion.div>
@@ -450,37 +352,24 @@ export default function AdminSettings() {
       {/* Reset confirmation modal */}
       {showResetConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setShowResetConfirm(false)} />
+          <div className="absolute inset-0 bg-black/20" onClick={() => setShowResetConfirm(false)} />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="relative bg-[rgba(15,14,24,0.95)] backdrop-blur-2xl border border-white/[0.08] rounded-[28px] p-8 w-full max-w-md shadow-[0_0_60px_rgba(0,0,0,0.8)] z-10 text-center"
+            className="relative bg-white border border-gray-200 rounded-2xl p-6 w-full max-w-md shadow-xl z-10 text-center"
           >
-            <div className="w-14 h-14 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto mb-5">
-              <AlertTriangle className="w-6 h-6 text-rose-400" />
+            <div className="w-12 h-12 rounded-full bg-red-50 border border-red-200 flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
             </div>
-            <h2 className="text-xl font-black text-white mb-2">Reset All Settings?</h2>
-            <p className="text-zinc-400 text-sm leading-relaxed mb-8">
+            <h2 className="text-lg font-bold text-gray-900 mb-1">Reset All Settings?</h2>
+            <p className="text-gray-500 text-sm leading-relaxed mb-6">
               This will restore all settings to defaults. Orders and menu data are not affected.
             </p>
             <div className="flex gap-3">
-              <button
-                onClick={() => setShowResetConfirm(false)}
-                className="flex-1 py-3.5 border border-white/10 hover:border-white/20 bg-white/3 hover:bg-white/6 text-zinc-300 font-bold uppercase tracking-widest text-[10px] rounded-full transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleReset}
-                className="flex-1 py-3.5 bg-rose-500 hover:bg-rose-600 text-white font-bold uppercase tracking-widest text-[10px] rounded-full shadow-lg shadow-rose-500/20 transition-all"
-              >
-                Reset Settings
-              </button>
+              <button onClick={() => setShowResetConfirm(false)} className="flex-1 py-2.5 border border-gray-200 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition-all">Cancel</button>
+              <button onClick={handleReset} className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-all">Reset Settings</button>
             </div>
-            <button
-              onClick={() => setShowResetConfirm(false)}
-              className="absolute top-4 right-4 p-2 rounded-xl text-zinc-500 hover:text-white hover:bg-white/5 transition-all"
-            >
+            <button onClick={() => setShowResetConfirm(false)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all">
               <X className="w-4 h-4" />
             </button>
           </motion.div>

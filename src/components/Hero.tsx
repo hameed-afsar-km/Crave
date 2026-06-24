@@ -10,7 +10,7 @@ export default function Hero() {
 
       {/* Background - right side */}
       <div
-        className="absolute right-0 top-0 w-full md:w-[55%] h-full bg-cover bg-left opacity-40"
+        className="absolute right-0 top-0 w-full md:w-[55%] h-full bg-cover bg-left opacity-90"
         aria-hidden
         style={{ backgroundImage: "url('/images/crave-hero.webp')" }}
       />

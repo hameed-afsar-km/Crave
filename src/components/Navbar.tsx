@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -57,6 +57,16 @@ export default function Navbar() {
   }, []);
 
   const closeMobile = () => setMobileOpen(false);
+
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001,
+  });
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   return (
     <>
@@ -207,6 +217,14 @@ export default function Navbar() {
           </div>
         </motion.div>
       </motion.nav>
+
+      {/* Scroll progress bar */}
+      {mounted && (
+        <motion.div
+          className="fixed top-0 left-0 right-0 z-[60] h-[2px] bg-gradient-to-r from-gold/60 via-gold to-gold/60 origin-left"
+          style={{ scaleX }}
+        />
+      )}
 
       {/* Full-screen Mobile Overlay */}
       <AnimatePresence>
