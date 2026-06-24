@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Clock, ShoppingBag, ArrowLeft, User, Phone, Mail, CheckCircle } from 'lucide-react';
+import { Clock, ShoppingBag, ArrowLeft, User, Phone, Mail, CheckCircle, Flame, ArrowRight } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { formatPrice, generateTimeSlots, generateOrderId } from '@/lib/utils';
-import { addDocument } from '@/hooks/useFirestore';
 import StoreStatusBanner from '@/components/StoreStatusBanner';
 import Link from 'next/link';
 
@@ -22,6 +21,9 @@ export default function CheckoutPage() {
   const [selectedTime, setSelectedTime] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmedOrderId, setConfirmedOrderId] = useState('');
+  const [confirmedOrder, setConfirmedOrder] = useState<any>(null);
 
   const tax = subtotal * 0.18;
   const total = subtotal + tax;
@@ -62,7 +64,9 @@ export default function CheckoutPage() {
       localStorage.setItem('crave-last-order', JSON.stringify(order));
 
       clearCart();
-      router.push(`/order/${orderId}`);
+      setConfirmedOrder(order);
+      setConfirmedOrderId(orderId);
+      setShowConfirmation(true);
     } catch {
       alert('Failed to place order. Please try again.');
     } finally {
@@ -326,6 +330,131 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Success Confirmation Overlay ── */}
+      <AnimatePresence>
+        {showConfirmation && confirmedOrder && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-5"
+          >
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ type: 'spring', damping: 22, stiffness: 200 }}
+              className="relative bg-[rgba(12,9,5,0.95)] backdrop-blur-2xl border border-gold/15 rounded-[32px] p-8 md:p-10 w-full max-w-md shadow-[0_0_80px_rgba(212,175,55,0.1)] text-center overflow-hidden"
+            >
+              {/* Sparkles */}
+              {[...Array(6)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{
+                    opacity: [0, 1, 0],
+                    scale: [0, 1, 0],
+                    x: [0, (i % 2 === 0 ? -1 : 1) * (60 + Math.random() * 40)],
+                    y: [0, (i < 3 ? -1 : 1) * (60 + Math.random() * 40)],
+                  }}
+                  transition={{ delay: 0.3 + i * 0.08, duration: 1.2, ease: 'easeOut' }}
+                  className="absolute w-2 h-2 rounded-full bg-gold shadow-[0_0_8px_rgba(212,175,55,0.6)]"
+                  style={{
+                    left: '50%',
+                    top: '50%',
+                    marginLeft: -4,
+                    marginTop: -4,
+                  }}
+                />
+              ))}
+
+              {/* Animated Check */}
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 250, damping: 15, delay: 0.15 }}
+                className="w-20 h-20 rounded-full bg-gradient-to-br from-gold to-amber-600 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-gold/30"
+              >
+                <motion.div
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ delay: 0.5, duration: 0.5, ease: 'easeOut' }}
+                >
+                  <CheckCircle className="w-10 h-10 text-white" />
+                </motion.div>
+              </motion.div>
+
+              <motion.h2
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="text-2xl font-black text-white tracking-tight mb-1"
+              >
+                Order Placed!
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="text-zinc-400 text-sm mb-6"
+              >
+                Your order has been received successfully.
+              </motion.p>
+
+              {/* Order ID + Summary */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="bg-black/40 rounded-2xl border border-white/5 p-5 mb-6 space-y-3"
+              >
+                <div className="text-center">
+                  <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Order ID</p>
+                  <p className="text-sm font-black text-gold">{confirmedOrderId}</p>
+                </div>
+                <div className="h-px bg-white/5" />
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-400 font-semibold">Items</span>
+                  <span className="text-white font-bold">{confirmedOrder.items.length}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-400 font-semibold">Pickup</span>
+                  <span className="text-white font-bold">{confirmedOrder.pickupTime}</span>
+                </div>
+                <div className="flex justify-between text-sm pt-1 border-t border-white/5">
+                  <span className="text-white font-black">Total</span>
+                  <span className="text-lg font-black text-gradient-gold">{formatPrice(confirmedOrder.amount)}</span>
+                </div>
+              </motion.div>
+
+              {/* Actions */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="space-y-3"
+              >
+                <Link
+                  href={`/order/${confirmedOrderId}`}
+                  onClick={() => setShowConfirmation(false)}
+                  className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-gold to-amber-600 text-white font-black rounded-2xl shadow-lg shadow-gold/15 hover:shadow-gold/30 transition-all text-sm"
+                >
+                  View Order
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+                <Link
+                  href="/menu"
+                  onClick={() => setShowConfirmation(false)}
+                  className="block text-sm font-bold text-zinc-500 hover:text-gold transition-colors"
+                >
+                  Continue Shopping
+                </Link>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -16,10 +16,10 @@ const navLinks = [
   { href: '/menu', label: 'Menu' },
 ];
 
-const statusColors = {
-  Open: 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.4)]',
-  Paused: 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.4)]',
-  Closed: 'bg-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.4)]',
+const statusDot = {
+  Open: 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]',
+  Paused: 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]',
+  Closed: 'bg-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.5)]',
 } as const;
 
 export default function Navbar() {
@@ -56,6 +56,8 @@ export default function Navbar() {
     return () => clearInterval(interval);
   }, []);
 
+  const closeMobile = () => setMobileOpen(false);
+
   return (
     <>
       <motion.nav
@@ -63,271 +65,230 @@ export default function Navbar() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className={cn(
-          'fixed top-0 left-0 right-0 z-50',
+          'fixed top-0 left-0 right-0 z-50 transition-all duration-700',
           isTransparent
             ? 'py-5 md:py-6'
-            : 'py-3 md:py-3.5 bg-[#08080B]/70 backdrop-blur-2xl',
-          'transition-all duration-500'
+            : 'py-3 md:py-3.5 bg-[#08080B]/70 backdrop-blur-2xl border-b border-white/5'
         )}
       >
-        {/* Full-width border glow — always present, intensifies on scroll */}
+        {/* Top edge glow */}
         <div className={cn(
-          'absolute inset-x-0 top-0 h-px transition-opacity duration-700',
-          'bg-gradient-to-r from-transparent via-gold/15 to-transparent',
-          isTransparent ? 'opacity-40' : 'opacity-100'
+          'absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/25 to-transparent transition-opacity duration-700',
+          isTransparent ? 'opacity-20' : 'opacity-100'
         )} />
 
-        {/* Bottom edge */}
-        <div className={cn(
-          'absolute inset-x-0 bottom-0 h-px transition-opacity duration-700',
-          'bg-gradient-to-r from-transparent via-white/[0.04] to-transparent',
-          isTransparent ? 'opacity-0' : 'opacity-100'
-        )} />
-
-        <div className="max-w-7xl mx-auto px-5 sm:px-8">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 relative">
           <div className="flex items-center justify-between h-[48px] md:h-[56px]">
 
-            {/* Left: Logo + Nav Links */}
-            <div className="flex items-center gap-5 md:gap-8">
-              <Link href="/" className="shrink-0">
-                <motion.div
-                  whileHover={{ scale: 1.03 }}
-                  transition={{ type: 'spring', stiffness: 350, damping: 20 }}
-                >
-                  <Image
-                    src="/logo.webp"
-                    alt="Crave"
-                    width={160}
-                    height={40}
-                    className="h-6 md:h-8 w-auto"
-                  />
-                </motion.div>
-              </Link>
-
-              <div className="hidden md:flex items-center gap-0.5">
-                {navLinks.map((link, i) => {
-                  const active = pathname === link.href;
-                  return (
-                    <motion.div
-                      key={link.href}
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 + i * 0.08, duration: 0.4 }}
+            {/* Left: Nav Links (desktop) */}
+            <div className="hidden md:flex items-center gap-1">
+              {navLinks.map((link, i) => {
+                const active = pathname === link.href;
+                return (
+                  <motion.div
+                    key={link.href}
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 + i * 0.08, duration: 0.4 }}
+                  >
+                    <Link
+                      href={link.href}
+                      className={cn(
+                        'relative px-3.5 py-1.5 text-sm font-semibold tracking-wide rounded-xl transition-all duration-300',
+                        isTransparent
+                          ? active ? 'text-white bg-white/8' : 'text-white/55 hover:text-white/90 hover:bg-white/5'
+                          : active ? 'text-gold bg-gold/8' : 'text-zinc-400 hover:text-gold hover:bg-gold/5'
+                      )}
                     >
-                      <Link
-                        href={link.href}
-                        className={cn(
-                          'relative px-3 py-1.5 text-sm font-semibold tracking-wide rounded-lg transition-all duration-300',
-                          isTransparent
-                            ? active ? 'text-white' : 'text-white/55 hover:text-white'
-                            : active ? 'text-gold' : 'text-zinc-400 hover:text-gold'
-                        )}
-                      >
-                        {link.label}
-                        {active && (
-                          <motion.div
-                            layoutId="navActive"
-                            className={cn(
-                              'absolute -bottom-px left-2 right-2 h-px rounded-full',
-                              isTransparent ? 'bg-white/40' : 'bg-gold/60'
-                            )}
-                          />
-                        )}
-                      </Link>
-                    </motion.div>
-                  );
-                })}
-              </div>
+                      {link.label}
+                    </Link>
+                  </motion.div>
+                );
+              })}
             </div>
 
-            {/* Right: Actions */}
-            <div className="hidden md:flex items-center gap-2">
-              {/* Store status dot */}
+            {/* Center: Logo */}
+            <Link href="/" className="absolute left-1/2 -translate-x-1/2">
+              <motion.div whileHover={{ scale: 1.03 }} transition={{ type: 'spring', stiffness: 350, damping: 20 }}>
+                <Image
+                  src="/logo.webp"
+                  alt="Crave"
+                  width={160}
+                  height={40}
+                  className="h-6 md:h-8 w-auto"
+                />
+              </motion.div>
+            </Link>
+
+            {/* Right: Status + Icons */}
+            <div className="flex items-center gap-3">
+              {/* Store status — pulsing dot */}
               <div
-                className={cn('w-2 h-2 rounded-full', statusColors[storeLabel as keyof typeof statusColors])}
+                className={cn('w-2 h-2 rounded-full', statusDot[storeLabel as keyof typeof statusDot])}
                 title={`Store ${storeLabel}`}
               />
 
-              {/* Icon group */}
-              <div className={cn(
-                'flex items-center gap-0.5 rounded-xl px-1 py-1 transition-all duration-500',
-                isTransparent
-                  ? 'bg-white/[0.04] border border-white/[0.06]'
-                  : 'bg-white/[0.03] border border-white/[0.04]'
-              )}>
+              {/* Icon group (desktop) */}
+              <div className="hidden md:flex items-center gap-0.5">
                 {isAdmin && (
                   <NavIconBtn href="/admin/dashboard" title="Admin Dashboard" isTransparent={isTransparent}>
-                    <LayoutDashboard className="w-4 h-4" />
+                    <LayoutDashboard className="w-[17px] h-[17px]" />
                   </NavIconBtn>
                 )}
 
                 {user && (
                   <NavIconBtn href="/orders" title="My Orders" isTransparent={isTransparent}>
-                    <Package className="w-4 h-4" />
+                    <Package className="w-[17px] h-[17px]" />
                   </NavIconBtn>
                 )}
 
-                <NavIconBtn href="/cart" title="Cart" isTransparent={isTransparent} badge={itemCount}>
-                  <ShoppingCart className="w-4 h-4" />
-                </NavIconBtn>
+                <CartIconBtn href="/cart" isTransparent={isTransparent} badge={itemCount} />
 
                 {user ? (
                   <>
                     <NavIconBtn href="/profile" title="Profile" isTransparent={isTransparent}>
-                      <User className="w-4 h-4" />
+                      <User className="w-[17px] h-[17px]" />
                     </NavIconBtn>
+
+                    <div className="w-px h-4 bg-white/8 mx-1.5" />
 
                     <button
                       onClick={signOut}
                       title="Sign Out"
                       className={cn(
-                        'p-1.5 rounded-lg transition-all duration-300',
+                        'p-1.5 rounded-xl transition-all duration-300',
                         isTransparent
-                          ? 'text-white/40 hover:text-red-400 hover:bg-red-500/10'
-                          : 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10'
+                          ? 'text-white/40 hover:text-rose-400 hover:bg-rose-500/10'
+                          : 'text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10'
                       )}
                     >
-                      <LogOut className="w-4 h-4" />
+                      <LogOut className="w-[17px] h-[17px]" />
                     </button>
                   </>
                 ) : (
-                  <div className="pl-0.5">
-                    <Link
-                      href="/auth"
-                      className="relative inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all duration-300 bg-gradient-to-r from-gold to-amber-500 text-white shadow-lg shadow-gold/15 hover:shadow-gold/30 hover:brightness-110"
-                    >
-                      <Flame className="w-3 h-3" />
-                      Order Now
-                    </Link>
-                  </div>
+                  <Link
+                    href="/auth"
+                    className={cn(
+                      'flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all duration-300 bg-gradient-to-r from-gold to-amber-500 text-white shadow-lg',
+                      isTransparent
+                        ? 'shadow-gold/20 hover:shadow-gold/30 hover:brightness-110'
+                        : 'shadow-gold/10 hover:shadow-gold/25 hover:brightness-110'
+                    )}
+                  >
+                    <Flame className="w-3 h-3" />
+                    Order
+                  </Link>
                 )}
               </div>
-            </div>
 
-            {/* Mobile */}
-            <div className="flex md:hidden items-center gap-1.5">
-              <Link href="/cart" className="relative p-1.5">
-                <ShoppingCart className={cn(
-                  'w-[18px] h-[18px] transition-colors',
-                  isTransparent ? 'text-white/70' : 'text-zinc-300'
-                )} />
-                {itemCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 text-[11px] font-black text-gold">
-                    {itemCount}
-                  </span>
-                )}
-              </Link>
+              {/* Mobile: Cart + Hamburger */}
+              <div className="flex md:hidden items-center gap-1.5">
+                <Link href="/cart" className="relative p-1.5">
+                  <ShoppingCart className={cn('w-[19px] h-[19px]', isTransparent ? 'text-white/70' : 'text-zinc-300')} />
+                  {itemCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 text-[11px] font-black text-gold">{itemCount}</span>
+                  )}
+                </Link>
 
-              <button
-                onClick={() => setMobileOpen(!mobileOpen)}
-                className={cn(
-                  'p-1.5 rounded-lg transition-all duration-300',
-                  isTransparent
-                    ? 'text-white/70 hover:bg-white/8'
-                    : 'text-zinc-400 hover:bg-white/5'
-                )}
-              >
-                <motion.div
-                  animate={{ rotate: mobileOpen ? 90 : 0 }}
-                  transition={{ duration: 0.25 }}
+                <button
+                  onClick={() => setMobileOpen(!mobileOpen)}
+                  className={cn('p-1.5 rounded-xl transition-all', isTransparent ? 'text-white/70 hover:bg-white/8' : 'text-zinc-400 hover:bg-white/5')}
                 >
-                  {mobileOpen ? <X className="w-[18px] h-[18px]" /> : <Menu className="w-[18px] h-[18px]" />}
-                </motion.div>
-              </button>
+                  <motion.div animate={{ rotate: mobileOpen ? 90 : 0 }} transition={{ duration: 0.25 }}>
+                    {mobileOpen ? <X className="w-[19px] h-[19px]" /> : <Menu className="w-[19px] h-[19px]" />}
+                  </motion.div>
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Scroll progress */}
         <motion.div
-          className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent origin-left"
+          className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/35 to-transparent origin-left"
           style={{ scaleX }}
         />
       </motion.nav>
 
-      {/* Mobile Overlay — Full-screen left drawer */}
+      {/* Mobile Drawer */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.2 }}
             className="fixed inset-0 z-40 md:hidden"
           >
-            <div
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-              onClick={() => setMobileOpen(false)}
-            />
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeMobile} />
 
             <motion.div
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 260 }}
-              className="absolute left-0 top-0 bottom-0 w-[280px] bg-[#0A0A0F]/95 border-r border-white/8 shadow-2xl flex flex-col"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 32, stiffness: 300 }}
+              className="absolute bottom-0 left-0 right-0 max-h-[90vh] bg-[#0C0C14]/98 border-t border-white/8 rounded-t-3xl shadow-2xl flex flex-col overflow-hidden"
             >
+              {/* Handle */}
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 rounded-full bg-white/10" />
+              </div>
+
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-5 border-b border-white/5">
-                <Image
-                  src="/logo.webp"
-                  alt="Crave"
-                  width={100}
-                  height={30}
-                  className="h-5 w-auto"
-                />
-                <button
-                  onClick={() => setMobileOpen(false)}
-                  className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition-colors"
-                >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
+                <Image src="/logo.webp" alt="Crave" width={100} height={28} className="h-5 w-auto" />
+                <button onClick={closeMobile} className="p-1.5 rounded-xl text-zinc-500 hover:text-white hover:bg-white/5 border border-white/5">
                   <X className="w-[18px] h-[18px]" />
                 </button>
               </div>
 
-              {/* Nav links */}
-              <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-                {navLinks.map((link, i) => (
-                  <motion.div
-                    key={link.href}
-                    initial={{ opacity: 0, x: -16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 + 0.1 }}
-                  >
-                    <Link
-                      href={link.href}
-                      onClick={() => setMobileOpen(false)}
-                      className={cn(
-                        'flex items-center gap-3 px-3.5 py-3 rounded-xl font-semibold text-sm transition-all duration-200',
-                        pathname === link.href
-                          ? 'bg-gold/10 text-gold'
-                          : 'text-zinc-400 hover:text-white hover:bg-white/5'
-                      )}
+              {/* Links */}
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
+                {navLinks.map((link, i) => {
+                  const active = pathname === link.href;
+                  return (
+                    <motion.div
+                      key={link.href}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 + 0.1 }}
                     >
-                      {link.label}
-                    </Link>
-                  </motion.div>
-                ))}
+                      <Link
+                        href={link.href}
+                        onClick={closeMobile}
+                        className={cn(
+                          'flex items-center justify-between px-4 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200',
+                          active
+                            ? 'bg-gold/10 text-gold border border-gold/15'
+                            : 'text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent'
+                        )}
+                      >
+                        {link.label}
+                        {active && <span className="w-1.5 h-1.5 rounded-full bg-gold" />}
+                      </Link>
+                    </motion.div>
+                  );
+                })}
 
-                {/* Separator */}
                 <div className="h-px bg-white/5 my-3" />
 
                 {/* Cart */}
                 <motion.div
-                  initial={{ opacity: 0, x: -16 }}
-                  animate={{ opacity: 1, x: 0 }}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.18 }}
                 >
                   <Link
                     href="/cart"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center justify-between px-3.5 py-3 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 font-semibold text-sm transition-all"
+                    onClick={closeMobile}
+                    className="flex items-center justify-between px-4 py-3.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent font-semibold text-sm transition-all"
                   >
                     <span className="flex items-center gap-3">
-                      <ShoppingCart className="w-4 h-4 text-gold" />
+                      <ShoppingCart className="w-[18px] h-[18px] text-gold" />
                       Cart
                     </span>
                     {itemCount > 0 && (
-                      <span className="px-2 py-0.5 bg-gold/15 text-gold text-[10px] font-black rounded-full">
+                      <span className="px-2.5 py-0.5 bg-gradient-to-r from-gold to-amber-600 text-white text-[10px] font-black rounded-full">
                         {itemCount}
                       </span>
                     )}
@@ -335,72 +296,59 @@ export default function Navbar() {
                 </motion.div>
 
                 {user && (
-                  <>
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.22 }}
+                    className="space-y-1"
+                  >
                     {isAdmin && (
-                      <motion.div
-                        initial={{ opacity: 0, x: -16 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.22 }}
+                      <Link
+                        href="/admin/dashboard"
+                        onClick={closeMobile}
+                        className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent font-semibold text-sm transition-all"
                       >
-                        <Link
-                          href="/admin/dashboard"
-                          onClick={() => setMobileOpen(false)}
-                          className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 font-semibold text-sm transition-all"
-                        >
-                          <LayoutDashboard className="w-4 h-4 text-gold" />
-                          Admin Panel
-                        </Link>
-                      </motion.div>
+                        <LayoutDashboard className="w-[18px] h-[18px] text-gold" />
+                        Admin Panel
+                      </Link>
                     )}
-                    <motion.div
-                      initial={{ opacity: 0, x: -16 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.26 }}
+                    <Link
+                      href="/orders"
+                      onClick={closeMobile}
+                      className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent font-semibold text-sm transition-all"
                     >
-                      <Link
-                        href="/orders"
-                        onClick={() => setMobileOpen(false)}
-                        className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 font-semibold text-sm transition-all"
-                      >
-                        <Package className="w-4 h-4 text-gold" />
-                        My Orders
-                      </Link>
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0, x: -16 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.3 }}
+                      <Package className="w-[18px] h-[18px] text-gold" />
+                      My Orders
+                    </Link>
+                    <Link
+                      href="/profile"
+                      onClick={closeMobile}
+                      className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent font-semibold text-sm transition-all"
                     >
-                      <Link
-                        href="/profile"
-                        onClick={() => setMobileOpen(false)}
-                        className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 font-semibold text-sm transition-all"
-                      >
-                        <User className="w-4 h-4 text-gold" />
-                        Profile
-                      </Link>
-                    </motion.div>
-                  </>
+                      <User className="w-[18px] h-[18px] text-gold" />
+                      Profile
+                    </Link>
+                  </motion.div>
                 )}
               </div>
 
               {/* Footer */}
-              <div className="px-3 py-4 border-t border-white/5 space-y-2">
+              <div className="px-4 py-4 border-t border-white/5">
                 {user ? (
                   <button
-                    onClick={() => { signOut(); setMobileOpen(false); }}
-                    className="flex items-center justify-center gap-2 w-full py-3 bg-red-500/8 border border-red-500/12 text-red-400 hover:bg-red-500/15 rounded-xl transition-colors font-semibold text-sm"
+                    onClick={() => { signOut(); closeMobile(); }}
+                    className="flex items-center justify-center gap-2 w-full py-3 bg-rose-500/8 border border-rose-500/15 text-rose-400 hover:bg-rose-500/15 rounded-xl transition-all font-semibold text-sm"
                   >
-                    <LogOut className="w-4 h-4" />
+                    <LogOut className="w-[18px] h-[18px]" />
                     Sign Out
                   </button>
                 ) : (
                   <Link
                     href="/auth"
-                    onClick={() => setMobileOpen(false)}
+                    onClick={closeMobile}
                     className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-gold to-amber-600 text-white font-bold rounded-xl shadow-lg shadow-gold/10 transition-all"
                   >
-                    <Flame className="w-4 h-4" />
+                    <Flame className="w-[18px] h-[18px]" />
                     Sign In to Order
                   </Link>
                 )}
@@ -413,18 +361,16 @@ export default function Navbar() {
   );
 }
 
-// Helper component
+// Helper: Nav icon button
 function NavIconBtn({
   href,
   title,
   isTransparent,
-  badge,
   children,
 }: {
   href: string;
   title: string;
   isTransparent: boolean;
-  badge?: number;
   children: React.ReactNode;
 }) {
   return (
@@ -432,24 +378,48 @@ function NavIconBtn({
       href={href}
       title={title}
       className={cn(
-        'relative p-1.5 rounded-lg transition-all duration-300',
+        'relative p-1.5 rounded-xl transition-all duration-300',
         isTransparent
           ? 'text-white/50 hover:text-white hover:bg-white/10'
           : 'text-zinc-500 hover:text-gold hover:bg-gold/10'
       )}
     >
-      <span className="relative inline-block">
-        {children}
-        {badge && badge > 0 ? (
-          <motion.span
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute -top-2 -left-2.5 text-[12px] font-black text-gold"
-          >
-            {badge}
-          </motion.span>
-        ) : null}
-      </span>
+      {children}
+    </Link>
+  );
+}
+
+// Helper: Cart icon with badge
+function CartIconBtn({
+  href,
+  isTransparent,
+  badge,
+}: {
+  href: string;
+  isTransparent: boolean;
+  badge: number;
+}) {
+  return (
+    <Link
+      href={href}
+      title="Cart"
+      className={cn(
+        'relative p-1.5 rounded-xl transition-all duration-300',
+        isTransparent
+          ? 'text-white/50 hover:text-white hover:bg-white/10'
+          : 'text-zinc-500 hover:text-gold hover:bg-gold/10'
+      )}
+    >
+      <ShoppingCart className="w-[17px] h-[17px]" />
+      {badge > 0 && (
+        <motion.span
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="absolute -top-1 -right-1 flex items-center justify-center w-[18px] h-[18px] rounded-full bg-gradient-to-br from-gold to-amber-600 text-[9px] font-black text-white ring-2 ring-[#08080B]"
+        >
+          {badge}
+        </motion.span>
+      )}
     </Link>
   );
 }

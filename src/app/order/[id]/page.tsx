@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, Clock, ChefHat, Package, MapPin, ArrowLeft, Flame, Receipt, X, Printer } from 'lucide-react';
+import { CheckCircle, Clock, ChefHat, Package, MapPin, ArrowLeft, Flame, Receipt, X, Printer, ImageIcon, FileText } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
+import { toPng } from 'html-to-image';
+import jsPDF from 'jspdf';
 import Link from 'next/link';
 
 const statusSteps = ['received', 'preparing', 'ready', 'completed'];
@@ -36,6 +38,33 @@ export default function OrderTrackingPage() {
   const params = useParams();
   const [orderInfo, setOrderInfo] = useState<any>(null);
   const [showReceipt, setShowReceipt] = useState(false);
+  const receiptRef = useRef<HTMLDivElement>(null);
+
+  const downloadImage = async () => {
+    if (!receiptRef.current) return;
+    try {
+      const dataUrl = await toPng(receiptRef.current, { backgroundColor: '#0f0e18', pixelRatio: 2 });
+      const link = document.createElement('a');
+      link.download = `receipt-${order.id}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch {}
+  };
+
+  const downloadPdf = async () => {
+    if (!receiptRef.current) return;
+    try {
+      const dataUrl = await toPng(receiptRef.current, { backgroundColor: '#0f0e18', pixelRatio: 2 });
+      const img = new Image();
+      img.src = dataUrl;
+      await img.decode();
+      const pdf = new jsPDF({ unit: 'mm', format: [80, 150], compress: true });
+      const imgW = 72;
+      const imgH = (img.naturalHeight / img.naturalWidth) * imgW;
+      pdf.addImage(dataUrl, 'PNG', 4, 10, imgW, imgH);
+      pdf.save(`receipt-${order.id}.pdf`);
+    } catch {}
+  };
 
   useEffect(() => {
     const orders = JSON.parse(localStorage.getItem('crave-orders') || '[]');
@@ -287,7 +316,13 @@ export default function OrderTrackingPage() {
                   <Receipt className="w-4 h-4 text-gold" />
                   <h2 className="text-sm font-black text-white">Bill Receipt</h2>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <button onClick={downloadImage} className="p-2 rounded-xl border border-white/8 hover:border-sky-500/20 text-zinc-500 hover:text-sky-400 hover:bg-sky-500/8 transition-all" title="Download as Image">
+                    <ImageIcon className="w-4 h-4" />
+                  </button>
+                  <button onClick={downloadPdf} className="p-2 rounded-xl border border-white/8 hover:border-rose-500/20 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/8 transition-all" title="Download as PDF">
+                    <FileText className="w-4 h-4" />
+                  </button>
                   <button onClick={printReceipt} className="p-2 rounded-xl border border-white/8 hover:border-emerald-500/20 text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/8 transition-all" title="Print">
                     <Printer className="w-4 h-4" />
                   </button>
@@ -297,7 +332,7 @@ export default function OrderTrackingPage() {
                 </div>
               </div>
 
-              <div className="p-6">
+              <div ref={receiptRef} className="p-6">
                 {/* Receipt content */}
                 <div className="text-center mb-6 pb-4 border-b border-white/5">
                   <h3 className="text-xl font-black text-gradient-gold tracking-wider">CRAVE</h3>
