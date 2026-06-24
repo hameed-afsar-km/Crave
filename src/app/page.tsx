@@ -1,9 +1,11 @@
+import dynamic from 'next/dynamic';
 import Hero from '@/components/Hero';
 import FeaturedItems from '@/components/FeaturedItems';
 import WhyOnline from '@/components/WhyOnline';
-import HowItWorks from '@/components/HowItWorks';
-import Testimonials from '@/components/Testimonials';
-import FinalCTA from '@/components/FinalCTA';
+
+const HowItWorks = dynamic(() => import('@/components/HowItWorks'));
+const Testimonials = dynamic(() => import('@/components/Testimonials'));
+const FinalCTA = dynamic(() => import('@/components/FinalCTA'));
 
 export default function Home() {
   return (

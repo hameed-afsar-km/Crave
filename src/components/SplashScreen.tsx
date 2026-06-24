@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 
 export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
   useEffect(() => {
@@ -41,7 +40,7 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
           className="h-px w-32 sm:w-40 bg-gradient-to-r from-transparent via-gold/60 to-transparent"
         />
 
-        {/* Logo */}
+        {/* Logo text */}
         <motion.div
           initial={{ y: 20, opacity: 0, filter: 'blur(6px)' }}
           animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
@@ -51,13 +50,9 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
             animate={{ y: [0, -3, 0] }}
             transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <Image
-              src="/logo.webp"
-              alt="Crave"
-              width={180}
-              height={45}
-              className="w-[150px] sm:w-[180px] h-auto"
-            />
+            <h1 className="font-steelfish text-5xl sm:text-7xl md:text-8xl text-gradient-gold-bright glow-text">
+              Crave
+            </h1>
           </motion.div>
         </motion.div>
 
@@ -69,15 +64,7 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
           className="h-px w-32 sm:w-40 bg-gradient-to-r from-transparent via-gold/60 to-transparent"
         />
 
-        {/* Tagline */}
-        <motion.p
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7, duration: 0.6 }}
-          className="text-[10px] sm:text-xs font-bold text-gold/50 uppercase tracking-[0.3em]"
-        >
-          Skip the Queue • Order Smarter
-        </motion.p>
+
       </div>
     </motion.div>
   );

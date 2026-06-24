@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useParams, notFound } from 'next/navigation';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Star, Minus, Plus, ShoppingCart, ArrowLeft, Check } from 'lucide-react';
 import { menuItems } from '@/lib/data';
@@ -72,9 +73,11 @@ export default function FoodDetailPage() {
           >
             <div className="sticky top-28">
               <div className="relative rounded-[32px] overflow-hidden border border-white/5 shadow-2xl">
-                <img
+                <Image
                   src={item.image}
                   alt={item.name}
+                  width={600}
+                  height={600}
                   className="w-full aspect-square object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
