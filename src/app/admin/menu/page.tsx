@@ -108,7 +108,7 @@ export default function AdminMenu() {
   }
 
   return (
-    <div className="min-h-screen bg-[#06060A] pt-16 pb-16 relative overflow-hidden">
+    <div className="min-h-screen bg-[#06060A] relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[radial-gradient(circle,rgba(212,175,55,0.04)_0%,transparent_65%)] pointer-events-none" />
 
       <div className="bg-[rgba(8,8,14,0.6)] backdrop-blur-xl border-b border-white/[0.05] relative z-10">

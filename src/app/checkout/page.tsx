@@ -8,6 +8,7 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { formatPrice, generateTimeSlots, generateOrderId } from '@/lib/utils';
 import { addDocument } from '@/hooks/useFirestore';
+import StoreStatusBanner from '@/components/StoreStatusBanner';
 import Link from 'next/link';
 
 export default function CheckoutPage() {
@@ -19,9 +20,10 @@ export default function CheckoutPage() {
   const [email, setEmail] = useState(user?.email || '');
   const [pickupOption, setPickupOption] = useState<'asap' | 'later'>('asap');
   const [selectedTime, setSelectedTime] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [processing, setProcessing] = useState(false);
 
-  const tax = subtotal * 0.05;
+  const tax = subtotal * 0.18;
   const total = subtotal + tax;
   const timeSlots = generateTimeSlots();
 
@@ -31,8 +33,10 @@ export default function CheckoutPage() {
     }
   }, [pickupOption]);
 
+  const isPhoneValid = /^\d{10}$/.test(phone);
+
   const handlePlaceOrder = async () => {
-    if (!name || !phone) return;
+    if (!name || !phone || !isPhoneValid) return;
     setProcessing(true);
     try {
       const orderId = generateOrderId();
@@ -103,6 +107,10 @@ export default function CheckoutPage() {
           <p className="text-zinc-500 text-sm mt-1.5">Fill in your details to complete your order</p>
         </motion.div>
 
+        <div className="mb-6">
+          <StoreStatusBanner />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-7">
           {/* Form */}
           <div className="lg:col-span-3 space-y-5">
@@ -139,16 +147,32 @@ export default function CheckoutPage() {
                     <label className="block text-[11px] font-black text-zinc-500 uppercase tracking-widest mb-2">
                       Phone *
                     </label>
-                    <div className="flex rounded-xl overflow-hidden border border-white/8 focus-within:border-gold/45 focus-within:shadow-[0_0_0_3px_rgba(212,175,55,0.07)] transition-all bg-[rgba(6,6,10,0.6)]">
+                    <div className={`flex rounded-xl overflow-hidden border transition-all bg-[rgba(6,6,10,0.6)] ${
+                        phoneError ? 'border-rose-500/40 focus-within:border-rose-400 focus-within:shadow-[0_0_0_3px_rgba(244,63,94,0.1)]' : 'border-white/8 focus-within:border-gold/45 focus-within:shadow-[0_0_0_3px_rgba(212,175,55,0.07)]'
+                      }`}>
                       <span className="flex items-center px-4 bg-white/3 border-r border-white/5 text-zinc-500 text-sm font-bold shrink-0">+91</span>
                       <input
                         type="tel"
                         value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          if (val.length <= 10) {
+                            setPhone(val);
+                            if (val.length === 10) setPhoneError('');
+                            else if (val.length > 0) setPhoneError('Phone must be 10 digits');
+                            else setPhoneError('');
+                          }
+                        }}
                         placeholder="98765 43210"
                         className="flex-1 px-4 py-3.5 bg-transparent text-white placeholder-zinc-600 focus:outline-none text-sm font-semibold"
                       />
                     </div>
+                    {phoneError && (
+                      <p className="text-[10px] text-rose-400 font-semibold mt-1.5 flex items-center gap-1">
+                        <span className="w-1 h-1 rounded-full bg-rose-400" />
+                        {phoneError}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-[11px] font-black text-zinc-500 uppercase tracking-widest mb-2">
@@ -262,7 +286,7 @@ export default function CheckoutPage() {
                   <span className="font-bold text-zinc-300">{formatPrice(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-zinc-500 text-xs">
-                  <span>Tax (5%)</span>
+                  <span>GST (18%)</span>
                   <span className="font-bold text-zinc-300">{formatPrice(tax)}</span>
                 </div>
               </div>
@@ -276,7 +300,7 @@ export default function CheckoutPage() {
 
               <motion.button
                 onClick={handlePlaceOrder}
-                disabled={processing || !name || !phone}
+                disabled={processing || !name || !phone || !isPhoneValid}
                 whileHover={{ scale: processing ? 1 : 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="relative flex items-center justify-center gap-2.5 w-full py-4 bg-gradient-to-r from-gold via-amber-500 to-amber-600 text-white font-black rounded-2xl shadow-lg shadow-gold/12 hover:shadow-gold/28 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed text-sm overflow-hidden group"

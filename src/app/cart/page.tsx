@@ -9,7 +9,7 @@ import { formatPrice } from '@/lib/utils';
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, clearCart, subtotal } = useCart();
-  const tax = subtotal * 0.05;
+  const tax = subtotal * 0.18;
   const total = subtotal + tax;
 
   if (items.length === 0) {
@@ -151,7 +151,7 @@ export default function CartPage() {
                   <span className="font-bold text-zinc-300">{formatPrice(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-zinc-500 text-sm">
-                  <span>Tax (5%)</span>
+                  <span>GST (18%)</span>
                   <span className="font-bold text-zinc-300">{formatPrice(tax)}</span>
                 </div>
                 <div className="flex justify-between text-zinc-500 text-sm">

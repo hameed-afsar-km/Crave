@@ -26,11 +26,12 @@ export default function FoodDetailPage() {
   if (!item) return notFound();
 
   const handleAddToCart = () => {
+    const optionsKey = selectedExtras.length > 0 ? `-${[...selectedExtras].sort().join('-')}` : '';
     addItem({
-      id: item.id,
+      id: `${item.id}${optionsKey}`,
       menuItemId: item.id,
       name: item.name,
-      price: item.price,
+      price: totalPrice,
       quantity,
       image: item.image,
       options: selectedExtras,

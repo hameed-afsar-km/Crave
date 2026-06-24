@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
   Settings as SettingsIcon, ArrowLeft, Store, Clock, Bell, Shield,
-  Save, ToggleLeft, ToggleRight, IndianRupee, AlertTriangle, X,
+  Save, ToggleLeft, ToggleRight, IndianRupee, AlertTriangle, X, Trash2,
   CookingPot, Users, Phone, Calendar
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -17,6 +17,7 @@ export default function AdminSettings() {
   const [form, setForm] = useState<StoreSettings>(loadSettings());
   const [saved, setSaved] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showClearDataConfirm, setShowClearDataConfirm] = useState(false);
 
   useEffect(() => {
     setForm(loadSettings());
@@ -52,6 +53,14 @@ export default function AdminSettings() {
     setShowResetConfirm(false);
   };
 
+  const handleClearData = () => {
+    localStorage.removeItem('crave-orders');
+    localStorage.removeItem('crave-last-order');
+    localStorage.removeItem('crave-menu-items');
+    localStorage.removeItem('crave-seeded');
+    setShowClearDataConfirm(false);
+  };
+
   const slots = generateTimeSlots();
   const maxSlotsToShow = 8;
 
@@ -64,7 +73,7 @@ export default function AdminSettings() {
   }
 
   return (
-    <div className="min-h-screen bg-[#06060A] pt-16 pb-16 relative overflow-hidden">
+    <div className="min-h-screen bg-[#06060A] relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[radial-gradient(circle,rgba(212,175,55,0.04)_0%,transparent_65%)] pointer-events-none" />
 
       {/* Header */}
@@ -352,7 +361,7 @@ export default function AdminSettings() {
             <h2 className="text-sm font-black text-rose-400 uppercase tracking-wider">Danger Zone</h2>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pb-5 border-b border-rose-500/10 mb-5">
             <div>
               <p className="text-sm font-bold text-zinc-200">Reset All Settings</p>
               <p className="text-xs text-zinc-600 font-semibold mt-0.5">Restore all settings to factory defaults</p>
@@ -362,6 +371,20 @@ export default function AdminSettings() {
               className="px-5 py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all"
             >
               Reset
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-zinc-200">Clear All Data</p>
+              <p className="text-xs text-zinc-600 font-semibold mt-0.5">Remove all orders, menu items, and seeded data</p>
+            </div>
+            <button
+              onClick={() => setShowClearDataConfirm(true)}
+              className="flex items-center gap-1.5 px-5 py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Clear
             </button>
           </div>
         </motion.div>
@@ -383,6 +406,46 @@ export default function AdminSettings() {
           </motion.button>
         </div>
       </div>
+
+      {/* Clear data confirmation modal */}
+      {showClearDataConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setShowClearDataConfirm(false)} />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="relative bg-[rgba(15,14,24,0.95)] backdrop-blur-2xl border border-white/[0.08] rounded-[28px] p-8 w-full max-w-md shadow-[0_0_60px_rgba(0,0,0,0.8)] z-10 text-center"
+          >
+            <div className="w-14 h-14 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto mb-5">
+              <AlertTriangle className="w-6 h-6 text-rose-400" />
+            </div>
+            <h2 className="text-xl font-black text-white mb-2">Clear All Data?</h2>
+            <p className="text-zinc-400 text-sm leading-relaxed mb-8">
+              This will permanently delete all orders, menu items, and seeded sample data. Settings are not affected.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowClearDataConfirm(false)}
+                className="flex-1 py-3.5 border border-white/10 hover:border-white/20 bg-white/3 hover:bg-white/6 text-zinc-300 font-bold uppercase tracking-widest text-[10px] rounded-full transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClearData}
+                className="flex-1 py-3.5 bg-rose-500 hover:bg-rose-600 text-white font-bold uppercase tracking-widest text-[10px] rounded-full shadow-lg shadow-rose-500/20 transition-all"
+              >
+                Clear Everything
+              </button>
+            </div>
+            <button
+              onClick={() => setShowClearDataConfirm(false)}
+              className="absolute top-4 right-4 p-2 rounded-xl text-zinc-500 hover:text-white hover:bg-white/5 transition-all"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        </div>
+      )}
 
       {/* Reset confirmation modal */}
       {showResetConfirm && (

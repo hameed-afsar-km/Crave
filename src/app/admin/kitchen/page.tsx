@@ -104,7 +104,7 @@ export default function KitchenPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#06060A] pt-16 pb-16 relative overflow-hidden">
+    <div className="min-h-screen bg-[#06060A] relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[radial-gradient(circle,rgba(212,175,55,0.03)_0%,transparent_65%)] pointer-events-none" />
 
       {/* Header */}

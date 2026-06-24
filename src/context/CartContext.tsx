@@ -37,10 +37,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = (item: CartItem) => {
     setItems(prev => {
-      const existing = prev.find(i => i.id === item.id);
+      const optionsKey = (k: CartItem) => k.options?.length ? [...k.options].sort().join('|') : '';
+      const itemKey = optionsKey(item);
+      const existing = prev.find(i =>
+        i.menuItemId === item.menuItemId && optionsKey(i) === itemKey
+      );
       if (existing) {
         return prev.map(i =>
-          i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i
+          i.menuItemId === item.menuItemId && optionsKey(i) === itemKey
+            ? { ...i, quantity: i.quantity + item.quantity }
+            : i
         );
       }
       return [...prev, item];

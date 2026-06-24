@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { menuItems, categories } from '@/lib/data';
 import FoodCard from '@/components/FoodCard';
+import StoreStatusBanner from '@/components/StoreStatusBanner';
 import { MenuGridSkeleton } from '@/components/LoadingSkeleton';
 
 export default function MenuPage() {
@@ -46,6 +47,10 @@ export default function MenuPage() {
             Freshly made with handpicked ingredients, ready when you are.
           </p>
         </motion.div>
+
+        <div className="mb-6">
+          <StoreStatusBanner />
+        </div>
 
         {/* Search + filter bar */}
         <motion.div
