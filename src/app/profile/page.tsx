@@ -1,21 +1,21 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { User, Phone, Mail, Package, LogOut, ArrowLeft, Star, ShoppingBag } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 
-const pastOrders = [
-  { id: 'CRV-001', date: '2024-01-15', items: 3, total: 450, status: 'completed' },
-  { id: 'CRV-002', date: '2024-01-10', items: 2, total: 380, status: 'completed' },
-  { id: 'CRV-003', date: '2024-01-05', items: 4, total: 720, status: 'completed' },
-];
-
 export default function ProfilePage() {
   const { user, signOut, loading } = useAuth();
   const router = useRouter();
+  const [pastOrders, setPastOrders] = useState<any[]>([]);
+
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem('crave-orders') || '[]');
+    setPastOrders(stored);
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -25,7 +25,7 @@ export default function ProfilePage() {
 
   if (loading || !user) return null;
 
-  const totalSpent = pastOrders.reduce((sum, o) => sum + o.total, 0);
+  const totalSpent = pastOrders.reduce((sum: number, o: any) => sum + (o.amount || 0), 0);
   const totalOrders = pastOrders.length;
 
   return (
@@ -130,26 +130,38 @@ export default function ProfilePage() {
             <p className="text-zinc-600 text-center py-10 font-semibold text-sm">No orders yet.</p>
           ) : (
             <div className="space-y-3">
-              {pastOrders.map((order, i) => (
-                <motion.div
-                  key={order.id}
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.15 + i * 0.06 }}
-                  className="flex items-center justify-between p-4 bg-black/30 border border-white/5 rounded-2xl hover:border-gold/20 hover:bg-gold/[0.02] transition-all duration-300 group"
-                >
-                  <div>
-                    <p className="font-black text-white text-sm group-hover:text-gold transition-colors">{order.id}</p>
-                    <p className="text-xs text-zinc-600 mt-0.5 font-semibold">{order.date} • {order.items} items</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-black text-white">₹{order.total}</p>
-                    <span className="text-[10px] text-emerald-400 font-black uppercase tracking-wider block mt-0.5">
-                      ✓ Completed
-                    </span>
-                  </div>
-                </motion.div>
-              ))}
+              {pastOrders.map((order: any, i: number) => {
+                const date = order.createdAt
+                  ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                  : '';
+                const itemsCount = order.items?.length || 0;
+                const status = order.status || 'received';
+
+                return (
+                  <motion.div
+                    key={order.id}
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.15 + i * 0.06 }}
+                  >
+                    <Link
+                      href={`/order/${order.id}`}
+                      className="flex items-center justify-between p-4 bg-black/30 border border-white/5 rounded-2xl hover:border-gold/20 hover:bg-gold/[0.02] transition-all duration-300 group"
+                    >
+                      <div>
+                        <p className="font-black text-white text-sm group-hover:text-gold transition-colors">#{order.id}</p>
+                        <p className="text-xs text-zinc-600 mt-0.5 font-semibold">{date}{itemsCount > 0 ? ` · ${itemsCount} item${itemsCount > 1 ? 's' : ''}` : ''}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-black text-white">₹{order.amount}</p>
+                        <span className={`text-[10px] font-black uppercase tracking-wider block mt-0.5 ${status === 'cancelled' ? 'text-red-400' : 'text-emerald-400'}`}>
+                          {status === 'completed' ? '✓ Collected' : status === 'cancelled' ? 'Cancelled' : status}
+                        </span>
+                      </div>
+                    </Link>
+                  </motion.div>
+                );
+              })}
             </div>
           )}
         </motion.div>

@@ -5,7 +5,7 @@ import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { ShoppingCart, Menu, X, User, LogOut, LayoutDashboard, Flame } from 'lucide-react';
+import { ShoppingCart, Menu, X, User, LogOut, LayoutDashboard, Flame, Package } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
@@ -121,6 +121,12 @@ export default function Navbar() {
               {isAdmin && (
                 <NavIconBtn href="/admin/dashboard" title="Admin Dashboard" isTransparent={isTransparent}>
                   <LayoutDashboard className="w-[18px] h-[18px]" />
+                </NavIconBtn>
+              )}
+
+              {user && (
+                <NavIconBtn href="/orders" title="My Orders" isTransparent={isTransparent}>
+                  <Package className="w-[18px] h-[18px]" />
                 </NavIconBtn>
               )}
 
@@ -291,6 +297,16 @@ export default function Navbar() {
                     )}
                     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
                       <Link
+                        href="/orders"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-3.5 rounded-2xl text-zinc-300 hover:text-white hover:bg-white/5 font-semibold text-sm transition-all border border-transparent"
+                      >
+                        <Package className="w-4 h-4 text-gold" />
+                        My Orders
+                      </Link>
+                    </motion.div>
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.24 }}>
+                      <Link
                         href="/profile"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center gap-2.5 px-4 py-3.5 rounded-2xl text-zinc-300 hover:text-white hover:bg-white/5 font-semibold text-sm transition-all border border-transparent"
@@ -357,16 +373,18 @@ function NavIconBtn({
           : 'text-zinc-400 hover:text-gold hover:bg-gold/5 hover:border-gold/12'
       )}
     >
-      {children}
-      {badge && badge > 0 ? (
-        <motion.span
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-gradient-to-br from-gold to-amber-600 text-[9px] font-black text-white ring-2 ring-black"
-        >
-          {badge}
-        </motion.span>
-      ) : null}
+      <span className="relative inline-block">
+        {children}
+        {badge && badge > 0 ? (
+          <motion.span
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="absolute -top-2 -left-2.5 text-[12px] font-black text-gold"
+          >
+            {badge}
+          </motion.span>
+        ) : null}
+      </span>
     </Link>
   );
 }

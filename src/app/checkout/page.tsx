@@ -36,21 +36,27 @@ export default function CheckoutPage() {
     setProcessing(true);
     try {
       const orderId = generateOrderId();
-      await addDocument('orders', {
+      const order = {
         id: orderId,
         customerId: user?.uid || 'guest',
         customerName: name,
         customerPhone: phone,
         customerEmail: email,
-        items,
+        items: items.map(i => ({ name: i.name, qty: i.quantity, price: i.price })),
         amount: total,
         pickupTime: selectedTime,
-        status: 'received',
+        status: 'received' as const,
         paymentStatus: 'pending',
-        paymentId: '',
         estimatedWaitTime: 18,
-        orderId,
-      });
+        createdAt: new Date().toISOString(),
+      };
+
+      // Save to order history
+      const existing = JSON.parse(localStorage.getItem('crave-orders') || '[]');
+      existing.unshift(order);
+      localStorage.setItem('crave-orders', JSON.stringify(existing));
+      localStorage.setItem('crave-last-order', JSON.stringify(order));
+
       clearCart();
       router.push(`/order/${orderId}`);
     } catch {
