@@ -5,10 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
   ArrowLeft, Search, ChefHat, Package, CheckCircle, Clock,
-  X, Printer, Download, Phone, MapPin, ChevronRight, ShoppingBag
+  X, Printer, Download, Phone, MapPin, ChevronRight, ShoppingBag,
+  Copy, MessageCircle, AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { getStoredOrders } from '@/lib/seed-data';
+import { getStoredOrders, saveOrders } from '@/lib/seed-data';
 
 /* ── Types ── */
 interface OrderItem {
@@ -55,11 +56,40 @@ export default function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
+  const [copied, setCopied] = useState('');
+
   const updateStatus = (orderId: string, newStatus: Order['status']) => {
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+    setOrders(prev => {
+      const updated = prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
+      saveOrders(updated);
+      return updated;
+    });
     if (selectedOrder?.id === orderId) {
       setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
     }
+  };
+
+  const copyPhone = (phone: string) => {
+    navigator.clipboard.writeText(phone);
+    setCopied(phone);
+    setTimeout(() => setCopied(''), 2000);
+  };
+
+  const queuePosition = (orderId: string) => {
+    const active = orders.filter(o => o.status !== 'completed');
+    const idx = active.findIndex(o => o.id === orderId);
+    return idx >= 0 ? idx + 1 : '-';
+  };
+
+  const pickupCountdown = (pickupTime: string) => {
+    const [h, m] = pickupTime.split(':').map(Number);
+    const pickup = h * 60 + m;
+    const now = new Date();
+    const current = now.getHours() * 60 + now.getMinutes();
+    const diff = pickup - current;
+    if (diff < 0) return 'Overdue';
+    if (diff === 0) return 'Now';
+    return `${diff} min`;
   };
 
   const filtered = orders.filter(o => {
@@ -257,6 +287,19 @@ export default function AdminOrders() {
                     <p className="font-bold text-sm text-zinc-200 group-hover:text-white transition-colors truncate">{order.customer}</p>
                     <div className="flex items-center gap-2 text-[10px] text-zinc-600 font-semibold mt-0.5">
                       <Phone className="w-3 h-3" />{order.phone}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); copyPhone(order.phone); }}
+                        className="p-0.5 hover:text-gold transition-colors"
+                        title="Copy phone"
+                      >
+                        {copied === order.phone ? <span className="text-emerald-400 text-[9px]">Copied!</span> : <Copy className="w-3 h-3" />}
+                      </button>
+                      <a href={`tel:${order.phone}`} onClick={(e) => e.stopPropagation()} className="p-0.5 hover:text-gold transition-colors" title="Call">
+                        <Phone className="w-3 h-3" />
+                      </a>
+                      <a href={`https://wa.me/${order.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()} className="p-0.5 hover:text-gold transition-colors" title="WhatsApp">
+                        <MessageCircle className="w-3 h-3" />
+                      </a>
                       <span className="text-zinc-800">·</span>
                       <MapPin className="w-3 h-3" />Pickup {order.pickupTime}
                     </div>
@@ -273,11 +316,21 @@ export default function AdminOrders() {
                     </p>
                   </div>
 
-                  {/* Amount + Status */}
-                  <div className="flex items-center gap-4 sm:gap-6 shrink-0">
+                  {/* Amount + Queue + Pickup */}
+                  <div className="flex items-center gap-3 sm:gap-4 shrink-0">
                     <div className="text-right">
                       <p className="font-black text-sm text-zinc-200">₹{order.amount}</p>
                       <p className="text-[10px] text-zinc-600 font-bold">{order.createdAt}</p>
+                    </div>
+                    <div className="hidden sm:block text-right">
+                      <p className="font-black text-xs text-gold">#{queuePosition(order.id)}</p>
+                      <p className="text-[9px] text-zinc-600 font-bold">Queue</p>
+                    </div>
+                    <div className="text-right">
+                      <p className={`font-black text-xs ${pickupCountdown(order.pickupTime) === 'Overdue' ? 'text-rose-400' : pickupCountdown(order.pickupTime) === 'Now' ? 'text-emerald-400' : 'text-zinc-300'}`}>
+                        {pickupCountdown(order.pickupTime)}
+                      </p>
+                      <p className="text-[9px] text-zinc-600 font-bold">{order.pickupTime}</p>
                     </div>
                     <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border whitespace-nowrap ${sc.pill}`}>
                       <span className={`w-1 h-1 rounded-full ${sc.dot}`} />
@@ -299,6 +352,15 @@ export default function AdminOrders() {
                     <ActionBtn onClick={(e) => { e.stopPropagation(); updateStatus(order.id, 'completed'); }} icon={Package} label="Mark Collected" color="text-blue-400" border="border-blue-500/12 hover:border-blue-500/30" bg="bg-blue-500/5 hover:bg-blue-500/12" />
                   )}
                   <ActionBtn onClick={(e) => { e.stopPropagation(); printOrder(order); }} icon={Printer} label="Print" color="text-zinc-400" border="border-white/8 hover:border-white/18" bg="bg-white/4 hover:bg-white/8" />
+                  <a
+                    href={`https://wa.me/${order.phone.replace(/\D/g, '')}`}
+                    target="_blank" rel="noopener"
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all text-emerald-400 border-emerald-500/12 hover:border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/12"
+                  >
+                    <MessageCircle className="w-3 h-3" />
+                    WhatsApp
+                  </a>
                 </div>
               </motion.div>
             );
@@ -433,6 +495,12 @@ export default function AdminOrders() {
                   <button onClick={() => printOrder(selectedOrder)} className="flex items-center gap-2 px-5 py-3 border border-white/10 hover:border-white/20 bg-white/3 hover:bg-white/6 text-zinc-300 rounded-xl transition-all text-[11px] font-black uppercase tracking-widest">
                     <Printer className="w-3.5 h-3.5" /> Print Receipt
                   </button>
+                  <a href={`tel:${selectedOrder.phone}`} className="flex items-center gap-2 px-5 py-3 border border-white/10 hover:border-gold/22 bg-white/3 hover:bg-gold/5 text-zinc-300 hover:text-gold rounded-xl transition-all text-[11px] font-black uppercase tracking-widest">
+                    <Phone className="w-3.5 h-3.5" /> Call
+                  </a>
+                  <a href={`https://wa.me/${selectedOrder.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener" className="flex items-center gap-2 px-5 py-3 border border-emerald-500/10 hover:border-emerald-500/22 bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-400 rounded-xl transition-all text-[11px] font-black uppercase tracking-widest">
+                    <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+                  </a>
                 </div>
               </div>
             </motion.div>

@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Plus, Edit2, Trash2, Search, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, Search, Eye, EyeOff, TrendingUp, TrendingDown } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { menuItems as initialItems } from '@/lib/data';
-import { getStoredMenuItems } from '@/lib/seed-data';
+import { getStoredMenuItems, getStoredOrders, saveMenuItems } from '@/lib/seed-data';
 import { MenuItem } from '@/types';
 
 export default function AdminMenu() {
@@ -18,17 +18,45 @@ export default function AdminMenu() {
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [form, setForm] = useState({ name: '', description: '', price: '', category: 'Burgers', image: '' });
 
+  const itemOrderCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const orders = getStoredOrders();
+    if (orders) {
+      orders.forEach((o: any) => {
+        (o.items || []).forEach((item: any) => {
+          const name = item.name || '';
+          counts[name] = (counts[name] || 0) + (item.qty || 1);
+        });
+      });
+    }
+    return counts;
+  }, []);
+
+  const sortedByOrders = useMemo(() => {
+    return [...items].sort((a, b) => (itemOrderCounts[b.name] || 0) - (itemOrderCounts[a.name] || 0));
+  }, [items, itemOrderCounts]);
+
+  const maxOrders = Math.max(...Object.values(itemOrderCounts), 1);
+
   const filtered = items.filter(i =>
     i.name.toLowerCase().includes(search.toLowerCase()) ||
     i.category.toLowerCase().includes(search.toLowerCase())
   );
 
   const toggleAvailability = (id: string) => {
-    setItems(prev => prev.map(i => i.id === id ? { ...i, available: !i.available } : i));
+    setItems(prev => {
+      const updated = prev.map(i => i.id === id ? { ...i, available: !i.available } : i);
+      saveMenuItems(updated);
+      return updated;
+    });
   };
 
   const deleteItem = (id: string) => {
-    setItems(prev => prev.filter(i => i.id !== id));
+    setItems(prev => {
+      const updated = prev.filter(i => i.id !== id);
+      saveMenuItems(updated);
+      return updated;
+    });
   };
 
   const openEdit = (item: MenuItem) => {
@@ -45,23 +73,28 @@ export default function AdminMenu() {
 
   const saveItem = () => {
     if (!form.name || !form.price) return;
-    if (editingItem) {
-      setItems(prev => prev.map(i => i.id === editingItem.id ? {
-        ...i, name: form.name, description: form.description, price: Number(form.price), category: form.category, image: form.image,
-      } : i));
-    } else {
-      const newItem: MenuItem = {
-        id: String(Date.now()),
-        name: form.name,
-        description: form.description,
-        price: Number(form.price),
-        category: form.category,
-        image: form.image || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80',
-        rating: 0,
-        available: true,
-      };
-      setItems(prev => [newItem, ...prev]);
-    }
+    setItems(prev => {
+      let updated: MenuItem[];
+      if (editingItem) {
+        updated = prev.map(i => i.id === editingItem.id ? {
+          ...i, name: form.name, description: form.description, price: Number(form.price), category: form.category, image: form.image,
+        } : i);
+      } else {
+        const newItem: MenuItem = {
+          id: String(Date.now()),
+          name: form.name,
+          description: form.description,
+          price: Number(form.price),
+          category: form.category,
+          image: form.image || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80',
+          rating: 0,
+          available: true,
+        };
+        updated = [newItem, ...prev];
+      }
+      saveMenuItems(updated);
+      return updated;
+    });
     setShowForm(false);
     setEditingItem(null);
   };
@@ -122,6 +155,7 @@ export default function AdminMenu() {
                   <th className="text-left px-6 py-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">Item</th>
                   <th className="text-left px-6 py-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">Category</th>
                   <th className="text-left px-6 py-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">Price</th>
+                  <th className="text-left px-6 py-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">Orders</th>
                   <th className="text-left px-6 py-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">Rating</th>
                   <th className="text-left px-6 py-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">Status</th>
                   <th className="text-left px-6 py-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">Actions</th>
@@ -147,6 +181,30 @@ export default function AdminMenu() {
                     </td>
                     <td className="px-6 py-4 text-xs font-bold text-zinc-400 uppercase tracking-widest">{item.category}</td>
                     <td className="px-6 py-4 font-black text-sm text-zinc-200">₹{item.price}</td>
+                    {/* Orders column */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-black text-gold">{itemOrderCounts[item.name] || 0}</span>
+                            <span className="text-[9px] text-zinc-600 font-semibold">orders</span>
+                          </div>
+                          <div className="w-16 h-1 bg-black/40 rounded-full overflow-hidden mt-0.5">
+                            <div
+                              className="h-full rounded-full bg-gold/60"
+                              style={{ width: `${Math.min(100, ((itemOrderCounts[item.name] || 0) / maxOrders) * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                        {itemOrderCounts[item.name] && itemOrderCounts[item.name] > 0 && (
+                          itemOrderCounts[item.name] >= (sortedByOrders.length > 0 ? itemOrderCounts[sortedByOrders[0].name] || 0 : 0) && itemOrderCounts[item.name] > 0
+                            ? <TrendingUp className="w-3 h-3 text-emerald-400 shrink-0" />
+                            : itemOrderCounts[item.name] <= (sortedByOrders.length > 1 ? itemOrderCounts[sortedByOrders[sortedByOrders.length - 1].name] || 0 : 0)
+                            ? <TrendingDown className="w-3 h-3 text-rose-400 shrink-0" />
+                            : null
+                        )}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 text-xs font-bold text-gold">
                       {item.rating > 0 ? (
                         <div className="flex items-center gap-1">

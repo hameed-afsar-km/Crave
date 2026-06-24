@@ -4,18 +4,18 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import Link from 'next/link';
 import {
-  ShoppingBag, IndianRupee, Clock, CheckCircle,
+  ShoppingBag, IndianRupee, Clock, CheckCircle, CookingPot,
   TrendingUp, TrendingDown, Package, Users, ArrowRight,
-  Zap, ChevronRight, MoreHorizontal, Database
+  Zap, ChevronRight, AlertTriangle, Phone, Database, Store
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { seedSampleData, isSeeded } from '@/lib/seed-data';
+import { seedSampleData, isSeeded, getStoredOrders } from '@/lib/seed-data';
+import { loadSettings, saveSettings } from '@/lib/store';
 
 function AnimatedCounter({ value, prefix = '', suffix = '' }: { value: number; prefix?: string; suffix?: string }) {
   const [count, setCount] = useState(0);
   const ref = useRef(null);
   const inView = useInView(ref, { once: true });
-
   useEffect(() => {
     if (!inView) return;
     const duration = 1400;
@@ -29,190 +29,106 @@ function AnimatedCounter({ value, prefix = '', suffix = '' }: { value: number; p
     }, duration / steps);
     return () => clearInterval(timer);
   }, [value, inView]);
-
-  return (
-    <span ref={ref} className="text-3xl font-black text-white tabular-nums tracking-tight">
-      {prefix}{count}{suffix}
-    </span>
-  );
+  return <span ref={ref} className="text-3xl font-black text-white tabular-nums tracking-tight">{prefix}{count}{suffix}</span>;
 }
 
 function MiniSparkline({ data, color }: { data: number[]; color: string }) {
+  if (!data.length) return null;
   const max = Math.max(...data);
   const min = Math.min(...data);
   const range = max - min || 1;
-  const w = 80;
-  const h = 28;
+  const w = 72;
+  const h = 24;
   const points = data.map((v, i) => {
     const x = (i / (data.length - 1)) * w;
     const y = h - ((v - min) / range) * (h - 4) - 2;
     return `${x},${y}`;
   }).join(' ');
-
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="shrink-0">
-      <polyline
-        points={points}
-        fill="none"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="opacity-80"
-      />
+      <polyline points={points} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-70" />
     </svg>
   );
 }
 
-/* ── Bar chart component (inline SVG) ── */
-function RevenueChart({ data }: { data: { day: string; revenue: number }[] }) {
-  const max = Math.max(...data.map(d => d.revenue));
-  const barW = 32;
-  const gap = 12;
-  const chartW = data.length * (barW + gap) - gap;
-  const chartH = 160;
-
-  return (
-    <div className="relative">
-      <svg width={chartW} height={chartH} viewBox={`0 0 ${chartW} ${chartH}`} className="w-full">
-        <defs>
-          <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#D4AF37" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#D4AF37" stopOpacity="0.2" />
-          </linearGradient>
-        </defs>
-        {data.map((d, i) => {
-          const barH = (d.revenue / max) * (chartH - 20);
-          const x = i * (barW + gap);
-          const y = chartH - barH - 10;
-          return (
-            <g key={d.day}>
-              <rect x={x} y={y} width={barW} height={barH} rx="4" fill="url(#barGrad)" className="hover:opacity-80 transition-opacity cursor-pointer" />
-              <text x={x + barW / 2} y={chartH - 2} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="9" fontFamily="inherit" fontWeight="700">
-                {d.day}
-              </text>
-              <text x={x + barW / 2} y={y - 4} textAnchor="middle" fill="rgba(212,175,55,0.5)" fontSize="9" fontFamily="inherit" fontWeight="700">
-                ₹{(d.revenue / 1000).toFixed(1)}k
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-    </div>
-  );
-}
-
-/* ── Donut chart (inline SVG) ── */
-function StatusDonut({ data }: { data: { label: string; value: number; color: string }[] }) {
-  const total = data.reduce((s, d) => s + d.value, 0) || 1;
-  const radius = 50;
-  const circ = 2 * Math.PI * radius;
-  let offset = 0;
-
-  return (
-    <div className="flex items-center gap-5">
-      <svg width="130" height="130" viewBox="0 0 120 120" className="shrink-0">
-        {data.map((d) => {
-          const pct = d.value / total;
-          const len = pct * circ;
-          const dash = `${len} ${circ - len}`;
-          const o = -offset;
-          offset += len;
-          return (
-            <circle
-              key={d.label}
-              cx="60" cy="60" r={radius}
-              fill="none"
-              stroke={d.color}
-              strokeWidth="14"
-              strokeDasharray={dash}
-              strokeDashoffset={o}
-              transform="rotate(-90, 60, 60)"
-              strokeLinecap="round"
-              className="transition-all duration-500"
-            />
-          );
-        })}
-        <text x="60" y="56" textAnchor="middle" fill="white" fontSize="22" fontFamily="inherit" fontWeight="900">{total}</text>
-        <text x="60" y="72" textAnchor="middle" fill="rgba(255,255,255,0.35)" fontSize="9" fontFamily="inherit" fontWeight="700">Orders</text>
-      </svg>
-      <div className="space-y-2">
-        {data.map(d => (
-          <div key={d.label} className="flex items-center gap-2 text-xs">
-            <span className="w-2 h-2 rounded-full" style={{ background: d.color }} />
-            <span className="text-zinc-500 font-semibold">{d.label}</span>
-            <span className="text-white font-black ml-auto">{d.value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ── Data ── */
-const statsCards = [
-  { label: 'Orders Today', value: 48, icon: ShoppingBag, color: 'from-gold to-amber-600', glow: 'rgba(212,175,55,0.2)', prefix: '', trend: '+12%', up: true, sparkline: [32, 38, 35, 42, 40, 48] },
-  { label: 'Revenue Today', value: 12450, icon: IndianRupee, color: 'from-emerald-400 to-green-500', glow: 'rgba(52,211,153,0.2)', prefix: '₹', trend: '+8%', up: true, sparkline: [8200, 10500, 9800, 11200, 11800, 12450] },
-  { label: 'Pending Orders', value: 12, icon: Clock, color: 'from-amber-400 to-orange-500', glow: 'rgba(251,191,36,0.2)', prefix: '', trend: '-3%', up: false, sparkline: [18, 15, 14, 16, 13, 12] },
-  { label: 'Completed Today', value: 36, icon: CheckCircle, color: 'from-blue-400 to-violet-500', glow: 'rgba(96,165,250,0.2)', prefix: '', trend: '+18%', up: true, sparkline: [22, 26, 28, 30, 33, 36] },
-];
-
-const weeklyRevenue = [
-  { day: 'Mon', revenue: 8200 },
-  { day: 'Tue', revenue: 10500 },
-  { day: 'Wed', revenue: 9800 },
-  { day: 'Thu', revenue: 11200 },
-  { day: 'Fri', revenue: 11800 },
-  { day: 'Sat', revenue: 14250 },
-  { day: 'Sun', revenue: 12450 },
-];
-
-const statusDist = [
-  { label: 'Received', value: 8, color: '#60A5FA' },
-  { label: 'Preparing', value: 12, color: '#FBBF24' },
-  { label: 'Ready', value: 6, color: '#34D399' },
-  { label: 'Completed', value: 36, color: '#6B7280' },
-];
-
-const topItems = [
-  { name: 'Chicken Shawarma', sold: 24, revenue: 4320, pct: 100 },
-  { name: 'Beef Burger', sold: 18, revenue: 4500, pct: 86 },
-  { name: 'Chicken Combo', sold: 14, revenue: 4900, pct: 72 },
-  { name: 'French Fries', sold: 12, revenue: 1440, pct: 58 },
-  { name: 'Chocolate Milkshake', sold: 10, revenue: 1400, pct: 45 },
-];
-
-const recentActivity = [
-  { action: 'Order #CRV-048 marked as preparing', time: '2 min ago', type: 'update' },
-  { action: 'New order #CRV-049 received', time: '5 min ago', type: 'new' },
-  { action: 'Order #CRV-047 marked as ready', time: '8 min ago', type: 'update' },
-  { action: 'Menu item "Grilled Sandwich" price updated', time: '15 min ago', type: 'edit' },
-  { action: 'Order #CRV-046 collected', time: '22 min ago', type: 'complete' },
-];
-
-const peakHours = [
-  { hour: '12:00', orders: 18 },
-  { hour: '13:00', orders: 24 },
-  { hour: '14:00', orders: 15 },
-  { hour: '18:00', orders: 22 },
-  { hour: '19:00', orders: 28 },
-  { hour: '20:00', orders: 20 },
-  { hour: '21:00', orders: 10 },
-];
-
 export default function AdminDashboard() {
   const { user, isAdmin } = useAuth();
-  const [storeOpen, setStoreOpen] = useState(true);
+  const [settings, setSettings] = useState(loadSettings());
   const [seeded, setSeeded] = useState(false);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [now, setNow] = useState(new Date());
 
   useEffect(() => {
     setSeeded(isSeeded());
+    const stored = getStoredOrders();
+    if (stored) setOrders(stored);
+    const timer = setInterval(() => setNow(new Date()), 15000);
+    return () => clearInterval(timer);
   }, []);
+
+  const toggleStore = () => {
+    const next = { ...settings, storeOpen: !settings.storeOpen };
+    setSettings(next);
+    saveSettings(next);
+  };
+
+  const toggleAccepting = () => {
+    const next = { ...settings, acceptingOrders: !settings.acceptingOrders };
+    setSettings(next);
+    saveSettings(next);
+  };
 
   const handleSeedData = () => {
     seedSampleData();
     setSeeded(true);
+    const stored = getStoredOrders();
+    if (stored) setOrders(stored);
   };
+
+  /* ── Compute KPIs from real data ── */
+  const todayStr = now.toISOString().slice(0, 10);
+  const todayOrders = orders.filter((o: any) => o.createdAt && o.createdAt.includes(todayStr) || true);
+  const ordersToday = orders.length;
+  const revenueToday = orders.reduce((s: number, o: any) => s + (o.amount || 0), 0);
+  const pendingOrders = orders.filter((o: any) => o.status !== 'completed').length;
+  const preparingCount = orders.filter((o: any) => o.status === 'preparing').length;
+  const readyCount = orders.filter((o: any) => o.status === 'ready').length;
+  const receivedCount = orders.filter((o: any) => o.status === 'received').length;
+  const completedToday = orders.filter((o: any) => o.status === 'completed').length;
+  const avgOrderValue = orders.length ? Math.round(revenueToday / orders.length) : 0;
+  const queueLength = pendingOrders;
+
+  /* Best seller (most ordered item name) */
+  const itemCounts: Record<string, number> = {};
+  orders.forEach((o: any) => {
+    (o.items || []).forEach((item: any) => {
+      const name = item.name || item.menuItemId;
+      itemCounts[name] = (itemCounts[name] || 0) + (item.qty || 1);
+    });
+  });
+  const sortedItems = Object.entries(itemCounts).sort(([, a], [, b]) => b - a);
+  const bestSeller = sortedItems.length ? sortedItems[0][0] : 'N/A';
+
+  /* Peak hour */
+  const hourCounts: Record<string, number> = {};
+  orders.forEach((o: any) => {
+    const h = o.pickupTime ? o.pickupTime.split(':')[0] : '12';
+    hourCounts[h] = (hourCounts[h] || 0) + 1;
+  });
+  const peakHour = Object.entries(hourCounts).sort(([, a], [, b]) => b - a);
+  const peakHourStr = peakHour.length ? `${peakHour[0][0]}:00` : 'N/A';
+
+  /* Recent activity */
+  const recentActivity = orders
+    .sort((a: any, b: any) => (b.createdAt || '').localeCompare(a.createdAt || ''))
+    .slice(0, 6)
+    .map((o: any) => {
+      const statusLabel: Record<string, string> = { received: 'New order', preparing: 'Started preparing', ready: 'Marked ready', completed: 'Collected' };
+      return { action: `${statusLabel[o.status] || 'Updated'} #${o.id}`, customer: o.customer, status: o.status, time: o.createdAt || '' };
+    });
+
+  /* Wait time estimate */
+  const estimatedWait = preparingCount > 0 ? Math.round(preparingCount * settings.averagePrepTime / Math.max(1, Math.ceil(preparingCount / 2))) : 0;
 
   if (!isAdmin) {
     return (
@@ -234,271 +150,302 @@ export default function AdminDashboard() {
 
       {/* Header */}
       <div className="bg-[rgba(8,8,14,0.6)] backdrop-blur-xl border-b border-white/[0.05] relative z-10">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-7">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div className="flex items-center gap-2.5 mb-1">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">Dashboard</h1>
+              <div className="flex items-center gap-2.5 mb-0.5">
+                <div className={`w-2 h-2 rounded-full ${settings.storeOpen ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
+                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">Dashboard</h1>
               </div>
-              <p className="text-zinc-500 text-sm">Welcome back, {user?.name || 'Administrator'}</p>
+              <p className="text-zinc-500 text-xs font-semibold">
+                {now.toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric' })}
+                {' · '}{now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+              </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
               {/* Seed data */}
               <button
                 onClick={handleSeedData}
                 disabled={seeded}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest border transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
                   seeded
                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 cursor-default'
                     : 'bg-gold/10 text-gold border-gold/20 hover:bg-gold/18 hover:border-gold/30'
                 }`}
               >
-                <Database className="w-3.5 h-3.5" />
-                {seeded ? 'Seeded ✓' : 'Seed Sample Data'}
+                <Database className="w-3 h-3" />
+                {seeded ? 'Seeded ✓' : 'Seed Data'}
+              </button>
+              {/* Accepting orders toggle */}
+              <button
+                onClick={toggleAccepting}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                  settings.acceptingOrders
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                    : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                }`}
+              >
+                {settings.acceptingOrders ? 'Accepting' : 'Paused'}
               </button>
               {/* Store toggle */}
               <button
-                onClick={() => setStoreOpen(!storeOpen)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest border transition-all ${
-                  storeOpen
+                onClick={toggleStore}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                  settings.storeOpen
                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                     : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                 }`}
               >
-                <span className={`w-1.5 h-1.5 rounded-full ${storeOpen ? 'bg-emerald-400' : 'bg-rose-400'}`} />
-                {storeOpen ? 'Open' : 'Closed'}
+                <Store className="w-3 h-3" />
+                {settings.storeOpen ? 'Open' : 'Closed'}
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 py-10 relative z-10 space-y-8">
-        {/* ── Stats Grid ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {statsCards.map((card, i) => (
-            <motion.div
-              key={card.label}
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="relative rounded-[22px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] hover:border-white/[0.1] p-5 transition-all duration-300 overflow-hidden group"
-            >
-              <div className="absolute top-0 right-0 w-28 h-28 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none blur-2xl" style={{ background: card.glow }} />
-              <div className="flex items-start justify-between mb-3">
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center shadow-md`}>
-                  <card.icon className="w-4.5 h-4.5 text-white" />
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className={`text-[10px] font-black ${card.up ? 'text-emerald-400' : 'text-rose-400'}`}>
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 py-8 relative z-10 space-y-8">
+
+        {/* ════════════════════════════════════════ */}
+        {/* SECTION 1 — TODAY OVERVIEW              */}
+        {/* ════════════════════════════════════════ */}
+        <div>
+          <h2 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4">Today Overview</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: 'Orders Today', value: ordersToday, icon: ShoppingBag, color: 'from-gold to-amber-600', prefix: '', trend: ordersToday > 0 ? `${Math.round(ordersToday)}` : '0', up: true },
+              { label: 'Revenue Today', value: revenueToday, icon: IndianRupee, color: 'from-emerald-400 to-green-500', prefix: '₹', trend: revenueToday > 0 ? `₹${revenueToday}` : '₹0', up: true },
+              { label: 'Pending Orders', value: pendingOrders, icon: Clock, color: 'from-amber-400 to-orange-500', prefix: '', trend: `${pendingOrders} active`, up: false },
+              { label: 'Completed Today', value: completedToday, icon: CheckCircle, color: 'from-blue-400 to-violet-500', prefix: '', trend: completedToday > 0 ? `${completedToday}` : '0', up: true },
+            ].map((card, i) => (
+              <motion.div
+                key={card.label}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.06 }}
+                className="rounded-[20px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-5"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center shadow-md`}>
+                    <card.icon className="w-4.5 h-4.5 text-white" />
+                  </div>
+                  <span className={`text-[10px] font-black ${card.up ? 'text-emerald-400' : 'text-amber-400'}`}>
                     {card.trend}
                   </span>
-                  {card.up ? <TrendingUp className="w-3 h-3 text-emerald-400" /> : <TrendingDown className="w-3 h-3 text-rose-400" />}
                 </div>
-              </div>
-              <div className="flex items-end justify-between">
-                <div>
-                  <AnimatedCounter value={card.value} prefix={card.prefix} />
-                  <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mt-1.5">{card.label}</p>
-                </div>
-                <MiniSparkline data={card.sparkline} color={card.up ? '#34D399' : '#F87171'} />
-              </div>
-            </motion.div>
-          ))}
+                <AnimatedCounter value={card.value} prefix={card.prefix} />
+                <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mt-1.5">{card.label}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
 
-        {/* ── Row: Revenue Chart + Status Donut ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Revenue chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.12 }}
-            className="lg:col-span-2 rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6"
-          >
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
-              <div>
-                <h2 className="text-sm font-black text-white uppercase tracking-wider">Weekly Revenue</h2>
-                <p className="text-[10px] text-zinc-600 font-bold mt-0.5">Total: ₹76,200</p>
-              </div>
-              <Link href="/admin/analytics" className="text-[11px] font-black text-gold/70 hover:text-gold transition-colors flex items-center gap-1">
-                Full Report <ChevronRight className="w-3 h-3" />
-              </Link>
-            </div>
-            <div className="overflow-x-auto pb-2">
-              <RevenueChart data={weeklyRevenue} />
-            </div>
-          </motion.div>
+        {/* ════════════════════════════════════════ */}
+        {/* SECTION 2 — LIVE OPERATIONS             */}
+        {/* ════════════════════════════════════════ */}
+        <div>
+          <h2 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4">Live Operations</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: 'Queue Length', value: queueLength, icon: Users, color: 'from-blue-400 to-violet-500', sub: `${preparingCount} being prepared` },
+              { label: 'Est. Wait Time', value: estimatedWait, icon: Clock, color: 'from-amber-400 to-orange-500', suffix: ' min', sub: `Avg prep ${settings.averagePrepTime} min` },
+              { label: 'Preparing', value: preparingCount, icon: CookingPot, color: 'from-gold to-amber-500', sub: `${receivedCount} received` },
+              { label: 'Ready for Pickup', value: readyCount, icon: Package, color: 'from-emerald-400 to-green-500', sub: readyCount > 0 ? `${readyCount} waiting` : 'None' },
+            ].map((card, i) => (
+              <motion.div
+                key={card.label}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.06 }}
+                className="rounded-[20px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-5 hover:border-white/[0.1] transition-all"
+              >
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center shadow-md mb-3`}>
+                  <card.icon className="w-4.5 h-4.5 text-white" />
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl font-black text-white tabular-nums tracking-tight">{card.value}</span>
+                  {card.suffix && <span className="text-lg font-black text-zinc-500">{card.suffix}</span>}
+                </div>
+                <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mt-1">{card.label}</p>
+                <p className="text-[10px] text-zinc-500 font-semibold mt-0.5">{card.sub}</p>
+              </motion.div>
+            ))}
+          </div>
 
-          {/* Status distribution */}
+          {/* Kitchen link */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.16 }}
-            className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6"
-          >
-            <h2 className="text-sm font-black text-white uppercase tracking-wider mb-6 pb-4 border-b border-white/5">Order Status</h2>
-            <StatusDonut data={statusDist} />
-          </motion.div>
-        </div>
-
-        {/* ── Row: Top Items + Activity + Peak Hours ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Top selling items */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6"
+            className="mt-4"
           >
-            <h2 className="text-sm font-black text-white uppercase tracking-wider mb-6 pb-4 border-b border-white/5">Top Items</h2>
-            <div className="space-y-4">
-              {topItems.map((item, i) => (
-                <div key={item.name}>
-                  <div className="flex items-center justify-between text-sm mb-1.5">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-[10px] font-black text-zinc-600 w-4">{i + 1}</span>
-                      <span className="font-bold text-zinc-200">{item.name}</span>
-                    </div>
-                    <span className="font-black text-gold text-xs">₹{(item.revenue / 1000).toFixed(1)}k</span>
-                  </div>
-                  <div className="relative h-1.5 bg-black/40 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${item.pct}%` }}
-                      transition={{ delay: 0.3 + i * 0.08, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                      className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-gold to-amber-500"
-                    />
-                  </div>
-                  <p className="text-[10px] text-zinc-600 font-bold mt-0.5">{item.sold} sold</p>
+            <Link
+              href="/admin/kitchen"
+              className="flex items-center justify-between gap-3 px-5 py-4 rounded-[20px] bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/15 hover:border-amber-500/30 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md">
+                  <CookingPot className="w-4.5 h-4.5 text-white" />
                 </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Recent activity */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.24 }}
-            className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6"
-          >
-            <h2 className="text-sm font-black text-white uppercase tracking-wider mb-6 pb-4 border-b border-white/5">Recent Activity</h2>
-            <div className="space-y-1">
-              {recentActivity.map((a, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.25 + i * 0.05 }}
-                  className={`flex items-start gap-3 p-3 rounded-xl transition-colors ${
-                    a.type === 'new' ? 'bg-gold/[0.03] border border-gold/8' : 'hover:bg-white/[0.02]'
-                  }`}
-                >
-                  <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${
-                    a.type === 'new' ? 'bg-gold' : a.type === 'complete' ? 'bg-emerald-400' : 'bg-zinc-600'
-                  }`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-zinc-300 font-semibold leading-tight truncate">{a.action}</p>
-                    <p className="text-[10px] text-zinc-600 font-bold mt-0.5">{a.time}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Peak hours */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.28 }}
-            className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6"
-          >
-            <h2 className="text-sm font-black text-white uppercase tracking-wider mb-6 pb-4 border-b border-white/5">Peak Hours</h2>
-            <div className="space-y-3">
-              {peakHours.map((h) => {
-                const maxOrders = Math.max(...peakHours.map(p => p.orders));
-                const pct = (h.orders / maxOrders) * 100;
-                return (
-                  <div key={h.hour} className="flex items-center gap-3">
-                    <span className="text-[10px] font-black text-zinc-600 w-10 text-right">{h.hour}</span>
-                    <div className="flex-1 h-5 bg-black/40 rounded-full overflow-hidden relative">
-                      <div
-                        className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-amber-500/60 to-gold transition-all duration-500"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="text-xs font-black text-zinc-200 w-6 text-right">{h.orders}</span>
-                  </div>
-                );
-              })}
-            </div>
-            <Link href="/admin/analytics" className="mt-5 inline-flex items-center gap-1 text-[11px] font-black text-gold/70 hover:text-gold transition-colors">
-              View detailed analytics <ArrowRight className="w-3 h-3" />
+                <div>
+                  <p className="font-black text-sm text-white">Open Kitchen Display</p>
+                  <p className="text-[10px] text-zinc-500 font-semibold mt-0.5">{preparingCount + receivedCount} orders in progress</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-amber-400/50 group-hover:text-amber-400 transition-colors" />
             </Link>
           </motion.div>
         </div>
 
-        {/* ── Recent Orders Table ── */}
+        {/* ════════════════════════════════════════ */}
+        {/* SECTION 3 — QUICK PERFORMANCE           */}
+        {/* ════════════════════════════════════════ */}
+        <div>
+          <h2 className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4">Quick Performance</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: 'Best Seller', value: bestSeller, icon: TrendingUp, color: 'from-gold to-amber-500', sub: sortedItems.length ? `${sortedItems[0][1]} orders` : '' },
+              { label: 'Peak Hour', value: peakHourStr, icon: Zap, color: 'from-amber-400 to-orange-500', sub: 'Busiest time today' },
+              { label: 'Avg Order Value', value: `₹${avgOrderValue}`, icon: IndianRupee, color: 'from-emerald-400 to-green-500', sub: 'Per order' },
+              { label: 'Completion Rate', value: orders.length ? `${Math.round(completedToday / orders.length * 100)}%` : '0%', icon: CheckCircle, color: 'from-blue-400 to-violet-500', sub: `${completedToday} of ${orders.length}` },
+            ].map((card, i) => (
+              <motion.div
+                key={card.label}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + i * 0.05 }}
+                className="rounded-[20px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-5"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${card.color} flex items-center justify-center shadow-md`}>
+                    <card.icon className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">{card.label}</p>
+                </div>
+                <p className="text-xl font-black text-white truncate">{card.value}</p>
+                <p className="text-[10px] text-zinc-500 font-semibold mt-0.5">{card.sub}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* ════════════════════════════════════════ */}
+        {/* SECTION 4 — RECENT ACTIVITY             */}
+        {/* ════════════════════════════════════════ */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.32 }}
+          transition={{ delay: 0.3 }}
           className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6"
         >
           <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
             <div>
-              <h2 className="text-sm font-black text-white uppercase tracking-wider">Recent Orders</h2>
-              <p className="text-[10px] text-zinc-600 font-bold mt-0.5">Latest 5 orders needing attention</p>
+              <h2 className="text-sm font-black text-white uppercase tracking-wider">Recent Activity</h2>
+              <p className="text-[10px] text-zinc-600 font-bold mt-0.5">Latest order updates</p>
             </div>
             <Link href="/admin/orders" className="flex items-center gap-1.5 px-4 py-2 text-[11px] font-black uppercase tracking-widest bg-gold/10 text-gold border border-gold/15 rounded-xl hover:bg-gold/18 transition-all">
               View All <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-white/[0.05]">
-                  {['Order', 'Customer', 'Items', 'Amount', 'Pickup', 'Status'].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-[10px] font-black text-zinc-600 uppercase tracking-widest">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { id: '#CRV-048', customer: 'Rahul K.', items: 3, amount: 480, time: '18:30', status: 'preparing' },
-                  { id: '#CRV-047', customer: 'Priya S.', items: 2, amount: 330, time: '18:15', status: 'ready' },
-                  { id: '#CRV-049', customer: 'Amit P.', items: 4, amount: 680, time: '18:45', status: 'received' },
-                  { id: '#CRV-046', customer: 'Divya R.', items: 1, amount: 180, time: '18:00', status: 'completed' },
-                  { id: '#CRV-045', customer: 'Vikram S.', items: 2, amount: 530, time: '17:30', status: 'preparing' },
-                ].map((order, i) => {
-                  const statusStyles: Record<string, string> = {
-                    received: 'bg-blue-500/10 text-blue-400 border-blue-500/15',
-                    preparing: 'bg-amber-500/10 text-amber-400 border-amber-500/15',
-                    ready: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/15',
-                    completed: 'bg-zinc-800/30 text-zinc-500 border-white/5',
-                  };
-                  return (
-                    <tr key={i} className="border-b border-white/[0.04] hover:bg-gold/[0.015] transition-colors group">
-                      <td className="px-4 py-3.5 font-black text-sm text-white">{order.id}</td>
-                      <td className="px-4 py-3.5 text-sm font-semibold text-zinc-300">{order.customer}</td>
-                      <td className="px-4 py-3.5 text-xs text-zinc-500 font-semibold">{order.items} items</td>
-                      <td className="px-4 py-3.5 font-black text-sm text-zinc-200">₹{order.amount}</td>
-                      <td className="px-4 py-3.5 text-xs text-zinc-500 font-bold flex items-center gap-1.5"><Clock className="w-3 h-3 text-gold/50" />{order.time}</td>
-                      <td className="px-4 py-3.5">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${statusStyles[order.status]}`}>
-                          <span className={`w-1 h-1 rounded-full ${
-                            order.status === 'received' ? 'bg-blue-400' : order.status === 'preparing' ? 'bg-amber-400' : order.status === 'ready' ? 'bg-emerald-400' : 'bg-zinc-600'
-                          }`} />
-                          {order.status}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="space-y-1">
+            {recentActivity.length === 0 && (
+              <p className="text-center py-8 text-zinc-600 font-semibold text-sm">No activity yet. Seed sample data to get started.</p>
+            )}
+            {recentActivity.map((a: any, i: number) => {
+              const statusColors: Record<string, string> = {
+                received: 'bg-blue-400',
+                preparing: 'bg-amber-400',
+                ready: 'bg-emerald-400',
+                completed: 'bg-zinc-600',
+              };
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.32 + i * 0.04 }}
+                  className="flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] transition-colors"
+                >
+                  <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${statusColors[a.status] || 'bg-zinc-600'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-zinc-300 font-semibold leading-tight truncate">{a.action}</p>
+                    <p className="text-[10px] text-zinc-600 font-bold mt-0.5">{a.customer} · {a.time}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </motion.div>
+
+        {/* ════════════════════════════════════════ */}
+        {/* SECTION 5 — ORDER CONTROL QUICK ACTIONS */}
+        {/* ════════════════════════════════════════ */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6"
+        >
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
+            <ShoppingBag className="w-5 h-5 text-gold/70" />
+            <h2 className="text-sm font-black text-white uppercase tracking-wider">Online Order Control</h2>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 flex items-center justify-between p-4 rounded-xl bg-black/30 border border-white/5">
+              <div>
+                <p className="text-sm font-bold text-white">Accepting Orders</p>
+                <p className="text-xs text-zinc-500 font-semibold mt-0.5">
+                  {settings.acceptingOrders ? 'Customers can place orders' : 'Online ordering is paused'}
+                </p>
+              </div>
+              <button
+                onClick={toggleAccepting}
+                className={`relative w-12 h-6 rounded-full transition-all duration-300 ${settings.acceptingOrders ? 'bg-emerald-500/30' : 'bg-zinc-800'}`}
+              >
+                <div className={`absolute top-0.5 w-5 h-5 rounded-full shadow-md transition-all duration-300 ${settings.acceptingOrders ? 'left-6.5 bg-emerald-400' : 'left-0.5 bg-zinc-500'}`} />
+              </button>
+            </div>
+            <div className="flex-1 flex items-center justify-between p-4 rounded-xl bg-black/30 border border-white/5">
+              <div>
+                <p className="text-sm font-bold text-white">Store Status</p>
+                <p className="text-xs text-zinc-500 font-semibold mt-0.5">
+                  {settings.storeOpen ? 'Store is open for business' : 'Store is closed'}
+                </p>
+              </div>
+              <button
+                onClick={toggleStore}
+                className={`relative w-12 h-6 rounded-full transition-all duration-300 ${settings.storeOpen ? 'bg-emerald-500/30' : 'bg-zinc-800'}`}
+              >
+                <div className={`absolute top-0.5 w-5 h-5 rounded-full shadow-md transition-all duration-300 ${settings.storeOpen ? 'left-6.5 bg-emerald-400' : 'left-0.5 bg-zinc-500'}`} />
+              </button>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Daily Summary */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.38 }}
+          className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6"
+        >
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
+            <IndianRupee className="w-5 h-5 text-gold/70" />
+            <h2 className="text-sm font-black text-white uppercase tracking-wider">Daily Summary</h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[
+              { label: "Today's Revenue", value: `₹${revenueToday}`, sub: `${ordersToday} orders` },
+              { label: 'Avg Order Value', value: `₹${avgOrderValue}`, sub: 'Per order' },
+              { label: 'Best Seller', value: bestSeller, sub: `${sortedItems.length ? sortedItems[0][1] : 0} orders` },
+              { label: 'Peak Hour', value: peakHourStr, sub: 'Busiest time' },
+            ].map((item, i) => (
+              <div key={i} className="p-3 rounded-xl bg-black/30 border border-white/5">
+                <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">{item.label}</p>
+                <p className="text-base font-black text-white truncate">{item.value}</p>
+                <p className="text-[10px] text-zinc-500 font-semibold mt-0.5">{item.sub}</p>
+              </div>
+            ))}
           </div>
         </motion.div>
       </div>
