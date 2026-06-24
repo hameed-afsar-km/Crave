@@ -2,13 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ClipboardList, UtensilsCrossed, LogOut, ExternalLink } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, UtensilsCrossed, BarChart3, Settings, LogOut, ExternalLink } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 const links = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/orders', label: 'Orders', icon: ClipboardList },
   { href: '/admin/menu', label: 'Menu', icon: UtensilsCrossed },
+  { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function AdminNav() {

@@ -156,6 +156,18 @@ export default function AuthPage() {
                   <Phone className="w-4.5 h-4.5" />
                   Continue with Phone
                 </motion.button>
+
+                <div className="pt-1">
+                  <button
+                    onClick={() => {
+                      signIn({ uid: `admin_${Date.now()}`, name: 'Admin', email: 'admin@crave.com', phone: '', role: 'admin' });
+                      router.push('/admin/dashboard');
+                    }}
+                    className="w-full text-[11px] font-bold uppercase tracking-widest text-zinc-700 hover:text-gold transition-colors text-center"
+                  >
+                    Admin Login
+                  </button>
+                </div>
               </div>
             )}
 
