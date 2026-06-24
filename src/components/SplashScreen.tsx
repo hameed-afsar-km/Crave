@@ -21,7 +21,7 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute w-96 h-96 rounded-full bg-gold/15 blur-[120px]"
+        className="absolute w-[28rem] h-[28rem] sm:w-96 sm:h-96 rounded-full bg-gold/15 blur-[120px]"
       />
 
       <motion.div
@@ -31,13 +31,13 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
         className="absolute w-56 h-56 rounded-full bg-gold/20 blur-[60px]"
       />
 
-      <div className="relative flex flex-col items-center gap-6">
+        <div className="relative flex flex-col items-center gap-8">
         {/* Gold line */}
         <motion.div
           initial={{ scaleX: 0, opacity: 0 }}
           animate={{ scaleX: 1, opacity: 1 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="h-px w-32 sm:w-40 bg-gradient-to-r from-transparent via-gold/60 to-transparent"
+          className="h-px w-48 sm:w-40 bg-gradient-to-r from-transparent via-gold/60 to-transparent"
         />
 
         {/* Logo text */}
@@ -50,7 +50,7 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
             animate={{ y: [0, -3, 0] }}
             transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <h1 className="font-steelfish text-5xl sm:text-7xl md:text-8xl text-gradient-gold-bright glow-text">
+            <h1 className="font-steelfish text-7xl sm:text-7xl md:text-8xl text-gradient-gold-bright glow-text">
               Crave
             </h1>
           </motion.div>
@@ -61,9 +61,8 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
           initial={{ scaleX: 0, opacity: 0 }}
           animate={{ scaleX: 1, opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="h-px w-32 sm:w-40 bg-gradient-to-r from-transparent via-gold/60 to-transparent"
+          className="h-px w-48 sm:w-40 bg-gradient-to-r from-transparent via-gold/60 to-transparent"
         />
-
 
       </div>
     </motion.div>
