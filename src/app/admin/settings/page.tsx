@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
   Settings, ArrowLeft, Store, Clock, Bell, Shield,
-  Save, ToggleLeft, ToggleRight, IndianRupee
+  Save, ToggleLeft, ToggleRight, IndianRupee, AlertTriangle, X
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -20,10 +20,23 @@ export default function AdminSettings() {
   const [notifyNewOrders, setNotifyNewOrders] = useState(true);
   const [notifyReady, setNotifyReady] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
+  };
+
+  const handleReset = () => {
+    setStoreName('Crave Express');
+    setOpeningTime('10:00');
+    setClosingTime('22:00');
+    setWaitTime('12');
+    setMaxOrders('50');
+    setNotifyNewOrders(true);
+    setNotifyReady(true);
+    setStoreOpen(true);
+    setShowResetConfirm(false);
   };
 
   if (!isAdmin) {
@@ -217,7 +230,10 @@ export default function AdminSettings() {
               <p className="text-sm font-bold text-zinc-200">Reset All Data</p>
               <p className="text-xs text-zinc-600 font-semibold mt-0.5">Permanently clear all orders and reset settings to defaults</p>
             </div>
-            <button className="px-5 py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all">
+            <button
+              onClick={() => setShowResetConfirm(true)}
+              className="px-5 py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all"
+            >
               Reset
             </button>
           </div>
@@ -240,6 +256,54 @@ export default function AdminSettings() {
           </motion.button>
         </div>
       </div>
+
+      {/* Reset confirmation modal */}
+      <AnimatePresence>
+        {showResetConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          >
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setShowResetConfirm(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="relative bg-[rgba(15,14,24,0.95)] backdrop-blur-2xl border border-white/[0.08] rounded-[28px] p-8 w-full max-w-md shadow-[0_0_60px_rgba(0,0,0,0.8)] z-10 text-center"
+            >
+              <div className="w-14 h-14 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto mb-5">
+                <AlertTriangle className="w-6 h-6 text-rose-400" />
+              </div>
+              <h2 className="text-xl font-black text-white mb-2">Reset All Data?</h2>
+              <p className="text-zinc-400 text-sm leading-relaxed mb-8">
+                This will reset all settings to their defaults. Orders and menu data will not be affected.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowResetConfirm(false)}
+                  className="flex-1 py-3.5 border border-white/10 hover:border-white/20 bg-white/3 hover:bg-white/6 text-zinc-300 font-bold uppercase tracking-widest text-[10px] rounded-full transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleReset}
+                  className="flex-1 py-3.5 bg-rose-500 hover:bg-rose-600 text-white font-bold uppercase tracking-widest text-[10px] rounded-full shadow-lg shadow-rose-500/20 transition-all"
+                >
+                  Reset Settings
+                </button>
+              </div>
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                className="absolute top-4 right-4 p-2 rounded-xl text-zinc-500 hover:text-white hover:bg-white/5 transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

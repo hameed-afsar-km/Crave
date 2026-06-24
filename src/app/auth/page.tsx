@@ -5,7 +5,11 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Globe, Phone, ArrowLeft, Flame, Lock } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { auth } from '@/lib/firebase';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import Link from 'next/link';
+
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@crave.com';
 
 export default function AuthPage() {
   const router = useRouter();
@@ -14,10 +18,38 @@ export default function AuthPage() {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
+  const [error, setError] = useState('');
 
-  const handleGoogleSignIn = () => {
-    signIn({ uid: `google_${Date.now()}`, name: 'Google User', email: 'user@gmail.com', phone: '', role: 'customer' });
-    router.push('/');
+  const handleGoogleSignIn = async () => {
+    try {
+      setError('');
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const firebaseUser = result.user;
+
+      if (!firebaseUser.email) {
+        setError('Google account must have an email address.');
+        return;
+      }
+
+      const isAdmin = firebaseUser.email === ADMIN_EMAIL;
+
+      signIn({
+        uid: firebaseUser.uid,
+        name: firebaseUser.displayName || 'Google User',
+        email: firebaseUser.email,
+        phone: firebaseUser.phoneNumber || '',
+        role: isAdmin ? 'admin' : 'customer',
+      });
+
+      router.push(isAdmin ? '/admin/dashboard' : '/');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Google sign-in failed. Please try again.');
+      }
+    }
   };
 
   const handleSendOtp = () => { if (phone.length >= 10) setStep('otp'); };
@@ -156,18 +188,6 @@ export default function AuthPage() {
                   <Phone className="w-4.5 h-4.5" />
                   Continue with Phone
                 </motion.button>
-
-                <div className="pt-1">
-                  <button
-                    onClick={() => {
-                      signIn({ uid: `admin_${Date.now()}`, name: 'Admin', email: 'admin@crave.com', phone: '', role: 'admin' });
-                      router.push('/admin/dashboard');
-                    }}
-                    className="w-full text-[11px] font-bold uppercase tracking-widest text-zinc-700 hover:text-gold transition-colors text-center"
-                  >
-                    Admin Login
-                  </button>
-                </div>
               </div>
             )}
 
@@ -237,6 +257,12 @@ export default function AuthPage() {
                     </button>
                   </>
                 )}
+              </div>
+            )}
+
+            {error && (
+              <div className="mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold text-center">
+                {error}
               </div>
             )}
 

@@ -7,11 +7,12 @@ import Image from 'next/image';
 import { ArrowLeft, Plus, Edit2, Trash2, Search, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { menuItems as initialItems } from '@/lib/data';
+import { getStoredMenuItems } from '@/lib/seed-data';
 import { MenuItem } from '@/types';
 
 export default function AdminMenu() {
   const { isAdmin } = useAuth();
-  const [items, setItems] = useState<MenuItem[]>(initialItems);
+  const [items, setItems] = useState<MenuItem[]>(() => getStoredMenuItems() ?? initialItems);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);

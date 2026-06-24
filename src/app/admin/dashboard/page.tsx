@@ -6,9 +6,10 @@ import Link from 'next/link';
 import {
   ShoppingBag, IndianRupee, Clock, CheckCircle,
   TrendingUp, TrendingDown, Package, Users, ArrowRight,
-  Zap, ChevronRight, MoreHorizontal
+  Zap, ChevronRight, MoreHorizontal, Database
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { seedSampleData, isSeeded } from '@/lib/seed-data';
 
 function AnimatedCounter({ value, prefix = '', suffix = '' }: { value: number; prefix?: string; suffix?: string }) {
   const [count, setCount] = useState(0);
@@ -202,6 +203,16 @@ const peakHours = [
 export default function AdminDashboard() {
   const { user, isAdmin } = useAuth();
   const [storeOpen, setStoreOpen] = useState(true);
+  const [seeded, setSeeded] = useState(false);
+
+  useEffect(() => {
+    setSeeded(isSeeded());
+  }, []);
+
+  const handleSeedData = () => {
+    seedSampleData();
+    setSeeded(true);
+  };
 
   if (!isAdmin) {
     return (
@@ -233,6 +244,19 @@ export default function AdminDashboard() {
               <p className="text-zinc-500 text-sm">Welcome back, {user?.name || 'Administrator'}</p>
             </div>
             <div className="flex items-center gap-3">
+              {/* Seed data */}
+              <button
+                onClick={handleSeedData}
+                disabled={seeded}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest border transition-all ${
+                  seeded
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 cursor-default'
+                    : 'bg-gold/10 text-gold border-gold/20 hover:bg-gold/18 hover:border-gold/30'
+                }`}
+              >
+                <Database className="w-3.5 h-3.5" />
+                {seeded ? 'Seeded ✓' : 'Seed Sample Data'}
+              </button>
               {/* Store toggle */}
               <button
                 onClick={() => setStoreOpen(!storeOpen)}

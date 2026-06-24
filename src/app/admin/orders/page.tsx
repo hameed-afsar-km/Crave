@@ -8,6 +8,7 @@ import {
   X, Printer, Download, Phone, MapPin, ChevronRight, ShoppingBag
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { getStoredOrders } from '@/lib/seed-data';
 
 /* ── Types ── */
 interface OrderItem {
@@ -49,7 +50,7 @@ const initialOrders: Order[] = [
 
 export default function AdminOrders() {
   const { isAdmin } = useAuth();
-  const [orders, setOrders] = useState(initialOrders);
+  const [orders, setOrders] = useState<Order[]>(() => getStoredOrders() ?? initialOrders);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -82,29 +83,69 @@ export default function AdminOrders() {
   const printOrder = (order: Order) => {
     const w = window.open('', '_blank');
     if (!w) return;
+    const itemTotal = order.items.reduce((s, it) => s + it.qty, 0);
     w.document.write(`
       <html><head><title>Receipt ${order.id}</title>
-      <style>body{font-family:monospace;padding:24px;color:#111;max-width:300px;margin:0 auto}
-      h1{font-size:18px;text-align:center;border-bottom:2px dashed #ccc;padding-bottom:12px}
-      table{width:100%;border-collapse:collapse;margin:16px 0}
-      th,td{text-align:left;padding:4px 0;font-size:13px}
-      .total{font-size:16px;font-weight:bold;border-top:2px solid #111;padding-top:8px;margin-top:8px}
-      .footer{text-align:center;margin-top:24px;color:#666;font-size:11px;border-top:1px solid #eee;padding-top:12px}
-      .badge{display:inline-block;padding:4px 12px;background:#eee;border-radius:4px;font-size:11px;margin:8px 0}
-      </style></head><body>
-      <h1>CRAVE EXPRESS</h1>
-      <p style="text-align:center;font-size:12px">LIC Metro, Chennai</p>
-      <p style="text-align:center;font-size:12px">${new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-      <div style="text-align:center"><span class="badge">${order.id}</span></div>
-      <p style="font-size:12px"><strong>Customer:</strong> ${order.customer}<br><strong>Phone:</strong> ${order.phone}<br><strong>Pickup:</strong> ${order.pickupTime}</p>
-      <table><tr><th style="font-size:11px">Item</th><th style="text-align:center;font-size:11px">Qty</th><th style="text-align:right;font-size:11px">Price</th></tr>
-      ${order.items.map(i => `<tr><td>${i.name}</td><td style="text-align:center">${i.qty}</td><td style="text-align:right">₹${(order.amount / order.items.reduce((s, it) => s + it.qty, 0) * i.qty).toFixed(0)}</td></tr>`).join('')}
-      </table>
-      <div class="total"><span>Total:</span><span style="float:right">₹${order.amount}</span></div>
-      <p style="font-size:12px"><strong>Status:</strong> ${order.status.toUpperCase()}</p>
-      ${order.notes ? `<p style="font-size:12px"><strong>Notes:</strong> ${order.notes}</p>` : ''}
-      <div class="footer">Thank you! Visit again.</div>
-      <script>window.print()</script>
+      <style>
+        @page { width: 80mm; margin: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+          font-family: 'Courier New', monospace; font-size: 11px;
+          color: #111; width: 80mm; padding: 8mm 4mm;
+          line-height: 1.5;
+        }
+        h1 { font-size: 18px; text-align: center; letter-spacing: 2px; margin-bottom: 2px; }
+        .sub { text-align: center; font-size: 9px; color: #666; margin-bottom: 4px; }
+        .divider { border: none; border-top: 1px dashed #999; margin: 8px 0; }
+        .divider-solid { border: none; border-top: 1px solid #333; margin: 8px 0; }
+        .badge { display: block; text-align: center; font-size: 14px; font-weight: bold; letter-spacing: 1px; margin: 4px 0; }
+        .info { font-size: 10px; margin: 4px 0; }
+        .info strong { display: inline-block; width: 55px; }
+        table { width: 100%; border-collapse: collapse; margin: 6px 0; }
+        th { text-align: left; font-size: 9px; text-transform: uppercase; color: #666; padding: 3px 0; border-bottom: 1px solid #ddd; }
+        td { padding: 3px 0; font-size: 11px; }
+        td:last-child, th:last-child { text-align: right; }
+        td:nth-child(2), th:nth-child(2) { text-align: center; }
+        .total-row td { font-weight: bold; font-size: 13px; padding-top: 6px; border-top: 2px solid #333; }
+        .notes { font-size: 10px; color: #555; margin: 4px 0; padding: 4px 0; border-top: 1px dashed #ddd; }
+        .footer { text-align: center; margin-top: 12px; font-size: 10px; color: #888; border-top: 1px dashed #ccc; padding-top: 8px; }
+        .footer b { color: #333; }
+        .cut-line { text-align: center; font-size: 14px; color: #ccc; letter-spacing: 4px; margin: 8px 0; }
+        @media print {
+          body { width: auto; padding: 0; }
+          .no-print { display: none; }
+        }
+      </style></head>
+      <body>
+        <h1>CRAVE</h1>
+        <p class="sub">LIC Metro, Chennai</p>
+        <p class="sub">${new Date().toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })} ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>
+        <hr class="divider" />
+        <span class="badge">${order.id}</span>
+        <hr class="divider" />
+        <p class="info"><strong>Customer</strong> ${order.customer}</p>
+        <p class="info"><strong>Phone</strong> ${order.phone}</p>
+        <p class="info"><strong>Pickup</strong> ${order.pickupTime}</p>
+        <hr class="divider" />
+        <table>
+          <tr><th>Item</th><th>Qty</th><th>Amount</th></tr>
+          ${order.items.map(i => {
+            const price = Math.round(order.amount / itemTotal * i.qty);
+            return `<tr><td>${i.name}</td><td>${i.qty}</td><td>₹${price}</td></tr>`;
+          }).join('')}
+          <tr class="total-row"><td colspan="2">TOTAL</td><td>₹${order.amount}</td></tr>
+        </table>
+        <hr class="divider-solid" />
+        <p class="info"><strong>Status</strong> ${order.status.toUpperCase()}</p>
+        ${order.notes ? `<p class="notes">📝 ${order.notes}</p>` : ''}
+        <p class="cut-line">- - - - - - - -</p>
+        <div class="footer">
+          Thank you!<br />
+          <b>Visit again</b>
+        </div>
+        <script>
+          window.onload = function() { window.print(); window.close(); }
+        <\/script>
       </body></html>
     `);
     w.document.close();

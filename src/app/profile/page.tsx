@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { User, Phone, Mail, Package, LogOut, ArrowLeft, Star, ShoppingBag } from 'lucide-react';
@@ -16,8 +17,13 @@ export default function ProfilePage() {
   const { user, signOut, loading } = useAuth();
   const router = useRouter();
 
-  if (loading) return null;
-  if (!user) { router.push('/auth'); return null; }
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/auth');
+    }
+  }, [loading, user, router]);
+
+  if (loading || !user) return null;
 
   const totalSpent = pastOrders.reduce((sum, o) => sum + o.total, 0);
   const totalOrders = pastOrders.length;
