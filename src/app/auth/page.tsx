@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Globe, Phone, ArrowLeft, Flame, Lock } from 'lucide-react';
+import { Globe, ArrowLeft, Flame, Lock } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { auth } from '@/lib/firebase';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
@@ -14,10 +14,6 @@ const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@crave.com';
 export default function AuthPage() {
   const router = useRouter();
   const { signIn } = useAuth();
-  const [mode, setMode] = useState<'select' | 'phone'>('select');
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [error, setError] = useState('');
 
   const handleGoogleSignIn = async () => {
@@ -49,15 +45,6 @@ export default function AuthPage() {
       } else {
         setError('Google sign-in failed. Please try again.');
       }
-    }
-  };
-
-  const handleSendOtp = () => { if (phone.length >= 10) setStep('otp'); };
-
-  const handleVerifyOtp = () => {
-    if (otp.length >= 4) {
-      signIn({ uid: `phone_${Date.now()}`, name: 'Customer', email: '', phone, role: 'customer' });
-      router.push('/');
     }
   };
 
@@ -160,105 +147,15 @@ export default function AuthPage() {
               <p className="text-zinc-500 text-sm">Sign in to start ordering your favorites</p>
             </div>
 
-            {/* Mode: select */}
-            {mode === 'select' && (
-              <div className="space-y-3">
-                <motion.button
-                  whileHover={{ scale: 1.015 }}
-                  whileTap={{ scale: 0.985 }}
-                  onClick={handleGoogleSignIn}
-                  className="w-full flex items-center justify-center gap-3 py-3.5 border border-white/8 bg-white/3 hover:bg-gold/5 hover:border-gold/25 rounded-2xl font-bold text-sm text-zinc-200 transition-all duration-300"
-                >
-                  <Globe className="w-4.5 h-4.5 text-gold" />
-                  Continue with Google
-                </motion.button>
-
-                <div className="flex items-center gap-3 py-1">
-                  <div className="flex-1 h-px bg-white/5" />
-                  <span className="text-[11px] uppercase tracking-widest text-zinc-700 font-black">or</span>
-                  <div className="flex-1 h-px bg-white/5" />
-                </div>
-
-                <motion.button
-                  whileHover={{ scale: 1.015 }}
-                  whileTap={{ scale: 0.985 }}
-                  onClick={() => setMode('phone')}
-                  className="w-full flex items-center justify-center gap-3 py-3.5 bg-gradient-to-r from-gold via-amber-500 to-amber-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-gold/12 hover:shadow-gold/28 transition-all duration-300"
-                >
-                  <Phone className="w-4.5 h-4.5" />
-                  Continue with Phone
-                </motion.button>
-              </div>
-            )}
-
-            {/* Mode: phone */}
-            {mode === 'phone' && (
-              <div className="space-y-4">
-                <button
-                  onClick={() => { setMode('select'); setStep('phone'); setOtp(''); }}
-                  className="text-[11px] font-black uppercase tracking-widest text-zinc-600 hover:text-gold transition-colors"
-                >
-                  ← Other options
-                </button>
-
-                {step === 'phone' ? (
-                  <>
-                    <div>
-                      <label className="block text-[11px] font-black text-zinc-500 uppercase tracking-widest mb-2">
-                        Phone Number
-                      </label>
-                      <div className="flex rounded-xl overflow-hidden border border-white/8 focus-within:border-gold/45 focus-within:shadow-[0_0_0_3px_rgba(212,175,55,0.07)] transition-all bg-[rgba(6,6,10,0.6)]">
-                        <span className="flex items-center px-4 bg-white/3 border-r border-white/5 text-zinc-500 text-sm font-black shrink-0">+91</span>
-                        <input
-                          type="tel"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                          placeholder="98765 43210"
-                          className="flex-1 px-4 py-3.5 bg-transparent text-white placeholder-zinc-600 focus:outline-none text-sm font-semibold"
-                        />
-                      </div>
-                    </div>
-                    <motion.button
-                      whileHover={{ scale: 1.015 }}
-                      whileTap={{ scale: 0.985 }}
-                      onClick={handleSendOtp}
-                      disabled={phone.length < 10}
-                      className="w-full py-4 bg-gradient-to-r from-gold to-amber-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-gold/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      Send OTP
-                    </motion.button>
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <label className="block text-[11px] font-black text-zinc-500 uppercase tracking-widest mb-2">
-                        Enter OTP
-                      </label>
-                      <input
-                        type="text"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                        placeholder="• • • • • •"
-                        className="w-full px-4 py-4 input-dark rounded-2xl text-center text-3xl tracking-[0.4em] font-black"
-                        maxLength={6}
-                      />
-                    </div>
-                    <motion.button
-                      whileHover={{ scale: 1.015 }}
-                      whileTap={{ scale: 0.985 }}
-                      onClick={handleVerifyOtp}
-                      disabled={otp.length < 4}
-                      className="w-full py-4 bg-gradient-to-r from-gold to-amber-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-gold/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      Verify & Sign In
-                    </motion.button>
-                    <button onClick={() => setStep('phone')} className="w-full text-xs text-zinc-600 hover:text-gold font-bold transition-colors text-center">
-                      Change phone number
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
+            <motion.button
+              whileHover={{ scale: 1.015 }}
+              whileTap={{ scale: 0.985 }}
+              onClick={handleGoogleSignIn}
+              className="w-full flex items-center justify-center gap-3 py-3.5 border border-white/8 bg-white/3 hover:bg-gold/5 hover:border-gold/25 rounded-2xl font-bold text-sm text-zinc-200 transition-all duration-300"
+            >
+              <Globe className="w-4.5 h-4.5 text-gold" />
+              Continue with Google
+            </motion.button>
 
             {error && (
               <div className="mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold text-center">
