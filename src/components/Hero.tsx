@@ -14,22 +14,18 @@ const PARTICLES = Array.from({ length: 12 }, (_, i) => ({
 
 export default function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#06060A]">
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-[#06060A]">
 
-      {/* Background */}
+      {/* Background - right side */}
       <div
-        className="absolute inset-0 bg-cover bg-center"
+        className="absolute right-0 top-0 w-full md:w-[55%] h-full bg-cover bg-left opacity-40"
         aria-hidden
-      >
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-20"
-          style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=2000&q=80)' }}
-        />
-      </div>
+        style={{ backgroundImage: "url('/images/Crave Store 1.png')" }}
+      />
 
       {/* Dark overlay layers */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/50 to-[#06060A]" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/85 to-transparent" />
 
       {/* Large ambient glow center */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[600px] h-[600px] pointer-events-none">
@@ -60,22 +56,17 @@ export default function Hero() {
 
       {/* Content */}
       <motion.div
-        className="relative z-10 text-center px-5 max-w-5xl mx-auto pt-20"
+        className="relative z-10 text-left px-5 sm:px-10 md:px-14 max-w-2xl pt-20 ml-0 md:ml-8 lg:ml-16"
       >
-        {/* Badge */}
+        {/* Top bar */}
         <motion.div
-          initial={{ opacity: 0, y: 22 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.15 }}
-          className="mb-7 flex justify-center"
+          initial={{ opacity: 0, width: 0 }}
+          animate={{ opacity: 1, width: '100%' }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="mb-8 flex items-center gap-3 justify-start"
         >
-          <span className="inline-flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-gold/8 to-amber-500/8 backdrop-blur-md rounded-full text-gold text-[11px] font-bold uppercase tracking-widest border border-gold/22 shadow-[0_0_20px_rgba(212,175,55,0.08)]">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-50" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-gold" />
-            </span>
-            Skip The Queue — Order Online
-          </span>
+          <div className="h-px w-8 bg-gold/40" />
+          <span className="text-[10px] font-bold text-gold uppercase tracking-[0.3em]">Skip The Queue — Order Online</span>
         </motion.div>
 
         {/* Main headline */}
@@ -97,7 +88,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.5 }}
-          className="mt-6 text-base md:text-lg text-zinc-400 max-w-xl mx-auto leading-relaxed"
+          className="mt-6 text-base md:text-lg text-zinc-400 max-w-lg leading-relaxed"
         >
           Order your favorites in advance, choose a pickup time, and collect fresh food without waiting in line — near LIC Metro, Chennai.
         </motion.p>
@@ -107,7 +98,7 @@ export default function Hero() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.65 }}
-          className="mt-6 flex items-center justify-center gap-6 text-zinc-500 text-xs font-semibold"
+          className="mt-6 flex items-center justify-start gap-6 text-zinc-500 text-xs font-semibold"
         >
           <span className="flex items-center gap-1.5">
             <Star className="w-3.5 h-3.5 text-gold fill-gold" />
@@ -127,7 +118,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 22 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.75 }}
-          className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
+          className="mt-10 flex flex-col sm:flex-row items-start justify-start gap-4"
         >
           <Link
             href="/menu"
