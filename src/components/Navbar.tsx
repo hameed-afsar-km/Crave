@@ -16,10 +16,10 @@ const navLinks = [
   { href: '/menu', label: 'Menu' },
 ];
 
-const statusConfig = {
-  Open: { label: 'OPEN', dot: 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.4)]', text: 'text-emerald-400' },
-  Paused: { label: 'PAUSED', dot: 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.4)]', text: 'text-amber-400' },
-  Closed: { label: 'CLOSED', dot: 'bg-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.4)]', text: 'text-rose-400' },
+const statusDot = {
+  Open: 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]',
+  Paused: 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]',
+  Closed: 'bg-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.5)]',
 } as const;
 
 export default function Navbar() {
@@ -58,8 +58,6 @@ export default function Navbar() {
 
   const closeMobile = () => setMobileOpen(false);
 
-  const status = statusConfig[storeLabel as keyof typeof statusConfig];
-
   return (
     <>
       <motion.nav
@@ -73,42 +71,37 @@ export default function Navbar() {
             : 'py-3 md:py-3.5 bg-[#08080B]/70 backdrop-blur-2xl border-b border-white/5'
         )}
       >
+        {/* Top edge glow */}
+        <div className={cn(
+          'absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/25 to-transparent transition-opacity duration-700',
+          isTransparent ? 'opacity-20' : 'opacity-100'
+        )} />
+
         <div className="max-w-7xl mx-auto px-5 sm:px-8 relative">
           <div className="flex items-center justify-between h-[48px] md:h-[56px]">
 
             {/* Left: Nav Links (desktop) */}
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-1">
               {navLinks.map((link, i) => {
                 const active = pathname === link.href;
                 return (
                   <motion.div
                     key={link.href}
-                    initial={{ opacity: 0, x: -6 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 + i * 0.06, duration: 0.35 }}
-                    className="relative"
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 + i * 0.08, duration: 0.4 }}
                   >
                     <Link
                       href={link.href}
                       className={cn(
-                        'relative px-3 py-2 text-sm font-semibold tracking-wider transition-all duration-300',
+                        'relative px-3.5 py-1.5 text-sm font-semibold tracking-wide rounded-xl transition-all duration-300',
                         isTransparent
-                          ? 'text-white/50 hover:text-white'
-                          : 'text-zinc-500 hover:text-gold'
+                          ? active ? 'text-white bg-white/8' : 'text-white/55 hover:text-white/90 hover:bg-white/5'
+                          : active ? 'text-gold bg-gold/8' : 'text-zinc-400 hover:text-gold hover:bg-gold/5'
                       )}
                     >
                       {link.label}
                     </Link>
-                    {active && (
-                      <motion.div
-                        layoutId="navDot"
-                        className={cn(
-                          'absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full',
-                          isTransparent ? 'bg-white' : 'bg-gold'
-                        )}
-                        transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-                      />
-                    )}
                   </motion.div>
                 );
               })}
@@ -128,31 +121,24 @@ export default function Navbar() {
             </Link>
 
             {/* Right: Status + Icons */}
-            <div className="flex items-center gap-2.5">
-              {/* Store status chip */}
-              <div className={cn(
-                'hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all duration-300',
-                isTransparent
-                  ? 'border-white/8 bg-white/[0.03]'
-                  : 'border-white/5 bg-white/[0.02]'
-              )}>
-                <span className={cn('w-1.5 h-1.5 rounded-full', status.dot)} />
-                <span className={cn('text-[10px] font-bold tracking-[0.12em]', status.text)}>
-                  {status.label}
-                </span>
-              </div>
+            <div className="flex items-center gap-3">
+              {/* Store status — pulsing dot */}
+              <div
+                className={cn('w-2 h-2 rounded-full', statusDot[storeLabel as keyof typeof statusDot])}
+                title={`Store ${storeLabel}`}
+              />
 
-              {/* Icon group */}
-              <div className="flex items-center gap-0.5">
+              {/* Icon group (desktop) */}
+              <div className="hidden md:flex items-center gap-0.5">
                 {isAdmin && (
-                  <NavIconBtn href="/admin/dashboard" title="Dashboard" isTransparent={isTransparent}>
-                    <LayoutDashboard className="w-[16px] h-[16px]" />
+                  <NavIconBtn href="/admin/dashboard" title="Admin Dashboard" isTransparent={isTransparent}>
+                    <LayoutDashboard className="w-[17px] h-[17px]" />
                   </NavIconBtn>
                 )}
 
                 {user && (
                   <NavIconBtn href="/orders" title="My Orders" isTransparent={isTransparent}>
-                    <Package className="w-[16px] h-[16px]" />
+                    <Package className="w-[17px] h-[17px]" />
                   </NavIconBtn>
                 )}
 
@@ -161,30 +147,32 @@ export default function Navbar() {
                 {user ? (
                   <>
                     <NavIconBtn href="/profile" title="Profile" isTransparent={isTransparent}>
-                      <User className="w-[16px] h-[16px]" />
+                      <User className="w-[17px] h-[17px]" />
                     </NavIconBtn>
 
-                    <div className="w-px h-3.5 bg-white/6 mx-1" />
+                    <div className="w-px h-4 bg-white/8 mx-1.5" />
 
                     <button
                       onClick={signOut}
                       title="Sign Out"
                       className={cn(
-                        'p-1.5 rounded-lg transition-all duration-300',
+                        'p-1.5 rounded-xl transition-all duration-300',
                         isTransparent
-                          ? 'text-white/30 hover:text-rose-400 hover:bg-rose-500/10'
-                          : 'text-zinc-600 hover:text-rose-400 hover:bg-rose-500/10'
+                          ? 'text-white/40 hover:text-rose-400 hover:bg-rose-500/10'
+                          : 'text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10'
                       )}
                     >
-                      <LogOut className="w-[16px] h-[16px]" />
+                      <LogOut className="w-[17px] h-[17px]" />
                     </button>
                   </>
                 ) : (
                   <Link
                     href="/auth"
                     className={cn(
-                      'flex items-center gap-1.5 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-widest rounded-lg transition-all duration-300 bg-gradient-to-r from-gold to-amber-500 text-white',
-                      isTransparent ? 'shadow-lg shadow-gold/15' : 'shadow-md shadow-gold/10'
+                      'flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all duration-300 bg-gradient-to-r from-gold to-amber-500 text-white shadow-lg',
+                      isTransparent
+                        ? 'shadow-gold/20 hover:shadow-gold/30 hover:brightness-110'
+                        : 'shadow-gold/10 hover:shadow-gold/25 hover:brightness-110'
                     )}
                   >
                     <Flame className="w-3 h-3" />
@@ -193,17 +181,21 @@ export default function Navbar() {
                 )}
               </div>
 
-              {/* Mobile hamburger */}
-              <div className="flex md:hidden items-center">
+              {/* Mobile: Cart + Hamburger */}
+              <div className="flex md:hidden items-center gap-1.5">
+                <Link href="/cart" className="relative p-1.5">
+                  <ShoppingCart className={cn('w-[19px] h-[19px]', isTransparent ? 'text-white/70' : 'text-zinc-300')} />
+                  {itemCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 text-[11px] font-black text-gold">{itemCount}</span>
+                  )}
+                </Link>
+
                 <button
                   onClick={() => setMobileOpen(!mobileOpen)}
-                  className={cn(
-                    'p-1.5 rounded-lg transition-all',
-                    isTransparent ? 'text-white/60 hover:bg-white/8' : 'text-zinc-500 hover:bg-white/5'
-                  )}
+                  className={cn('p-1.5 rounded-xl transition-all', isTransparent ? 'text-white/70 hover:bg-white/8' : 'text-zinc-400 hover:bg-white/5')}
                 >
                   <motion.div animate={{ rotate: mobileOpen ? 90 : 0 }} transition={{ duration: 0.25 }}>
-                    {mobileOpen ? <X className="w-[18px] h-[18px]" /> : <Menu className="w-[18px] h-[18px]" />}
+                    {mobileOpen ? <X className="w-[19px] h-[19px]" /> : <Menu className="w-[19px] h-[19px]" />}
                   </motion.div>
                 </button>
               </div>
@@ -213,48 +205,53 @@ export default function Navbar() {
 
         {/* Scroll progress */}
         <motion.div
-          className="absolute bottom-0 left-1/3 right-1/3 h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent origin-left"
+          className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/35 to-transparent origin-left"
           style={{ scaleX }}
         />
       </motion.nav>
 
-      {/* Mobile Drawer: Full-screen overlay */}
+      {/* Mobile Drawer */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.2 }}
             className="fixed inset-0 z-40 md:hidden"
           >
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={closeMobile} />
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeMobile} />
 
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="absolute top-0 left-0 right-0 bg-[#0C0C14]/98 border-b border-white/8 rounded-b-2xl shadow-2xl"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 32, stiffness: 300 }}
+              className="absolute bottom-0 left-0 right-0 max-h-[90vh] bg-[#0C0C14]/98 border-t border-white/8 rounded-t-3xl shadow-2xl flex flex-col overflow-hidden"
             >
+              {/* Handle */}
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 rounded-full bg-white/10" />
+              </div>
+
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
                 <Image src="/logo.webp" alt="Crave" width={100} height={28} className="h-5 w-auto" />
-                <button onClick={closeMobile} className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-white/5">
+                <button onClick={closeMobile} className="p-1.5 rounded-xl text-zinc-500 hover:text-white hover:bg-white/5 border border-white/5">
                   <X className="w-[18px] h-[18px]" />
                 </button>
               </div>
 
               {/* Links */}
-              <div className="px-4 pb-4 space-y-0.5">
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
                 {navLinks.map((link, i) => {
                   const active = pathname === link.href;
                   return (
                     <motion.div
                       key={link.href}
-                      initial={{ opacity: 0, x: -12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 + 0.05 }}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 + 0.1 }}
                     >
                       <Link
                         href={link.href}
@@ -262,29 +259,29 @@ export default function Navbar() {
                         className={cn(
                           'flex items-center justify-between px-4 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200',
                           active
-                            ? 'text-gold bg-gold/8'
-                            : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                            ? 'bg-gold/10 text-gold border border-gold/15'
+                            : 'text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent'
                         )}
                       >
                         {link.label}
-                        {active && <span className="w-1 h-1 rounded-full bg-gold" />}
+                        {active && <span className="w-1.5 h-1.5 rounded-full bg-gold" />}
                       </Link>
                     </motion.div>
                   );
                 })}
 
-                <div className="h-px bg-white/5 my-2" />
+                <div className="h-px bg-white/5 my-3" />
 
                 {/* Cart */}
                 <motion.div
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.12 }}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.18 }}
                 >
                   <Link
                     href="/cart"
                     onClick={closeMobile}
-                    className="flex items-center justify-between px-4 py-3.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 font-semibold text-sm transition-all"
+                    className="flex items-center justify-between px-4 py-3.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent font-semibold text-sm transition-all"
                   >
                     <span className="flex items-center gap-3">
                       <ShoppingCart className="w-[18px] h-[18px] text-gold" />
@@ -298,19 +295,18 @@ export default function Navbar() {
                   </Link>
                 </motion.div>
 
-                {/* User links */}
                 {user && (
                   <motion.div
-                    initial={{ opacity: 0, x: -12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.16 }}
-                    className="space-y-0.5"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.22 }}
+                    className="space-y-1"
                   >
                     {isAdmin && (
                       <Link
                         href="/admin/dashboard"
                         onClick={closeMobile}
-                        className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 font-semibold text-sm transition-all"
+                        className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent font-semibold text-sm transition-all"
                       >
                         <LayoutDashboard className="w-[18px] h-[18px] text-gold" />
                         Admin Panel
@@ -319,7 +315,7 @@ export default function Navbar() {
                     <Link
                       href="/orders"
                       onClick={closeMobile}
-                      className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 font-semibold text-sm transition-all"
+                      className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent font-semibold text-sm transition-all"
                     >
                       <Package className="w-[18px] h-[18px] text-gold" />
                       My Orders
@@ -327,40 +323,35 @@ export default function Navbar() {
                     <Link
                       href="/profile"
                       onClick={closeMobile}
-                      className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 font-semibold text-sm transition-all"
+                      className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent font-semibold text-sm transition-all"
                     >
                       <User className="w-[18px] h-[18px] text-gold" />
                       Profile
                     </Link>
                   </motion.div>
                 )}
+              </div>
 
-                {/* Bottom CTA */}
-                <motion.div
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="pt-3"
-                >
-                  {user ? (
-                    <button
-                      onClick={() => { signOut(); closeMobile(); }}
-                      className="flex items-center justify-center gap-2 w-full py-3 bg-rose-500/8 border border-rose-500/15 text-rose-400 hover:bg-rose-500/15 rounded-xl transition-all font-semibold text-sm"
-                    >
-                      <LogOut className="w-[18px] h-[18px]" />
-                      Sign Out
-                    </button>
-                  ) : (
-                    <Link
-                      href="/auth"
-                      onClick={closeMobile}
-                      className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-gold to-amber-600 text-white font-bold rounded-xl shadow-lg shadow-gold/10 transition-all"
-                    >
-                      <Flame className="w-[18px] h-[18px]" />
-                      Sign In to Order
-                    </Link>
-                  )}
-                </motion.div>
+              {/* Footer */}
+              <div className="px-4 py-4 border-t border-white/5">
+                {user ? (
+                  <button
+                    onClick={() => { signOut(); closeMobile(); }}
+                    className="flex items-center justify-center gap-2 w-full py-3 bg-rose-500/8 border border-rose-500/15 text-rose-400 hover:bg-rose-500/15 rounded-xl transition-all font-semibold text-sm"
+                  >
+                    <LogOut className="w-[18px] h-[18px]" />
+                    Sign Out
+                  </button>
+                ) : (
+                  <Link
+                    href="/auth"
+                    onClick={closeMobile}
+                    className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-gold to-amber-600 text-white font-bold rounded-xl shadow-lg shadow-gold/10 transition-all"
+                  >
+                    <Flame className="w-[18px] h-[18px]" />
+                    Sign In to Order
+                  </Link>
+                )}
               </div>
             </motion.div>
           </motion.div>
@@ -387,10 +378,10 @@ function NavIconBtn({
       href={href}
       title={title}
       className={cn(
-        'relative p-1.5 rounded-lg transition-all duration-300',
+        'relative p-1.5 rounded-xl transition-all duration-300',
         isTransparent
-          ? 'text-white/40 hover:text-white hover:bg-white/10'
-          : 'text-zinc-600 hover:text-gold hover:bg-gold/10'
+          ? 'text-white/50 hover:text-white hover:bg-white/10'
+          : 'text-zinc-500 hover:text-gold hover:bg-gold/10'
       )}
     >
       {children}
@@ -413,13 +404,13 @@ function CartIconBtn({
       href={href}
       title="Cart"
       className={cn(
-        'relative p-1.5 rounded-lg transition-all duration-300',
+        'relative p-1.5 rounded-xl transition-all duration-300',
         isTransparent
-          ? 'text-white/40 hover:text-white hover:bg-white/10'
-          : 'text-zinc-600 hover:text-gold hover:bg-gold/10'
+          ? 'text-white/50 hover:text-white hover:bg-white/10'
+          : 'text-zinc-500 hover:text-gold hover:bg-gold/10'
       )}
     >
-      <ShoppingCart className="w-[16px] h-[16px]" />
+      <ShoppingCart className="w-[17px] h-[17px]" />
       {badge > 0 && (
         <motion.span
           initial={{ scale: 0 }}
