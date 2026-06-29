@@ -73,12 +73,15 @@ function RevenueChart({ orders }: { orders: any[] }) {
   });
 
   const maxVal = Math.max(...Object.values(hourly), 1);
-  const bars = Object.entries(hourly).map(([hour, val]) => ({
-    hour: parseInt(hour),
-    val,
-    pct: val / maxVal,
-    label: hour === 0 ? '12AM' : hour < 12 ? `${hour}AM` : hour === 12 ? '12PM' : `${hour - 12}PM`,
-  }));
+  const bars = Object.entries(hourly).map(([h, val]) => {
+    const hour = parseInt(h, 10);
+    return {
+      hour,
+      val,
+      pct: val / maxVal,
+      label: hour === 0 ? '12AM' : hour < 12 ? `${hour}AM` : hour === 12 ? '12PM' : `${hour - 12}PM`,
+    };
+  });
 
   const W = 700, H = 180, barW = Math.floor((W - 40) / bars.length);
 
