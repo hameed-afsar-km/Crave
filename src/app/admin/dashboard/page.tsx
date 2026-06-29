@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   IndianRupee, Clock, CheckCircle, CookingPot,
   TrendingUp, Zap, ArrowRight, Package, Users,
-  Database, AlertTriangle, Store, Power
+  Database, AlertTriangle, Store, Power, Ban, X
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { seedSampleData, isSeeded, getStoredOrders, saveOrders } from '@/lib/seed-data';
@@ -55,6 +55,8 @@ export default function AdminDashboard() {
   const [seeded, setSeeded] = useState(false);
   const [orders, setOrders] = useState<any[]>([]);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [confirmPause, setConfirmPause] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
 
   useEffect(() => {
     setSeeded(isSeeded());
@@ -63,13 +65,25 @@ export default function AdminDashboard() {
   }, []);
 
   const toggleStore = () => {
-    const next = { ...settings, storeOpen: !settings.storeOpen };
+    if (settings.storeOpen) { setConfirmClose(true); return; }
+    const next = { ...settings, storeOpen: true };
     setSettings(next); saveSettings(next);
   };
 
+  const handleCloseConfirm = () => {
+    const next = { ...settings, storeOpen: false };
+    setSettings(next); saveSettings(next); setConfirmClose(false);
+  };
+
   const toggleAccepting = () => {
-    const next = { ...settings, acceptingOrders: !settings.acceptingOrders };
+    if (settings.acceptingOrders) { setConfirmPause(true); return; }
+    const next = { ...settings, acceptingOrders: true };
     setSettings(next); saveSettings(next);
+  };
+
+  const handlePauseConfirm = () => {
+    const next = { ...settings, acceptingOrders: false };
+    setSettings(next); saveSettings(next); setConfirmPause(false);
   };
 
   const handleSeedData = () => {
@@ -361,6 +375,54 @@ export default function AdminDashboard() {
         </div>
 
       </div>
+
+      {confirmClose && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setConfirmClose(false)} />
+          <div className="relative bg-[#12121A] border border-zinc-800/60 rounded-2xl w-full max-w-sm p-6 shadow-xl z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                  <Store className="w-4 h-4 text-red-400" />
+                </div>
+                <h3 className="text-sm font-bold text-white">Close Shop?</h3>
+              </div>
+              <button onClick={() => setConfirmClose(false)} className="p-1 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all"><X className="w-3.5 h-3.5" /></button>
+            </div>
+            <p className="text-sm text-zinc-400 leading-relaxed mb-6">
+              The storefront will be hidden and customers will not be able to place orders. Active orders will continue as normal.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={handleCloseConfirm} className="flex-1 px-4 py-2 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-500 transition-all">Close Shop</button>
+              <button onClick={() => setConfirmClose(false)} className="flex-1 px-4 py-2 border border-zinc-700 text-zinc-300 text-xs font-semibold rounded-lg hover:bg-zinc-800 transition-all">Keep Open</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmPause && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setConfirmPause(false)} />
+          <div className="relative bg-[#12121A] border border-zinc-800/60 rounded-2xl w-full max-w-sm p-6 shadow-xl z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                  <Ban className="w-4 h-4 text-amber-400" />
+                </div>
+                <h3 className="text-sm font-bold text-white">Pause Orders?</h3>
+              </div>
+              <button onClick={() => setConfirmPause(false)} className="p-1 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all"><X className="w-3.5 h-3.5" /></button>
+            </div>
+            <p className="text-sm text-zinc-400 leading-relaxed mb-6">
+              New orders will not be accepted while paused. Existing orders in the pipeline will continue as normal.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={handlePauseConfirm} className="flex-1 px-4 py-2 bg-amber-600 text-white text-xs font-semibold rounded-lg hover:bg-amber-500 transition-all">Pause Orders</button>
+              <button onClick={() => setConfirmPause(false)} className="flex-1 px-4 py-2 border border-zinc-700 text-zinc-300 text-xs font-semibold rounded-lg hover:bg-zinc-800 transition-all">Keep Accepting</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
