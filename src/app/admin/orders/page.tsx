@@ -15,7 +15,7 @@ interface OrderItem { name: string; qty: number; }
 interface Order {
   id: string; customer: string; phone: string; items: OrderItem[];
   amount: number; pickupTime: string;   status: 'received' | 'preparing' | 'ready' | 'completed' | 'cancelled';
-  notes?: string; createdAt: string;
+  notes?: string; cancelReason?: string; createdAt: string;
 }
 
 const statusConfig: Record<string, { label: string; pill: string; dot: string }> = {
@@ -48,21 +48,31 @@ export default function AdminOrders() {
   const [copied, setCopied] = useState('');
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const [copiedId, setCopiedId] = useState('');
+  const [confirmAction, setConfirmAction] = useState<'cancel' | 'delete' | null>(null);
+  const [confirmOrderId, setConfirmOrderId] = useState('');
+  const [cancelReason, setCancelReason] = useState('');
+
+  const presetReasons = ['Out of stock', 'Customer request', 'Duplicate order', 'Other'];
 
   const updateStatus = (orderId: string, newStatus: Order['status']) => {
     setOrders(prev => { const updated = prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o); saveOrders(updated); return updated; });
     if (selectedOrder?.id === orderId) setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
   };
 
-  const cancelOrder = (orderId: string) => {
-    setOrders(prev => { const updated = prev.map(o => o.id === orderId ? { ...o, status: 'cancelled' as Order['status'] } : o); saveOrders(updated); return updated; });
-    if (selectedOrder?.id === orderId) setSelectedOrder(prev => prev ? { ...prev, status: 'cancelled' } : null);
+  const cancelOrder = (orderId: string, reason: string) => {
+    setOrders(prev => { const updated = prev.map(o => o.id === orderId ? { ...o, status: 'cancelled' as Order['status'], cancelReason: reason } : o); saveOrders(updated); return updated; });
+    if (selectedOrder?.id === orderId) setSelectedOrder(prev => prev ? { ...prev, status: 'cancelled', cancelReason: reason } : null);
+    setConfirmAction(null);
+    setConfirmOrderId('');
+    setCancelReason('');
   };
 
   const deleteOrder = (orderId: string) => {
     setOrders(prev => { const updated = prev.filter(o => o.id !== orderId); saveOrders(updated); return updated; });
     if (selectedOrder?.id === orderId) setSelectedOrder(null);
-  };
+    setConfirmAction(null);
+    setConfirmOrderId('');
+  }; 
 
   const copyPhone = (phone: string) => {
     navigator.clipboard.writeText(phone); setCopied(phone); setTimeout(() => setCopied(''), 2000);
@@ -256,8 +266,8 @@ export default function AdminOrders() {
                     {order.status === 'received' && <button onClick={(e) => { e.stopPropagation(); updateStatus(order.id, 'preparing'); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-all"><ChefHat className="w-3 h-3" /> Start</button>}
                     {order.status === 'preparing' && <button onClick={(e) => { e.stopPropagation(); updateStatus(order.id, 'ready'); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"><CheckCircle className="w-3 h-3" /> Ready</button>}
                     {order.status === 'ready' && <button onClick={(e) => { e.stopPropagation(); updateStatus(order.id, 'completed'); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-all"><Package className="w-3 h-3" /> Collect</button>}
-                    {(order.status === 'received' || order.status === 'preparing') && <button onClick={(e) => { e.stopPropagation(); cancelOrder(order.id); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all"><Ban className="w-3 h-3" /> Cancel</button>}
-                    {(order.status === 'completed' || order.status === 'cancelled') && <button onClick={(e) => { e.stopPropagation(); deleteOrder(order.id); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all"><Trash2 className="w-3 h-3" /> Delete</button>}
+                    {(order.status === 'received' || order.status === 'preparing') && <button onClick={(e) => { e.stopPropagation(); setConfirmAction('cancel'); setConfirmOrderId(order.id); setCancelReason(''); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all"><Ban className="w-3 h-3" /> Cancel</button>}
+                    {(order.status === 'completed' || order.status === 'cancelled') && <button onClick={(e) => { e.stopPropagation(); setConfirmAction('delete'); setConfirmOrderId(order.id); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all"><Trash2 className="w-3 h-3" /> Delete</button>}
                     <button onClick={(e) => { e.stopPropagation(); printOrder(order); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-zinc-800/50 text-zinc-400 border border-zinc-700 hover:bg-zinc-700 transition-all"><Printer className="w-3 h-3" /> Print</button>
                     <a href={`https://wa.me/${(order.phone ?? '').replace(/\D/g, '')}`} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"><MessageCircle className="w-3 h-3" /> WhatsApp</a>
                     <a href={`tel:${order.phone}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-zinc-800/50 text-zinc-400 border border-zinc-700 hover:bg-zinc-700 transition-all"><Phone className="w-3 h-3" /> Call</a>
@@ -323,12 +333,129 @@ export default function AdminOrders() {
                   {selectedOrder.status === 'received' && <button onClick={() => updateStatus(selectedOrder.id, 'preparing')} className="flex items-center gap-2 px-4 py-2 bg-white text-black text-xs font-medium rounded-lg hover:bg-zinc-200 transition-all"><ChefHat className="w-3.5 h-3.5" /> Start</button>}
                   {selectedOrder.status === 'preparing' && <button onClick={() => updateStatus(selectedOrder.id, 'ready')} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-500 transition-all"><CheckCircle className="w-3.5 h-3.5" /> Ready</button>}
                   {selectedOrder.status === 'ready' && <button onClick={() => updateStatus(selectedOrder.id, 'completed')} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-500 transition-all"><Package className="w-3.5 h-3.5" /> Collect</button>}
-                  {(selectedOrder.status === 'received' || selectedOrder.status === 'preparing') && <button onClick={() => cancelOrder(selectedOrder.id)} className="flex items-center gap-2 px-4 py-2 border border-red-500/20 text-red-400 text-xs font-medium rounded-lg hover:bg-red-500/10 transition-all"><Ban className="w-3.5 h-3.5" /> Cancel</button>}
-                  {(selectedOrder.status === 'completed' || selectedOrder.status === 'cancelled') && <button onClick={() => deleteOrder(selectedOrder.id)} className="flex items-center gap-2 px-4 py-2 border border-red-500/20 text-red-400 text-xs font-medium rounded-lg hover:bg-red-500/10 transition-all"><Trash2 className="w-3.5 h-3.5" /> Delete</button>}
+                  {(selectedOrder.status === 'received' || selectedOrder.status === 'preparing') && <button onClick={() => { setConfirmAction('cancel'); setConfirmOrderId(selectedOrder.id); setCancelReason(''); }} className="flex items-center gap-2 px-4 py-2 border border-red-500/20 text-red-400 text-xs font-medium rounded-lg hover:bg-red-500/10 transition-all"><Ban className="w-3.5 h-3.5" /> Cancel</button>}
+                  {(selectedOrder.status === 'completed' || selectedOrder.status === 'cancelled') && <button onClick={() => { setConfirmAction('delete'); setConfirmOrderId(selectedOrder.id); }} className="flex items-center gap-2 px-4 py-2 border border-red-500/20 text-red-400 text-xs font-medium rounded-lg hover:bg-red-500/10 transition-all"><Trash2 className="w-3.5 h-3.5" /> Delete</button>}
                   <button onClick={() => printOrder(selectedOrder)} className="flex items-center gap-2 px-4 py-2 border border-zinc-700 text-zinc-300 text-xs font-medium rounded-lg hover:bg-zinc-800 transition-all"><Printer className="w-3.5 h-3.5" /> Print</button>
                   <a href={`tel:${selectedOrder.phone}`} className="flex items-center gap-2 px-4 py-2 border border-zinc-700 text-zinc-300 text-xs font-medium rounded-lg hover:bg-zinc-800 transition-all"><Phone className="w-3.5 h-3.5" /> Call</a>
                   <a href={`https://wa.me/${(selectedOrder.phone ?? '').replace(/\D/g, '')}`} target="_blank" rel="noopener" className="flex items-center gap-2 px-4 py-2 border border-emerald-500/20 text-emerald-400 text-xs font-medium rounded-lg hover:bg-emerald-500/10 transition-all"><MessageCircle className="w-3.5 h-3.5" /> WhatsApp</a>
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Cancel Confirmation Modal ── */}
+      <AnimatePresence>
+        {confirmAction === 'cancel' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          >
+            <div className="absolute inset-0 bg-black/60" onClick={() => { setConfirmAction(null); setConfirmOrderId(''); setCancelReason(''); }} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative bg-[#12121A] border border-zinc-800/60 rounded-2xl w-full max-w-md p-6 shadow-xl z-10"
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                  <Ban className="w-5 h-5 text-red-400" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white">Cancel Order</h2>
+                  <p className="text-xs text-zinc-500">#{confirmOrderId}</p>
+                </div>
+              </div>
+
+              <p className="text-sm text-zinc-400 mb-4">Why is this order being cancelled?</p>
+
+              {/* Preset reason chips */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                {presetReasons.map(r => (
+                  <button
+                    key={r}
+                    onClick={() => setCancelReason(r)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                      cancelReason === r
+                        ? 'bg-red-500/15 border-red-500/30 text-red-300'
+                        : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-300'
+                    }`}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+
+              {/* Custom reason */}
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Or type a custom reason..."
+                rows={3}
+                className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-xl text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500 resize-none mb-5"
+              />
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setConfirmAction(null); setConfirmOrderId(''); setCancelReason(''); }}
+                  className="flex-1 py-2.5 border border-zinc-700 text-zinc-400 text-sm font-medium rounded-xl hover:bg-zinc-800 transition-all"
+                >
+                  Keep Order
+                </button>
+                <button
+                  onClick={() => cancelOrder(confirmOrderId, cancelReason)}
+                  disabled={!cancelReason.trim()}
+                  className="flex-1 py-2.5 bg-red-600 text-white text-sm font-medium rounded-xl hover:bg-red-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Confirm Cancel
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Delete Confirmation Modal ── */}
+      <AnimatePresence>
+        {confirmAction === 'delete' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          >
+            <div className="absolute inset-0 bg-black/60" onClick={() => { setConfirmAction(null); setConfirmOrderId(''); }} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative bg-[#12121A] border border-zinc-800/60 rounded-2xl w-full max-w-sm p-6 shadow-xl z-10 text-center"
+            >
+              <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-6 h-6 text-red-400" />
+              </div>
+              <h2 className="text-base font-bold text-white mb-2">Delete Order</h2>
+              <p className="text-sm text-zinc-400 mb-1">
+                Are you sure you want to permanently delete order <span className="text-zinc-200 font-medium">#{confirmOrderId}</span>?
+              </p>
+              <p className="text-xs text-zinc-600 mb-6">This action cannot be undone.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setConfirmAction(null); setConfirmOrderId(''); }}
+                  className="flex-1 py-2.5 border border-zinc-700 text-zinc-400 text-sm font-medium rounded-xl hover:bg-zinc-800 transition-all"
+                >
+                  Keep Order
+                </button>
+                <button
+                  onClick={() => deleteOrder(confirmOrderId)}
+                  className="flex-1 py-2.5 bg-red-600 text-white text-sm font-medium rounded-xl hover:bg-red-500 transition-all"
+                >
+                  Delete Forever
+                </button>
               </div>
             </motion.div>
           </motion.div>
