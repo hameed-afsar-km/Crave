@@ -54,7 +54,13 @@ export default function CheckoutPage() {
     setProcessing(true);
     try {
       const orderId = generateOrderId();
-      const order = {
+
+      // Earn loyalty points (1 point per ₹10 spent)
+      const pointsEarned = Math.floor(total / 10);
+      const currentPoints = parseInt(localStorage.getItem('crave-points') || '0', 10);
+      localStorage.setItem('crave-points', String(currentPoints + pointsEarned));
+
+      const order: any = {
         id: orderId,
         customerId: user?.uid || 'guest',
         customerName: name,
@@ -66,6 +72,7 @@ export default function CheckoutPage() {
         status: 'received' as const,
         paymentStatus: 'pending',
         estimatedWaitTime: 18,
+        pointsEarned,
         createdAt: new Date().toISOString(),
       };
 

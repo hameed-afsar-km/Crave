@@ -11,10 +11,12 @@ export default function ProfilePage() {
   const { user, signOut, loading } = useAuth();
   const router = useRouter();
   const [pastOrders, setPastOrders] = useState<any[]>([]);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
 
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem('crave-orders') || '[]');
     setPastOrders(stored);
+    setLoyaltyPoints(parseInt(localStorage.getItem('crave-points') || '0', 10));
   }, []);
 
   useEffect(() => {
@@ -83,7 +85,7 @@ export default function ProfilePage() {
             {[
               { label: 'Total Orders', value: totalOrders, icon: ShoppingBag },
               { label: 'Amount Spent', value: `₹${totalSpent}`, icon: Package },
-              { label: 'Loyalty Points', value: '240 pts', icon: Star },
+              { label: 'Loyalty Points', value: `${loyaltyPoints} pts`, icon: Star },
             ].map(({ label, value, icon: Icon }) => (
               <div key={label} className="p-4 rounded-2xl bg-black/30 border border-white/5">
                 <Icon className="w-4 h-4 text-gold mb-2" />

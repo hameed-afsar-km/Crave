@@ -33,6 +33,7 @@ export interface Order {
   paymentId?: string;
   queuePosition?: number;
   estimatedWaitTime?: number;
+  pointsEarned?: number;
   createdAt: string;
 }
 
@@ -42,6 +43,7 @@ export interface UserProfile {
   email: string;
   phone: string;
   role: 'customer' | 'admin';
+  loyaltyPoints?: number;
   createdAt?: string;
 }
 
