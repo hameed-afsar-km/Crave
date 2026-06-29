@@ -27,7 +27,7 @@ function AnimatedCounter({ value, prefix = '', suffix = '' }: { value: number; p
     }, duration / steps);
     return () => clearInterval(timer);
   }, [value, inView]);
-  return <span ref={ref} className="text-2xl font-bold text-gray-900 tabular-nums tracking-tight">{prefix}{count}{suffix}</span>;
+  return <span ref={ref} className="text-2xl font-bold text-white tabular-nums tracking-tight">{prefix}{count}{suffix}</span>;
 }
 
 function BarChart({ data, color = '#4B5563' }: { data: { label: string; value: number }[]; color?: string }) {
@@ -50,7 +50,7 @@ function BarChart({ data, color = '#4B5563' }: { data: { label: string; value: n
         return (
           <g key={i}>
             <rect x={x} y={y} width={barW} height={barH} rx="3" fill={`url(#barGrad_${color.replace('#', '')})`} className="hover:opacity-80 transition-opacity" />
-            <text x={x + barW / 2} y={chartH + 12} textAnchor="middle" fill="#9CA3AF" fontSize="8" fontWeight="600">{d.label}</text>
+            <text x={x + barW / 2} y={chartH + 12} textAnchor="middle" fill="#A1A1AA" fontSize="8" fontWeight="600">{d.label}</text>
           </g>
         );
       })}
@@ -114,26 +114,26 @@ export default function AdminAnalytics() {
   if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500 font-medium">Access Denied</p>
+        <p className="text-zinc-500 font-medium">Access Denied</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#0A0A0F]">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100">
+      <div className="bg-[#0D0D14] border-b border-zinc-800/60">
         <div className="px-6 sm:px-8 py-5">
           <div className="flex items-center gap-3">
-            <Link href="/admin/dashboard" className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all">
+            <Link href="/admin/dashboard" className="p-1.5 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <div>
               <div className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-gray-600" />
-                <h1 className="text-xl font-bold text-gray-900">Analytics</h1>
+                <BarChart3 className="w-5 h-5 text-zinc-400" />
+                <h1 className="text-xl font-bold text-white">Analytics</h1>
               </div>
-              <p className="text-gray-500 text-sm">Key metrics at a glance</p>
+              <p className="text-zinc-500 text-sm">Key metrics at a glance</p>
             </div>
           </div>
         </div>
@@ -153,13 +153,13 @@ export default function AdminAnalytics() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06 }}
-              className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm"
+              className="bg-[#12121A] rounded-xl border border-zinc-800/60 p-5"
             >
-              <div className="w-9 h-9 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center mb-3">
-                <card.icon className="w-4 h-4 text-gray-600" />
+              <div className="w-9 h-9 rounded-lg bg-zinc-800/50 border border-zinc-700/50 flex items-center justify-center mb-3">
+                <card.icon className="w-4 h-4 text-zinc-400" />
               </div>
               <AnimatedCounter value={card.value} prefix={card.prefix} />
-              <p className="text-xs text-gray-500 mt-1">{card.label}</p>
+              <p className="text-xs text-zinc-500 mt-1">{card.label}</p>
             </motion.div>
           ))}
         </div>
@@ -167,21 +167,21 @@ export default function AdminAnalytics() {
         {/* Revenue + Orders trend */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-50">
+            className="bg-[#12121A] rounded-xl border border-zinc-800/60 p-5">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800/60">
               <div>
-                <h2 className="text-sm font-semibold text-gray-900">Revenue Trend</h2>
-                <p className="text-xs text-gray-500 mt-0.5">Weekly · ₹{data.revenue.toLocaleString('en-IN')} total</p>
+                <h2 className="text-sm font-semibold text-white">Revenue Trend</h2>
+                <p className="text-xs text-zinc-500 mt-0.5">Weekly · ₹{data.revenue.toLocaleString('en-IN')} total</p>
               </div>
             </div>
-            <BarChart data={weeklyRevenue} color="#4B5563" />
+            <BarChart data={weeklyRevenue} color="#71717A" />
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}
-            className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-50">
+            className="bg-[#12121A] rounded-xl border border-zinc-800/60 p-5">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800/60">
               <div>
-                <h2 className="text-sm font-semibold text-gray-900">Orders Trend</h2>
-                <p className="text-xs text-gray-500 mt-0.5">Weekly · {data.totalOrders} orders</p>
+                <h2 className="text-sm font-semibold text-white">Orders Trend</h2>
+                <p className="text-xs text-zinc-500 mt-0.5">Weekly · {data.totalOrders} orders</p>
               </div>
             </div>
             <BarChart data={weeklyOrders} color="#059669" />
@@ -192,8 +192,8 @@ export default function AdminAnalytics() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Top Selling Items */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
-            className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h2 className="text-sm font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-50">Top Items</h2>
+            className="bg-[#12121A] rounded-xl border border-zinc-800/60 p-5">
+            <h2 className="text-sm font-semibold text-white mb-4 pb-3 border-b border-zinc-800/60">Top Items</h2>
             <div className="space-y-3">
               {data.sortedItems.slice(0, 5).map((item, i) => {
                 const maxC = data.sortedItems[0]?.count || 1;
@@ -201,49 +201,49 @@ export default function AdminAnalytics() {
                   <div key={item.name}>
                     <div className="flex items-center justify-between text-sm mb-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-gray-400 w-4">{i + 1}</span>
-                        <span className="font-medium text-gray-800">{item.name}</span>
+                        <span className="text-xs font-semibold text-zinc-500 w-4">{i + 1}</span>
+                        <span className="font-medium text-zinc-200">{item.name}</span>
                       </div>
-                      <span className="font-semibold text-gray-900 text-xs">{item.count}</span>
+                      <span className="font-semibold text-white text-xs">{item.count}</span>
                     </div>
-                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full bg-gray-800" style={{ width: `${(item.count / maxC) * 100}%` }} />
+                    <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-zinc-500" style={{ width: `${(item.count / maxC) * 100}%` }} />
                     </div>
                   </div>
                 );
               })}
               {data.sortedItems.length === 0 && (
-                <p className="text-gray-400 text-sm text-center py-4">No order data yet</p>
+                <p className="text-zinc-600 text-sm text-center py-4">No order data yet</p>
               )}
             </div>
           </motion.div>
 
           {/* Peak Hours */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
-            className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h2 className="text-sm font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-50">Peak Hours</h2>
+            className="bg-[#12121A] rounded-xl border border-zinc-800/60 p-5">
+            <h2 className="text-sm font-semibold text-white mb-4 pb-3 border-b border-zinc-800/60">Peak Hours</h2>
             <div className="space-y-2">
               {data.peakHours.length > 0 ? data.peakHours.map((h) => {
                 const maxVal = Math.max(...data.peakHours.map(d => d.value));
                 return (
                   <div key={h.label} className="flex items-center gap-3">
-                    <span className="text-xs font-medium text-gray-500 w-9 text-right">{h.label}</span>
-                    <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full bg-gray-800" style={{ width: `${(h.value / maxVal) * 100}%` }} />
+                    <span className="text-xs font-medium text-zinc-500 w-9 text-right">{h.label}</span>
+                    <div className="flex-1 h-3 bg-zinc-800 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-zinc-500" style={{ width: `${(h.value / maxVal) * 100}%` }} />
                     </div>
-                    <span className="text-xs font-semibold text-gray-700 tabular-nums w-6 text-right">{h.value}</span>
+                    <span className="text-xs font-semibold text-zinc-300 tabular-nums w-6 text-right">{h.value}</span>
                   </div>
                 );
               }) : (
-                <p className="text-gray-400 text-sm text-center py-4">No peak data yet</p>
+                <p className="text-zinc-600 text-sm text-center py-4">No peak data yet</p>
               )}
             </div>
           </motion.div>
 
           {/* Customer Insights */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}
-            className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-            <h2 className="text-sm font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-50">Customer Insights</h2>
+            className="bg-[#12121A] rounded-xl border border-zinc-800/60 p-5">
+            <h2 className="text-sm font-semibold text-white mb-4 pb-3 border-b border-zinc-800/60">Customer Insights</h2>
             <div className="space-y-4">
               {[
                 { label: 'Total Customers', value: data.orders.length, icon: Users },
@@ -251,12 +251,12 @@ export default function AdminAnalytics() {
                 { label: 'Repeat Rate', value: `${data.returningRate}%`, icon: TrendingUp },
                 { label: 'Peak Hour Avg', value: data.peakHours.length ? `${Math.round(data.peakHours.reduce((s, d) => s + d.value, 0) / data.peakHours.length)}` : '0', icon: Zap },
               ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                <div key={i} className="flex items-center justify-between py-2 border-b border-zinc-800/60 last:border-0">
                   <div className="flex items-center gap-2">
-                    <item.icon className={`w-4 h-4 text-gray-400`} />
-                    <span className="text-xs text-gray-500">{item.label}</span>
+                    <item.icon className={`w-4 h-4 text-zinc-500`} />
+                    <span className="text-xs text-zinc-500">{item.label}</span>
                   </div>
-                  <span className="text-sm font-medium text-gray-900">{item.value}</span>
+                  <span className="text-sm font-medium text-white">{item.value}</span>
                 </div>
               ))}
             </div>

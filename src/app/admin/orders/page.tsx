@@ -179,7 +179,7 @@ export default function AdminOrders() {
         <div className="grid gap-3">
           {filtered.map((order, i) => {
             const sc = statusConfig[order.status];
-            const statusIdx = statusFlow.indexOf(order.status);
+            const statusIdx = statusFlow.indexOf(order.status as typeof statusFlow[number]);
             return (
               <motion.div key={order.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
                 onClick={() => setSelectedOrder(order)}
@@ -197,8 +197,6 @@ export default function AdminOrders() {
                     <div className="flex items-center gap-2 text-xs text-zinc-500 mt-0.5">
                       <Phone className="w-3 h-3" />{order.phone}
                       <button onClick={(e) => { e.stopPropagation(); copyPhone(order.phone); }} className="p-0.5 hover:text-zinc-300 transition-colors">{copied === order.phone ? <span className="text-emerald-400 text-[10px]">Copied!</span> : <Copy className="w-3 h-3" />}</button>
-                      <a href={`tel:${order.phone}`} onClick={(e) => e.stopPropagation()} className="p-0.5 hover:text-zinc-300"><Phone className="w-3 h-3" /></a>
-                      <a href={`https://wa.me/${(order.phone ?? '').replace(/\D/g, '')}`} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()} className="p-0.5 hover:text-zinc-300"><MessageCircle className="w-3 h-3" /></a>
                       <span className="text-zinc-700">·</span><MapPin className="w-3 h-3" />{order.pickupTime}
                     </div>
                   </div>
@@ -215,17 +213,13 @@ export default function AdminOrders() {
                       <p className="text-[10px] text-zinc-500">{order.pickupTime}</p>
                     </div>
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium ${sc.pill}`}><span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />{sc.label}</span>
-                    <ChevronRight className="w-4 h-4 text-zinc-600" />
                   </div>
                 </div>
-                <div className="mt-2.5 pt-2.5 border-t border-zinc-800/60 flex gap-2 flex-wrap">
-                  {order.status === 'received' && <button onClick={(e) => { e.stopPropagation(); updateStatus(order.id, 'preparing'); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-all"><ChefHat className="w-3 h-3" /> Start</button>}
-                  {order.status === 'preparing' && <button onClick={(e) => { e.stopPropagation(); updateStatus(order.id, 'ready'); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"><CheckCircle className="w-3 h-3" /> Ready</button>}
-                  {order.status === 'ready' && <button onClick={(e) => { e.stopPropagation(); updateStatus(order.id, 'completed'); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-all"><Package className="w-3 h-3" /> Collect</button>}
-                  {(order.status === 'received' || order.status === 'preparing') && <button onClick={(e) => { e.stopPropagation(); cancelOrder(order.id); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all"><Ban className="w-3 h-3" /> Cancel</button>}
+                <div className="flex gap-2 mt-2">
                   {(order.status === 'completed' || order.status === 'cancelled') && <button onClick={(e) => { e.stopPropagation(); deleteOrder(order.id); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all"><Trash2 className="w-3 h-3" /> Delete</button>}
                   <button onClick={(e) => { e.stopPropagation(); printOrder(order); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-zinc-800/50 text-zinc-400 border border-zinc-700 hover:bg-zinc-700 transition-all"><Printer className="w-3 h-3" /> Print</button>
                   <a href={`https://wa.me/${(order.phone ?? '').replace(/\D/g, '')}`} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"><MessageCircle className="w-3 h-3" /> WhatsApp</a>
+                  <a href={`tel:${order.phone}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-zinc-800/50 text-zinc-400 border border-zinc-700 hover:bg-zinc-700 transition-all"><Phone className="w-3 h-3" /> Call</a>
                 </div>
               </motion.div>
             );
@@ -255,7 +249,7 @@ export default function AdminOrders() {
                   <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Progress</h3>
                   <div className="flex items-center gap-1">
                     {statusFlow.map((s, i) => {
-                      const currentIdx = statusFlow.indexOf(selectedOrder.status);
+                      const currentIdx = statusFlow.indexOf(selectedOrder.status as typeof statusFlow[number]);
                       const done = i <= currentIdx;
                       return (
                         <div key={s} className="flex items-center flex-1">

@@ -102,61 +102,61 @@ export default function AdminMenu() {
   if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500 font-medium">Access Denied</p>
+        <p className="text-zinc-500 font-medium">Access Denied</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-100">
+    <div className="min-h-screen bg-[#0A0A0F]">
+      <div className="bg-[#0D0D14] border-b border-zinc-800/60">
         <div className="px-6 sm:px-8 py-5">
           <div className="flex items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-4">
-              <Link href="/admin/dashboard" className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all">
+              <Link href="/admin/dashboard" className="p-1.5 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
                 <ArrowLeft className="w-4 h-4" />
               </Link>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Menu Management</h1>
-                <p className="text-gray-500 text-sm mt-0.5">Add, edit, or remove catalog items</p>
+                <h1 className="text-xl font-bold text-white">Menu Management</h1>
+                <p className="text-zinc-500 text-sm mt-0.5">Add, edit, or remove catalog items</p>
               </div>
             </div>
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={openAdd}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-xs font-medium rounded-lg transition-all"
+              className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium rounded-lg transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
               Add Item
             </motion.button>
           </div>
           <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
             <input
               type="text"
               placeholder="Search menu items..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300"
+              className="w-full pl-9 pr-4 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500"
             />
           </div>
         </div>
       </div>
 
       <div className="px-6 sm:px-8 py-6 max-w-7xl mx-auto">
-        <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-[#12121A] border border-zinc-800/60 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-50 bg-gray-50">
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Item</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Price</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Orders</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Rating</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                <tr className="border-b border-zinc-800/60 bg-zinc-800/30">
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Item</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Category</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Price</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Orders</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Rating</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Status</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -166,62 +166,62 @@ export default function AdminMenu() {
                     initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.03 }}
-                    className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
+                    className="border-b border-zinc-800/60 hover:bg-zinc-800/30 transition-colors"
                   >
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <Image src={item.image} alt={item.name} width={40} height={40} className="rounded-lg object-cover border border-gray-100" />
+                        <Image src={item.image} alt={item.name} width={40} height={40} className="rounded-lg object-cover border border-zinc-700" />
                         <div>
-                          <p className="font-medium text-sm text-gray-900">{item.name}</p>
-                          <p className="text-xs text-gray-500 truncate max-w-[220px]">{item.description}</p>
+                          <p className="font-medium text-sm text-white">{item.name}</p>
+                          <p className="text-xs text-zinc-400 truncate max-w-[220px]">{item.description}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-xs font-medium text-gray-600">{item.category}</td>
-                    <td className="px-5 py-3 font-medium text-sm text-gray-900">₹{item.price}</td>
+                    <td className="px-5 py-3 text-xs font-medium text-zinc-300">{item.category}</td>
+                    <td className="px-5 py-3 font-medium text-sm text-white">₹{item.price}</td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-semibold text-gray-900">{itemOrderCounts[item.name] || 0}</span>
-                            <span className="text-xs text-gray-400">orders</span>
+                            <span className="text-xs font-semibold text-white">{itemOrderCounts[item.name] || 0}</span>
+                            <span className="text-xs text-zinc-500">orders</span>
                           </div>
-                          <div className="w-16 h-1 bg-gray-100 rounded-full overflow-hidden mt-0.5">
-                            <div className="h-full rounded-full bg-gray-800" style={{ width: `${Math.min(100, ((itemOrderCounts[item.name] || 0) / maxOrders) * 100)}%` }} />
+                          <div className="w-16 h-1 bg-zinc-800 rounded-full overflow-hidden mt-0.5">
+                            <div className="h-full rounded-full bg-zinc-500" style={{ width: `${Math.min(100, ((itemOrderCounts[item.name] || 0) / maxOrders) * 100)}%` }} />
                           </div>
                         </div>
                         {itemOrderCounts[item.name] && itemOrderCounts[item.name] > 0 && (
                           itemOrderCounts[item.name] >= (sortedByOrders.length > 0 ? itemOrderCounts[sortedByOrders[0].name] || 0 : 0) && itemOrderCounts[item.name] > 0
-                            ? <TrendingUp className="w-3 h-3 text-emerald-600 shrink-0" />
+                            ? <TrendingUp className="w-3 h-3 text-emerald-400 shrink-0" />
                             : itemOrderCounts[item.name] <= (sortedByOrders.length > 1 ? itemOrderCounts[sortedByOrders[sortedByOrders.length - 1].name] || 0 : 0)
-                            ? <TrendingDown className="w-3 h-3 text-red-500 shrink-0" />
+                            ? <TrendingDown className="w-3 h-3 text-red-400 shrink-0" />
                             : null
                         )}
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-xs font-medium text-gray-700">
+                    <td className="px-5 py-3 text-xs font-medium text-zinc-200">
                       {item.rating > 0 ? (
                         <span>{item.rating}</span>
                       ) : (
-                        <span className="text-gray-300">—</span>
+                        <span className="text-zinc-600">—</span>
                       )}
                     </td>
                     <td className="px-5 py-3">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium ${
-                        item.available ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
+                        item.available ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
                       }`}>
                         {item.available ? 'Available' : 'Unavailable'}
                       </span>
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex gap-1.5">
-                        <button onClick={() => toggleAvailability(item.id)} className="p-1.5 text-gray-400 border border-gray-200 hover:border-gray-300 hover:text-gray-600 rounded-lg transition-all" title={item.available ? 'Disable' : 'Enable'}>
+                        <button onClick={() => toggleAvailability(item.id)} className="p-1.5 text-zinc-500 border border-zinc-700 hover:border-zinc-600 hover:text-zinc-300 rounded-lg transition-all" title={item.available ? 'Disable' : 'Enable'}>
                           {item.available ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                         </button>
-                        <button onClick={() => openEdit(item)} className="p-1.5 text-gray-600 border border-gray-200 hover:border-gray-300 hover:text-gray-900 rounded-lg transition-all" title="Edit">
+                        <button onClick={() => openEdit(item)} className="p-1.5 text-zinc-400 border border-zinc-700 hover:border-zinc-600 hover:text-zinc-200 rounded-lg transition-all" title="Edit">
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
-                        <button onClick={() => deleteItem(item.id)} className="p-1.5 text-red-500 border border-red-200 hover:border-red-300 hover:bg-red-50 rounded-lg transition-all" title="Delete">
+                        <button onClick={() => deleteItem(item.id)} className="p-1.5 text-red-400 border border-red-500/20 hover:border-red-500/40 hover:bg-red-500/10 rounded-lg transition-all" title="Delete">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
@@ -232,43 +232,43 @@ export default function AdminMenu() {
             </table>
           </div>
           {filtered.length === 0 && (
-            <div className="text-center py-12 text-gray-500 font-medium text-sm">No items found</div>
+            <div className="text-center py-12 text-zinc-500 font-medium text-sm">No items found</div>
           )}
         </div>
       </div>
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/20" onClick={() => setShowForm(false)} />
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowForm(false)} />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="relative bg-white border border-gray-200 rounded-2xl p-6 w-full max-w-lg shadow-xl z-10"
+            className="relative bg-[#12121A] border border-zinc-800/60 rounded-2xl p-6 w-full max-w-lg shadow-xl z-10"
           >
-            <h2 className="text-base font-bold text-gray-900 mb-5">
+            <h2 className="text-base font-bold text-white mb-5">
               {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Item Name</label>
+                <label className="block text-xs font-medium text-zinc-500 mb-1">Item Name</label>
                 <input type="text" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300" />
+                  className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
+                <label className="block text-xs font-medium text-zinc-500 mb-1">Description</label>
                 <textarea value={form.description} onChange={(e) => setForm({...form, description: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 resize-none" rows={3} />
+                  className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500 resize-none" rows={3} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Price (₹)</label>
+                  <label className="block text-xs font-medium text-zinc-500 mb-1">Price (₹)</label>
                   <input type="number" value={form.price} onChange={(e) => setForm({...form, price: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300" />
+                    className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Category</label>
+                  <label className="block text-xs font-medium text-zinc-500 mb-1">Category</label>
                   <select value={form.category} onChange={(e) => setForm({...form, category: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 bg-white">
+                    className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500">
                     <option>Burgers</option>
                     <option>Shawarma</option>
                     <option>Fries</option>
@@ -279,16 +279,16 @@ export default function AdminMenu() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Image URL</label>
+                <label className="block text-xs font-medium text-zinc-500 mb-1">Image URL</label>
                 <input type="text" value={form.image} onChange={(e) => setForm({...form, image: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300" />
+                  className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" />
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 border border-gray-200 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition-all">
+              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 border border-zinc-700 text-zinc-400 text-xs font-medium rounded-lg hover:bg-zinc-800 transition-all">
                 Cancel
               </button>
-              <button onClick={saveItem} className="flex-1 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-xs font-medium rounded-lg transition-all">
+              <button onClick={saveItem} className="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium rounded-lg transition-all">
                 {editingItem ? 'Save Changes' : 'Add Item'}
               </button>
             </div>
