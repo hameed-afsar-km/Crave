@@ -18,19 +18,27 @@ export function generateOrderId(): string {
   return result;
 }
 
-export function generateTimeSlots(): { time: string; label: string }[] {
+export function generateTimeSlots(
+  openingTime?: string,
+  closingTime?: string,
+): { time: string; label: string }[] {
   const slots = [];
   const now = new Date();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const startMinutes = Math.ceil(currentMinutes / 15) * 15;
+  const startMinutes = Math.ceil((currentMinutes + 15) / 15) * 15;
 
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 40; i++) {
     const totalMinutes = startMinutes + i * 15;
     const hours = Math.floor(totalMinutes / 60) % 24;
     const minutes = totalMinutes % 60;
+    const time = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+
+    if (openingTime && closingTime) {
+      if (time < openingTime || time >= closingTime) continue;
+    }
+
     const ampm = hours >= 12 ? 'PM' : 'AM';
     const h12 = hours % 12 || 12;
-    const time = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     const label = `${h12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
     slots.push({ time, label });
   }

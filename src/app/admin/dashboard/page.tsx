@@ -5,7 +5,8 @@ import Link from 'next/link';
 import {
   IndianRupee, Clock, CheckCircle, CookingPot,
   TrendingUp, Zap, ArrowRight, Package, Users,
-  Database, AlertTriangle, Store, Power, Ban, X
+  Database, AlertTriangle, Store, Power, Ban, X,
+  Gift, Plus, Trash2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { seedSampleData, isSeeded, getStoredOrders, saveOrders } from '@/lib/seed-data';
@@ -123,12 +124,38 @@ export default function AdminDashboard() {
   const [confirmClear, setConfirmClear] = useState(false);
   const [confirmPause, setConfirmPause] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
+  const [localEarnRate, setLocalEarnRate] = useState(settings.earnRate || 10);
+  const [localRewards, setLocalRewards] = useState(settings.rewards || []);
 
   useEffect(() => {
     setSeeded(isSeeded());
     const stored = getStoredOrders();
     if (stored) setOrders(stored);
   }, []);
+
+  useEffect(() => {
+    setLocalEarnRate(settings.earnRate || 10);
+    setLocalRewards(settings.rewards || []);
+  }, [settings]);
+
+  const addReward = () => {
+    const id = `reward-${Date.now()}`;
+    setLocalRewards(prev => [...prev, { id, name: '', description: '', cost: 100, available: true }]);
+  };
+
+  const removeReward = (id: string) => {
+    setLocalRewards(prev => prev.filter(r => r.id !== id));
+  };
+
+  const updateReward = (id: string, field: string, value: any) => {
+    setLocalRewards(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
+  };
+
+  const saveRewards = () => {
+    const next = { ...settings, earnRate: localEarnRate, rewards: localRewards };
+    setSettings(next);
+    saveSettings(next);
+  };
 
   const toggleStore = () => {
     if (settings.storeOpen) { setConfirmClose(true); return; }
@@ -425,6 +452,86 @@ export default function AdminDashboard() {
               </Link>
             </div>
           </div>
+        </div>
+
+        {/* Rewards & Points Management */}
+        <div className="bg-[#12121A] rounded-xl border border-zinc-800/60 p-5">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800/60">
+            <div className="flex items-center gap-2">
+              <Gift className="w-4 h-4 text-zinc-500" />
+              <h2 className="text-sm font-semibold text-zinc-200">Rewards &amp; Points</h2>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <span>₹</span>
+                <input
+                  type="number"
+                  min="1"
+                  value={localEarnRate}
+                  onChange={(e) => setLocalEarnRate(Math.max(1, parseInt(e.target.value) || 10))}
+                  className="w-16 px-2 py-1 bg-zinc-800/50 border border-zinc-700 rounded-lg text-xs text-zinc-300 text-center focus:outline-none focus:ring-2 focus:ring-zinc-600"
+                />
+                <span>= 1 pt</span>
+              </div>
+              <button onClick={saveRewards} className="px-3 py-1.5 bg-gold/15 border border-gold/20 text-gold text-xs font-medium rounded-lg hover:bg-gold/25 transition-all">
+                Save Changes
+              </button>
+            </div>
+          </div>
+
+          {/* Reward items */}
+          <div className="space-y-2">
+            {localRewards.map((reward, idx) => (
+              <div key={reward.id} className="flex items-center gap-3 bg-zinc-800/30 rounded-lg px-3 py-2.5">
+                <span className="text-xs text-zinc-600 w-5 shrink-0 font-mono">{idx + 1}</span>
+                <input
+                  type="text"
+                  value={reward.name}
+                  onChange={(e) => updateReward(reward.id, 'name', e.target.value)}
+                  placeholder="Reward name"
+                  className="flex-1 min-w-0 bg-transparent border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-gold/40"
+                />
+                <input
+                  type="text"
+                  value={reward.description}
+                  onChange={(e) => updateReward(reward.id, 'description', e.target.value)}
+                  placeholder="Description"
+                  className="flex-1 min-w-0 bg-transparent border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-gold/40 hidden sm:block"
+                />
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <input
+                    type="number"
+                    min="1"
+                    value={reward.cost}
+                    onChange={(e) => updateReward(reward.id, 'cost', Math.max(1, parseInt(e.target.value) || 0))}
+                    className="w-16 px-2 py-1.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-xs text-zinc-200 text-center focus:outline-none focus:ring-2 focus:ring-zinc-600"
+                  />
+                  <span className="text-[10px] text-zinc-600 mr-1">pts</span>
+                </div>
+                <button
+                  onClick={() => updateReward(reward.id, 'available', !reward.available)}
+                  className={`px-2 py-1 rounded-md text-[10px] font-medium border transition-all ${
+                    reward.available
+                      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                      : 'bg-zinc-800/50 border-zinc-700 text-zinc-500'
+                  }`}
+                >
+                  {reward.available ? 'Active' : 'Off'}
+                </button>
+                <button onClick={() => removeReward(reward.id)} className="p-1.5 rounded-md text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+            {localRewards.length === 0 && (
+              <p className="text-xs text-zinc-600 text-center py-4">No rewards configured. Add one below.</p>
+            )}
+          </div>
+
+          <button onClick={addReward} className="mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600 text-xs font-medium transition-all w-full justify-center">
+            <Plus className="w-3.5 h-3.5" />
+            Add Reward
+          </button>
         </div>
 
         {/* Seed/Clear */}

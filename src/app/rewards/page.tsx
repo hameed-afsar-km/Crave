@@ -5,23 +5,16 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Gift, Star, ArrowLeft, ShoppingBag, CheckCircle, Zap, Coffee, Sandwich, Pizza } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { loadSettings, RewardConfig } from '@/lib/store';
 import Link from 'next/link';
 
-interface RewardItem {
-  id: string;
-  name: string;
-  description: string;
-  cost: number;
-  icon: React.ReactNode;
-}
-
-const rewards: RewardItem[] = [
-  { id: 'fries', name: 'Free Fries', description: 'Regular portion of golden fries', cost: 100, icon: <Coffee className="w-5 h-5" /> },
-  { id: 'cold-drink', name: 'Free Cold Drink', description: 'Any 500ml beverage of your choice', cost: 150, icon: <Coffee className="w-5 h-5" /> },
-  { id: 'wrap', name: 'Free Wrap', description: 'Any regular veg/chicken wrap', cost: 250, icon: <Sandwich className="w-5 h-5" /> },
-  { id: 'shawarma', name: 'Free Shawarma', description: 'Any regular shawarma on the menu', cost: 350, icon: <Pizza className="w-5 h-5" /> },
-  { id: 'combo', name: 'Combo Meal', description: 'Shawarma + Fries + Drink', cost: 500, icon: <ShoppingBag className="w-5 h-5" /> },
-];
+const rewardIcons: Record<string, React.ReactNode> = {
+  fries: <Coffee className="w-5 h-5" />,
+  'cold-drink': <Coffee className="w-5 h-5" />,
+  wrap: <Sandwich className="w-5 h-5" />,
+  shawarma: <Pizza className="w-5 h-5" />,
+  combo: <ShoppingBag className="w-5 h-5" />,
+};
 
 export default function RewardsPage() {
   const { user, loading } = useAuth();
@@ -42,9 +35,13 @@ export default function RewardsPage() {
     setRedeemed(saved);
   }, []);
 
+  const storeSettings = loadSettings();
+  const earnRate = storeSettings.earnRate || 10;
+  const rewards = (storeSettings.rewards || []).filter(r => r.available);
+
   if (loading || !user) return null;
 
-  const handleRedeem = (reward: RewardItem) => {
+  const handleRedeem = (reward: RewardConfig) => {
     if (points < reward.cost) return;
 
     const newPoints = points - reward.cost;
@@ -121,7 +118,7 @@ export default function RewardsPage() {
             <div className="h-16 w-px bg-white/5 hidden sm:block" />
             <div className="text-center hidden sm:block">
               <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Earn Rate</p>
-              <p className="text-lg font-black text-zinc-200">₹10 = 1 pt</p>
+              <p className="text-lg font-black text-zinc-200">₹{earnRate} = 1 pt</p>
               <p className="text-xs text-zinc-600 font-semibold mt-1">on every order</p>
             </div>
           </div>
@@ -144,7 +141,7 @@ export default function RewardsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
               { step: '1', title: 'Order', desc: 'Place an order from our menu' },
-              { step: '2', title: 'Earn', desc: 'Get 1 point for every ₹10 spent' },
+              { step: '2', title: 'Earn', desc: `Get 1 point for every ₹${earnRate} spent` },
               { step: '3', title: 'Redeem', desc: 'Swap points for free food below' },
             ].map((s) => (
               <div key={s.step} className="flex items-center gap-3.5 p-4 bg-black/30 border border-white/5 rounded-2xl">
@@ -212,7 +209,7 @@ export default function RewardsPage() {
                         ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
                         : 'bg-gold/8 border border-gold/15 text-gold'
                     }`}>
-                      {reward.icon}
+                      {rewardIcons[reward.id] || <Gift className="w-5 h-5" />}
                     </div>
                     <div>
                       <p className="font-black text-white text-sm">{reward.name}</p>

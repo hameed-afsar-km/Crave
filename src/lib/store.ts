@@ -1,3 +1,11 @@
+export interface RewardConfig {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  available: boolean;
+}
+
 export interface StoreSettings {
   storeName: string;
   storeOpen: boolean;
@@ -11,6 +19,8 @@ export interface StoreSettings {
   notifyNewOrders: boolean;
   notifyReady: boolean;
   pickupWindowMinutes: number;
+  earnRate: number;
+  rewards: RewardConfig[];
 }
 
 const STORAGE_KEY = 'crave-store-settings';
@@ -28,6 +38,14 @@ const defaults: StoreSettings = {
   notifyNewOrders: true,
   notifyReady: true,
   pickupWindowMinutes: 15,
+  earnRate: 10,
+  rewards: [
+    { id: 'fries', name: 'Free Fries', description: 'Regular portion of golden fries', cost: 100, available: true },
+    { id: 'cold-drink', name: 'Free Cold Drink', description: 'Any 500ml beverage of your choice', cost: 150, available: true },
+    { id: 'wrap', name: 'Free Wrap', description: 'Any regular veg/chicken wrap', cost: 250, available: true },
+    { id: 'shawarma', name: 'Free Shawarma', description: 'Any regular shawarma on the menu', cost: 350, available: true },
+    { id: 'combo', name: 'Combo Meal', description: 'Shawarma + Fries + Drink', cost: 500, available: true },
+  ],
 };
 
 export function loadSettings(): StoreSettings {

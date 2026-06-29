@@ -48,6 +48,8 @@ export default function AdminSettings() {
       notifyNewOrders: true,
       notifyReady: true,
       pickupWindowMinutes: 15,
+      earnRate: 10,
+      rewards: [],
     };
     setForm(defaults);
     saveSettings(defaults);

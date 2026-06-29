@@ -7,7 +7,7 @@ import { Clock, ShoppingBag, ArrowLeft, User, Mail, CheckCircle, ArrowRight, Sto
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { formatPrice, generateTimeSlots, generateOrderId } from '@/lib/utils';
-import { loadSettings } from '@/lib/store';
+import { loadSettings, getTimeUntilOpen } from '@/lib/store';
 import StoreStatusBanner from '@/components/StoreStatusBanner';
 import Link from 'next/link';
 
@@ -26,10 +26,16 @@ export default function CheckoutPage() {
   const [confirmedOrderId, setConfirmedOrderId] = useState('');
   const [confirmedOrder, setConfirmedOrder] = useState<any>(null);
   const [storeStatus, setStoreStatus] = useState(() => loadSettings());
+  const [timeUntilOpen, setTimeUntilOpen] = useState('');
 
   useEffect(() => {
-    setStoreStatus(loadSettings());
-    const interval = setInterval(() => setStoreStatus(loadSettings()), 10000);
+    const update = () => {
+      const s = loadSettings();
+      setStoreStatus(s);
+      setTimeUntilOpen(getTimeUntilOpen());
+    };
+    update();
+    const interval = setInterval(update, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -37,7 +43,7 @@ export default function CheckoutPage() {
 
   const tax = subtotal * 0.18;
   const total = subtotal + tax;
-  const timeSlots = generateTimeSlots();
+  const timeSlots = generateTimeSlots(storeStatus.openingTime, storeStatus.closingTime);
 
   useEffect(() => {
     if (pickupOption === 'asap' && timeSlots.length > 0) {
@@ -55,8 +61,9 @@ export default function CheckoutPage() {
     try {
       const orderId = generateOrderId();
 
-      // Earn loyalty points (1 point per ₹10 spent)
-      const pointsEarned = Math.floor(total / 10);
+      // Earn loyalty points based on store earn rate
+      const settings = loadSettings();
+      const pointsEarned = Math.floor(total / settings.earnRate);
       const currentPoints = parseInt(localStorage.getItem('crave-points') || '0', 10);
       localStorage.setItem('crave-points', String(currentPoints + pointsEarned));
 
@@ -377,11 +384,14 @@ export default function CheckoutPage() {
               <h2 className="text-2xl font-black text-white tracking-tight mb-2">
                 {!storeStatus.storeOpen ? 'Store Closed' : 'Orders Paused'}
               </h2>
-              <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
+              <p className="text-zinc-400 text-sm mb-2 leading-relaxed">
                 {!storeStatus.storeOpen
-                  ? 'The store is currently closed. Please check back during operating hours to place your order.'
+                  ? 'The store is currently closed. Please check back during operating hours.'
                   : 'We are not accepting orders at the moment. Your cart has been saved — come back soon!'}
               </p>
+              {timeUntilOpen && (
+                <p className="text-gold font-black text-sm mb-6">{timeUntilOpen}</p>
+              )}
               <Link
                 href="/menu"
                 className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-gold to-amber-600 text-white font-black rounded-2xl shadow-lg shadow-gold/15 hover:shadow-gold/30 transition-all text-sm"
