@@ -11,6 +11,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { loadSettings, saveSettings, StoreSettings } from '@/lib/store';
 import { generateTimeSlots } from '@/lib/utils';
+import { getStoredOrders } from '@/lib/seed-data';
 
 export default function AdminSettings() {
   const { isAdmin } = useAuth();
@@ -61,8 +62,14 @@ export default function AdminSettings() {
     setShowClearDataConfirm(false);
   };
 
+  const [orders, setOrders] = useState<any[]>([]);
   const slots = generateTimeSlots();
   const maxSlotsToShow = 8;
+
+  useEffect(() => {
+    const stored = getStoredOrders();
+    if (stored) setOrders(stored);
+  }, []);
 
   if (!isAdmin) {
     return (
@@ -193,7 +200,17 @@ export default function AdminSettings() {
               <div className="overflow-x-auto pb-1">
                 <div className="flex gap-2 min-w-max">
                   {slots.slice(0, maxSlotsToShow).map((slot, i) => {
-                    const booked = Math.floor(Math.random() * form.maxOrdersPerSlot);
+                    const slotStart = slot.time;
+                    const [sh, sm] = slotStart.split(':').map(Number);
+                    const slotStartMin = sh * 60 + sm;
+                    const slotEndMin = slotStartMin + form.slotDurationMinutes;
+                    const booked = orders.filter((o: any) => {
+                      const pt = o.pickupTime || '';
+                      const [ph, pm] = pt.split(':').map(Number);
+                      if (isNaN(ph) || isNaN(pm)) return false;
+                      const orderMin = ph * 60 + pm;
+                      return orderMin >= slotStartMin && orderMin < slotEndMin;
+                    }).length;
                     const full = booked >= form.maxOrdersPerSlot;
                     return (
                       <div key={i} className={`flex flex-col items-center gap-1 p-2.5 rounded-lg border min-w-[80px] ${full ? 'bg-red-500/10 border-red-500/20' : 'bg-zinc-800/30 border-zinc-800/60'}`}>
