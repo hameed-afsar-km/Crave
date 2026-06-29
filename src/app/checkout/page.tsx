@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Clock, ShoppingBag, ArrowLeft, User, Phone, Mail, CheckCircle, Flame, ArrowRight } from 'lucide-react';
+import { Clock, ShoppingBag, ArrowLeft, User, Mail, CheckCircle, ArrowRight, Store, Ban } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { formatPrice, generateTimeSlots, generateOrderId } from '@/lib/utils';
+import { loadSettings } from '@/lib/store';
 import StoreStatusBanner from '@/components/StoreStatusBanner';
 import Link from 'next/link';
 
@@ -24,6 +25,15 @@ export default function CheckoutPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedOrderId, setConfirmedOrderId] = useState('');
   const [confirmedOrder, setConfirmedOrder] = useState<any>(null);
+  const [storeStatus, setStoreStatus] = useState(() => loadSettings());
+
+  useEffect(() => {
+    setStoreStatus(loadSettings());
+    const interval = setInterval(() => setStoreStatus(loadSettings()), 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const canOrder = storeStatus.storeOpen && storeStatus.acceptingOrders;
 
   const tax = subtotal * 0.18;
   const total = subtotal + tax;
@@ -39,6 +49,8 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     if (!name || !phone || !isPhoneValid) return;
+    const latest = loadSettings();
+    if (!latest.storeOpen || !latest.acceptingOrders) { setStoreStatus(latest); return; }
     setProcessing(true);
     try {
       const orderId = generateOrderId();
@@ -304,7 +316,7 @@ export default function CheckoutPage() {
 
               <motion.button
                 onClick={handlePlaceOrder}
-                disabled={processing || !name || !phone || !isPhoneValid}
+                disabled={processing || !name || !phone || !isPhoneValid || !canOrder}
                 whileHover={{ scale: processing ? 1 : 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="relative flex items-center justify-center gap-2.5 w-full py-4 bg-gradient-to-r from-gold via-amber-500 to-amber-600 text-white font-black rounded-2xl shadow-lg shadow-gold/12 hover:shadow-gold/28 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed text-sm overflow-hidden group"
@@ -322,6 +334,11 @@ export default function CheckoutPage() {
                   </>
                 )}
               </motion.button>
+              {!canOrder && (
+                <p className="text-center text-[11px] text-rose-400/80 mt-3 font-semibold">
+                  {!storeStatus.storeOpen ? 'Store is currently closed' : 'Orders are temporarily paused'}
+                </p>
+              )}
 
               <p className="text-center text-[10px] text-zinc-700 mt-3 font-semibold tracking-wide">
                 Pay at pickup • No advance payment required
@@ -330,6 +347,45 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Store Closed / Paused Modal ── */}
+      <AnimatePresence>
+        {!canOrder && !showConfirmation && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-5"
+          >
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => {}} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ type: 'spring', damping: 22, stiffness: 200 }}
+              className="relative bg-[rgba(12,9,5,0.95)] backdrop-blur-2xl border border-gold/15 rounded-[32px] p-8 md:p-10 w-full max-w-sm text-center"
+            >
+              <div className="w-20 h-20 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-6">
+                {!storeStatus.storeOpen ? <Store className="w-10 h-10 text-amber-400" /> : <Ban className="w-10 h-10 text-amber-400" />}
+              </div>
+              <h2 className="text-2xl font-black text-white tracking-tight mb-2">
+                {!storeStatus.storeOpen ? 'Store Closed' : 'Orders Paused'}
+              </h2>
+              <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
+                {!storeStatus.storeOpen
+                  ? 'The store is currently closed. Please check back during operating hours to place your order.'
+                  : 'We are not accepting orders at the moment. Your cart has been saved — come back soon!'}
+              </p>
+              <Link
+                href="/menu"
+                className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-gold to-amber-600 text-white font-black rounded-2xl shadow-lg shadow-gold/15 hover:shadow-gold/30 transition-all text-sm"
+              >
+                Browse Menu
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Success Confirmation Overlay ── */}
       <AnimatePresence>

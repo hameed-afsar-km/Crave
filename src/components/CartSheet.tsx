@@ -1,11 +1,13 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { X, Minus, Plus, ShoppingBag, ArrowRight } from 'lucide-react';
+import { X, Minus, Plus, ShoppingBag, ArrowRight, Store, Ban } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { formatPrice } from '@/lib/utils';
+import { loadSettings } from '@/lib/store';
 
 interface CartSheetProps {
   open: boolean;
@@ -14,6 +16,15 @@ interface CartSheetProps {
 
 export default function CartSheet({ open, onClose }: CartSheetProps) {
   const { items, removeItem, updateQuantity, subtotal } = useCart();
+  const [storeStatus, setStoreStatus] = useState(() => loadSettings());
+
+  useEffect(() => {
+    setStoreStatus(loadSettings());
+    const interval = setInterval(() => setStoreStatus(loadSettings()), 10000);
+    return () => clearInterval(interval);
+  }, [open]);
+
+  const canOrder = storeStatus.storeOpen && storeStatus.acceptingOrders;
 
   return (
     <AnimatePresence>
@@ -108,14 +119,21 @@ export default function CartSheet({ open, onClose }: CartSheetProps) {
                   <span className="text-zinc-500 text-xs font-black uppercase tracking-wider">Subtotal</span>
                   <span className="text-xl font-black text-gradient-gold tracking-tight">{formatPrice(subtotal)}</span>
                 </div>
-                <Link
-                  href="/checkout"
-                  onClick={onClose}
-                  className="flex items-center justify-center gap-2.5 w-full py-4 bg-gradient-to-r from-gold via-amber-500 to-amber-600 text-white font-black uppercase tracking-widest text-xs rounded-full shadow-lg shadow-gold/10 hover:shadow-gold/25 transition-all hover:brightness-110 duration-300"
-                >
-                  <span>Proceed to Checkout</span>
-                  <ArrowRight className="w-4 h-4 text-white" />
-                </Link>
+                {!canOrder ? (
+                  <div className="w-full py-4 bg-zinc-800/50 text-zinc-500 font-black uppercase tracking-widest text-xs rounded-full text-center cursor-not-allowed border border-zinc-700/50 flex items-center justify-center gap-2">
+                    {!storeStatus.storeOpen ? <Store className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
+                    {!storeStatus.storeOpen ? 'Store Closed' : 'Orders Paused'}
+                  </div>
+                ) : (
+                  <Link
+                    href="/checkout"
+                    onClick={onClose}
+                    className="flex items-center justify-center gap-2.5 w-full py-4 bg-gradient-to-r from-gold via-amber-500 to-amber-600 text-white font-black uppercase tracking-widest text-xs rounded-full shadow-lg shadow-gold/10 hover:shadow-gold/25 transition-all hover:brightness-110 duration-300"
+                  >
+                    <span>Proceed to Checkout</span>
+                    <ArrowRight className="w-4 h-4 text-white" />
+                  </Link>
+                )}
               </div>
             )}
           </motion.div>

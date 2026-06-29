@@ -286,8 +286,8 @@ export default function AdminDashboard() {
                 {recent.map((o: any) => (
                   <div key={o.id} className="flex items-center gap-4 py-2.5">
                     <span className={`w-2 h-2 rounded-full shrink-0 ${statusDot[o.status] || 'bg-zinc-600'}`} />
-                    <span className="text-sm font-medium text-zinc-400 w-20 shrink-0">{o.id}</span>
-                    <span className="text-sm text-zinc-400 flex-1 truncate">{o.customer || o.customerName}</span>
+                    <span className="text-sm font-medium text-zinc-400 w-28 shrink-0">{o.id}</span>
+                    <span className="text-sm text-zinc-400 flex-1 truncate ml-2">{o.customer || o.customerName}</span>
                     <span className="text-sm font-medium text-zinc-300 w-16 text-right">₹{o.amount || 0}</span>
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-md ${statusColors[o.status] || 'bg-zinc-500/10 text-zinc-500'}`}>
                       {o.status === 'received' ? 'New' : o.status === 'preparing' ? 'Cooking' : o.status === 'ready' ? 'Ready' : 'Done'}

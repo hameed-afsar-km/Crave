@@ -1,16 +1,26 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Minus, Plus, X, ShoppingBag, ArrowLeft, ArrowRight, Trash2 } from 'lucide-react';
+import { Minus, Plus, X, ShoppingBag, ArrowLeft, ArrowRight, Trash2, Store, Ban } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { formatPrice } from '@/lib/utils';
+import { loadSettings } from '@/lib/store';
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, clearCart, subtotal } = useCart();
+  const [storeStatus, setStoreStatus] = useState(() => loadSettings());
   const tax = subtotal * 0.18;
   const total = subtotal + tax;
+  const canOrder = storeStatus.storeOpen && storeStatus.acceptingOrders;
+
+  useEffect(() => {
+    setStoreStatus(loadSettings());
+    const interval = setInterval(() => setStoreStatus(loadSettings()), 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (items.length === 0) {
     return (
@@ -167,14 +177,21 @@ export default function CartPage() {
                 <span className="text-2xl font-black text-gradient-gold glow-text-sm">{formatPrice(total)}</span>
               </div>
 
-              <Link
-                href="/checkout"
-                className="group flex items-center justify-center gap-2 w-full py-4 bg-gradient-to-r from-gold via-amber-500 to-amber-600 text-white font-black rounded-2xl shadow-lg shadow-gold/12 hover:shadow-gold/28 hover:scale-[1.02] transition-all duration-300 text-sm overflow-hidden relative"
-              >
-                <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/12 to-transparent" />
-                <span className="relative">Proceed to Checkout</span>
-                <ArrowRight className="w-4 h-4 relative group-hover:translate-x-0.5 transition-transform" />
-              </Link>
+              {!canOrder ? (
+                <div className="flex items-center justify-center gap-2 w-full py-4 bg-zinc-800/50 text-zinc-500 font-black rounded-2xl border border-zinc-700/50 text-sm cursor-not-allowed">
+                  {!storeStatus.storeOpen ? <Store className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
+                  {!storeStatus.storeOpen ? 'Store Closed' : 'Orders Paused'}
+                </div>
+              ) : (
+                <Link
+                  href="/checkout"
+                  className="group flex items-center justify-center gap-2 w-full py-4 bg-gradient-to-r from-gold via-amber-500 to-amber-600 text-white font-black rounded-2xl shadow-lg shadow-gold/12 hover:shadow-gold/28 hover:scale-[1.02] transition-all duration-300 text-sm overflow-hidden relative"
+                >
+                  <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/12 to-transparent" />
+                  <span className="relative">Proceed to Checkout</span>
+                  <ArrowRight className="w-4 h-4 relative group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+              )}
 
               <Link
                 href="/menu"
