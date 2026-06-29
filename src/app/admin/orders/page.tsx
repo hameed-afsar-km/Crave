@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   ArrowLeft, Search, ChefHat, Package, CheckCircle, Clock,
   X, Printer, Download, Phone, MapPin, ChevronRight, ShoppingBag,
-  Copy, MessageCircle
+  Copy, MessageCircle, Ban, Trash2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getStoredOrders, saveOrders } from '@/lib/seed-data';
@@ -14,7 +14,7 @@ import { getStoredOrders, saveOrders } from '@/lib/seed-data';
 interface OrderItem { name: string; qty: number; }
 interface Order {
   id: string; customer: string; phone: string; items: OrderItem[];
-  amount: number; pickupTime: string; status: 'received' | 'preparing' | 'ready' | 'completed';
+  amount: number; pickupTime: string;   status: 'received' | 'preparing' | 'ready' | 'completed' | 'cancelled';
   notes?: string; createdAt: string;
 }
 
@@ -23,6 +23,7 @@ const statusConfig: Record<string, { label: string; pill: string; dot: string }>
   preparing: { label: 'Preparing', pill: 'bg-amber-500/10 text-amber-400 border border-amber-500/20', dot: 'bg-amber-500' },
   ready: { label: 'Ready', pill: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20', dot: 'bg-emerald-500' },
   completed: { label: 'Completed', pill: 'bg-zinc-500/10 text-zinc-500 border border-zinc-700', dot: 'bg-zinc-600' },
+  cancelled: { label: 'Cancelled', pill: 'bg-red-500/10 text-red-400 border border-red-500/20', dot: 'bg-red-500' },
 };
 
 const statusFlow = ['received', 'preparing', 'ready', 'completed'] as const;
@@ -51,12 +52,22 @@ export default function AdminOrders() {
     if (selectedOrder?.id === orderId) setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
   };
 
+  const cancelOrder = (orderId: string) => {
+    setOrders(prev => { const updated = prev.map(o => o.id === orderId ? { ...o, status: 'cancelled' as Order['status'] } : o); saveOrders(updated); return updated; });
+    if (selectedOrder?.id === orderId) setSelectedOrder(prev => prev ? { ...prev, status: 'cancelled' } : null);
+  };
+
+  const deleteOrder = (orderId: string) => {
+    setOrders(prev => { const updated = prev.filter(o => o.id !== orderId); saveOrders(updated); return updated; });
+    if (selectedOrder?.id === orderId) setSelectedOrder(null);
+  };
+
   const copyPhone = (phone: string) => {
     navigator.clipboard.writeText(phone); setCopied(phone); setTimeout(() => setCopied(''), 2000);
   };
 
   const queuePosition = (orderId: string) => {
-    const active = orders.filter(o => o.status !== 'completed');
+    const active = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
     const idx = active.findIndex(o => o.id === orderId);
     return idx >= 0 ? idx + 1 : '-';
   };
@@ -127,7 +138,7 @@ export default function AdminOrders() {
 
   if (!isAdmin) return <div className="min-h-screen flex items-center justify-center"><p className="text-zinc-500 font-medium">Access Denied</p></div>;
 
-  const filterTabs = ['all', 'received', 'preparing', 'ready', 'completed'];
+  const filterTabs = ['all', 'received', 'preparing', 'ready', 'completed', 'cancelled'];
   const counts = { all: orders.length } as Record<string, number>;
   filterTabs.forEach(t => { counts[t] = t === 'all' ? orders.length : orders.filter(o => o.status === t).length; });
 
@@ -139,7 +150,7 @@ export default function AdminOrders() {
             <Link href="/admin/dashboard" className="p-1.5 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all"><ArrowLeft className="w-4 h-4" /></Link>
             <div className="flex-1">
               <h1 className="text-xl font-bold text-white">Order Management</h1>
-              <p className="text-zinc-500 text-sm mt-0.5">{orders.length} total · {orders.filter(o => o.status !== 'completed').length} active</p>
+              <p className="text-zinc-500 text-sm mt-0.5">{orders.length} total · {orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled').length} active</p>
             </div>
             <button onClick={exportCSV} className="hidden sm:flex items-center gap-2 px-3.5 py-2 border border-zinc-700 bg-zinc-800/50 hover:bg-zinc-700 text-zinc-400 rounded-lg transition-all text-xs font-medium"><Download className="w-3.5 h-3.5" /> Export</button>
           </div>
@@ -187,7 +198,7 @@ export default function AdminOrders() {
                       <Phone className="w-3 h-3" />{order.phone}
                       <button onClick={(e) => { e.stopPropagation(); copyPhone(order.phone); }} className="p-0.5 hover:text-zinc-300 transition-colors">{copied === order.phone ? <span className="text-emerald-400 text-[10px]">Copied!</span> : <Copy className="w-3 h-3" />}</button>
                       <a href={`tel:${order.phone}`} onClick={(e) => e.stopPropagation()} className="p-0.5 hover:text-zinc-300"><Phone className="w-3 h-3" /></a>
-                      <a href={`https://wa.me/${order.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()} className="p-0.5 hover:text-zinc-300"><MessageCircle className="w-3 h-3" /></a>
+                      <a href={`https://wa.me/${(order.phone ?? '').replace(/\D/g, '')}`} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()} className="p-0.5 hover:text-zinc-300"><MessageCircle className="w-3 h-3" /></a>
                       <span className="text-zinc-700">·</span><MapPin className="w-3 h-3" />{order.pickupTime}
                     </div>
                   </div>
@@ -207,12 +218,14 @@ export default function AdminOrders() {
                     <ChevronRight className="w-4 h-4 text-zinc-600" />
                   </div>
                 </div>
-                <div className="mt-2.5 pt-2.5 border-t border-zinc-800/60 flex gap-2">
+                <div className="mt-2.5 pt-2.5 border-t border-zinc-800/60 flex gap-2 flex-wrap">
                   {order.status === 'received' && <button onClick={(e) => { e.stopPropagation(); updateStatus(order.id, 'preparing'); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-all"><ChefHat className="w-3 h-3" /> Start</button>}
                   {order.status === 'preparing' && <button onClick={(e) => { e.stopPropagation(); updateStatus(order.id, 'ready'); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"><CheckCircle className="w-3 h-3" /> Ready</button>}
                   {order.status === 'ready' && <button onClick={(e) => { e.stopPropagation(); updateStatus(order.id, 'completed'); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-all"><Package className="w-3 h-3" /> Collect</button>}
+                  {(order.status === 'received' || order.status === 'preparing') && <button onClick={(e) => { e.stopPropagation(); cancelOrder(order.id); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all"><Ban className="w-3 h-3" /> Cancel</button>}
+                  {(order.status === 'completed' || order.status === 'cancelled') && <button onClick={(e) => { e.stopPropagation(); deleteOrder(order.id); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all"><Trash2 className="w-3 h-3" /> Delete</button>}
                   <button onClick={(e) => { e.stopPropagation(); printOrder(order); }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-zinc-800/50 text-zinc-400 border border-zinc-700 hover:bg-zinc-700 transition-all"><Printer className="w-3 h-3" /> Print</button>
-                  <a href={`https://wa.me/${order.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"><MessageCircle className="w-3 h-3" /> WhatsApp</a>
+                  <a href={`https://wa.me/${(order.phone ?? '').replace(/\D/g, '')}`} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"><MessageCircle className="w-3 h-3" /> WhatsApp</a>
                 </div>
               </motion.div>
             );
@@ -274,9 +287,11 @@ export default function AdminOrders() {
                   {selectedOrder.status === 'received' && <button onClick={() => updateStatus(selectedOrder.id, 'preparing')} className="flex items-center gap-2 px-4 py-2 bg-white text-black text-xs font-medium rounded-lg hover:bg-zinc-200 transition-all"><ChefHat className="w-3.5 h-3.5" /> Start</button>}
                   {selectedOrder.status === 'preparing' && <button onClick={() => updateStatus(selectedOrder.id, 'ready')} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-500 transition-all"><CheckCircle className="w-3.5 h-3.5" /> Ready</button>}
                   {selectedOrder.status === 'ready' && <button onClick={() => updateStatus(selectedOrder.id, 'completed')} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-500 transition-all"><Package className="w-3.5 h-3.5" /> Collect</button>}
+                  {(selectedOrder.status === 'received' || selectedOrder.status === 'preparing') && <button onClick={() => cancelOrder(selectedOrder.id)} className="flex items-center gap-2 px-4 py-2 border border-red-500/20 text-red-400 text-xs font-medium rounded-lg hover:bg-red-500/10 transition-all"><Ban className="w-3.5 h-3.5" /> Cancel</button>}
+                  {(selectedOrder.status === 'completed' || selectedOrder.status === 'cancelled') && <button onClick={() => deleteOrder(selectedOrder.id)} className="flex items-center gap-2 px-4 py-2 border border-red-500/20 text-red-400 text-xs font-medium rounded-lg hover:bg-red-500/10 transition-all"><Trash2 className="w-3.5 h-3.5" /> Delete</button>}
                   <button onClick={() => printOrder(selectedOrder)} className="flex items-center gap-2 px-4 py-2 border border-zinc-700 text-zinc-300 text-xs font-medium rounded-lg hover:bg-zinc-800 transition-all"><Printer className="w-3.5 h-3.5" /> Print</button>
                   <a href={`tel:${selectedOrder.phone}`} className="flex items-center gap-2 px-4 py-2 border border-zinc-700 text-zinc-300 text-xs font-medium rounded-lg hover:bg-zinc-800 transition-all"><Phone className="w-3.5 h-3.5" /> Call</a>
-                  <a href={`https://wa.me/${selectedOrder.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener" className="flex items-center gap-2 px-4 py-2 border border-emerald-500/20 text-emerald-400 text-xs font-medium rounded-lg hover:bg-emerald-500/10 transition-all"><MessageCircle className="w-3.5 h-3.5" /> WhatsApp</a>
+                  <a href={`https://wa.me/${(selectedOrder.phone ?? '').replace(/\D/g, '')}`} target="_blank" rel="noopener" className="flex items-center gap-2 px-4 py-2 border border-emerald-500/20 text-emerald-400 text-xs font-medium rounded-lg hover:bg-emerald-500/10 transition-all"><MessageCircle className="w-3.5 h-3.5" /> WhatsApp</a>
                 </div>
               </div>
             </motion.div>
