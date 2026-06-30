@@ -1,51 +1,32 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
   BarChart3, TrendingUp, IndianRupee, ShoppingBag, Clock,
-  ArrowLeft, Users, Zap
+  ArrowLeft, Users, Zap, Calendar
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getStoredOrders } from '@/lib/seed-data';
 import { AnimatedCounter } from '@/components/admin/AnimatedCounter';
 import { BarChart } from '@/components/admin/BarChart';
-import { weeklyRevenue, weeklyOrders } from '@/lib/revenue';
+import {
+  weeklyRevenue, weeklyOrders,
+  monthWeekRevenue, monthWeekOrders,
+  filterOrdersByPeriod,
+} from '@/lib/revenue';
+
+type Period = 'weekly' | 'monthly';
 
 export default function AdminAnalytics() {
   const { isAdmin } = useAuth();
+  const [period, setPeriod] = useState<Period>('weekly');
 
   const computeData = () => {
     const orders = getStoredOrders() || [];
     const revenue = orders.reduce((s: number, o: any) => s + (o.amount || 0), 0);
-
-    const itemCounts: Record<string, number> = {};
-    orders.forEach((o: any) => {
-      (o.items || []).forEach((item: any) => {
-        const name = item.name || '';
-        itemCounts[name] = (itemCounts[name] || 0) + (item.qty || 1);
-      });
-    });
-
-    const sortedItems = Object.entries(itemCounts)
-      .map(([name, count]) => ({ name, count, revenue: count * (revenue / Math.max(1, orders.length)) }))
-      .sort((a, b) => b.count - a.count);
-
-    const hourCounts: Record<string, number> = {};
-    orders.forEach((o: any) => {
-      const h = o.pickupTime ? o.pickupTime.split(':')[0] : '12';
-      hourCounts[h] = (hourCounts[h] || 0) + 1;
-    });
-    const peakHours = Object.entries(hourCounts)
-      .map(([hour, count]) => ({ label: `${hour}:00`, value: count as number }))
-      .sort((a, b) => Number(a.label.split(':')[0]) - Number(b.label.split(':')[0]));
-
-    const completedOrders = orders.filter((o: any) => o.status === 'completed');
-    const avgOrderValue = orders.length ? Math.round(revenue / orders.length) : 0;
-    const returningRate = orders.length > 1 ? 40 : 0;
-
-    return { orders, revenue, sortedItems, peakHours, completedOrders, avgOrderValue, returningRate, totalOrders: orders.length };
+    return { orders, revenue };
   };
 
   const [data, setData] = useState(computeData);
@@ -54,8 +35,51 @@ export default function AdminAnalytics() {
     setData(computeData());
   }, []);
 
-  const revData = weeklyRevenue(data.orders);
-  const ordData = weeklyOrders(data.orders);
+  const periodOrders = useMemo(() => filterOrdersByPeriod(data.orders, period), [data.orders, period]);
+  const periodRevenue = useMemo(() => periodOrders.reduce((s: number, o: any) => s + (o.amount || 0), 0), [periodOrders]);
+  const periodCompleted = useMemo(() => periodOrders.filter((o: any) => o.status === 'completed'), [periodOrders]);
+  const periodAvgValue = useMemo(() => periodOrders.length ? Math.round(periodRevenue / periodOrders.length) : 0, [periodRevenue, periodOrders]);
+
+  const periodItemCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    periodOrders.forEach((o: any) => {
+      (o.items || []).forEach((item: any) => {
+        const name = item.name || '';
+        counts[name] = (counts[name] || 0) + (item.qty || 1);
+      });
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count, revenue: count * (periodRevenue / Math.max(1, periodOrders.length)) }))
+      .sort((a, b) => b.count - a.count);
+  }, [periodOrders, periodRevenue]);
+
+  const periodPeakHours = useMemo(() => {
+    const hourCounts: Record<string, number> = {};
+    periodOrders.forEach((o: any) => {
+      const h = o.pickupTime ? o.pickupTime.split(':')[0] : '12';
+      hourCounts[h] = (hourCounts[h] || 0) + 1;
+    });
+    return Object.entries(hourCounts)
+      .map(([hour, count]) => ({ label: `${hour}:00`, value: count as number }))
+      .sort((a, b) => Number(a.label.split(':')[0]) - Number(b.label.split(':')[0]));
+  }, [periodOrders]);
+
+  const chartData = useMemo(() => {
+    if (period === 'weekly') {
+      return {
+        revenue: weeklyRevenue(data.orders),
+        orders: weeklyOrders(data.orders),
+        subtitle: `Weekly · ₹${periodRevenue.toLocaleString('en-IN')} total`,
+        ordersSubtitle: `Weekly · ${periodOrders.length} orders`,
+      };
+    }
+    return {
+      revenue: monthWeekRevenue(data.orders),
+      orders: monthWeekOrders(data.orders),
+      subtitle: `Monthly · ₹${periodRevenue.toLocaleString('en-IN')} total`,
+      ordersSubtitle: `Monthly · ${periodOrders.length} orders`,
+    };
+  }, [period, data.orders, periodRevenue, periodOrders]);
 
   if (!isAdmin) {
     return (
@@ -74,12 +98,36 @@ export default function AdminAnalytics() {
             <Link href="/admin/dashboard" className="p-1.5 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
               <ArrowLeft className="w-4 h-4" />
             </Link>
-            <div>
+            <div className="flex-1">
               <div className="flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-zinc-400" />
                 <h1 className="text-xl font-bold text-white">Analytics</h1>
               </div>
               <p className="text-zinc-500 text-sm">Key metrics at a glance</p>
+            </div>
+            <div className="flex items-center gap-1 bg-zinc-800/50 border border-zinc-700/60 rounded-lg p-0.5">
+              <button
+                onClick={() => setPeriod('weekly')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                  period === 'weekly'
+                    ? 'bg-zinc-700 text-zinc-200 shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                Weekly
+              </button>
+              <button
+                onClick={() => setPeriod('monthly')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                  period === 'monthly'
+                    ? 'bg-zinc-700 text-zinc-200 shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                Monthly
+              </button>
             </div>
           </div>
         </div>
@@ -89,10 +137,10 @@ export default function AdminAnalytics() {
         {/* Summary cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Total Revenue', value: data.revenue, icon: IndianRupee, prefix: '₹' },
-            { label: 'Total Orders', value: data.totalOrders, icon: ShoppingBag, prefix: '' },
-            { label: 'Avg Order Value', value: data.avgOrderValue, icon: TrendingUp, prefix: '₹' },
-            { label: 'Completed', value: data.completedOrders.length, icon: Clock, prefix: '' },
+            { label: `${period === 'weekly' ? 'Week' : 'Month'} Revenue`, value: periodRevenue, icon: IndianRupee, prefix: '₹' },
+            { label: `${period === 'weekly' ? 'Week' : 'Month'} Orders`, value: periodOrders.length, icon: ShoppingBag, prefix: '' },
+            { label: 'Avg Order Value', value: periodAvgValue, icon: TrendingUp, prefix: '₹' },
+            { label: 'Completed', value: periodCompleted.length, icon: Clock, prefix: '' },
           ].map((card, i) => (
             <motion.div
               key={card.label}
@@ -117,20 +165,20 @@ export default function AdminAnalytics() {
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800/60">
               <div>
                 <h2 className="text-sm font-semibold text-white">Revenue Trend</h2>
-                <p className="text-xs text-zinc-500 mt-0.5">Weekly · ₹{data.revenue.toLocaleString('en-IN')} total</p>
+                <p className="text-xs text-zinc-500 mt-0.5">{chartData.subtitle}</p>
               </div>
             </div>
-            <BarChart data={revData} color="#71717A" />
+            <BarChart data={chartData.revenue} color="#71717A" />
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}
             className="bg-[#12121A] rounded-xl border border-zinc-800/60 p-5">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-800/60">
               <div>
                 <h2 className="text-sm font-semibold text-white">Orders Trend</h2>
-                <p className="text-xs text-zinc-500 mt-0.5">Weekly · {data.totalOrders} orders</p>
+                <p className="text-xs text-zinc-500 mt-0.5">{chartData.ordersSubtitle}</p>
               </div>
             </div>
-            <BarChart data={ordData} color="#059669" />
+            <BarChart data={chartData.orders} color="#059669" />
           </motion.div>
         </div>
 
@@ -139,10 +187,10 @@ export default function AdminAnalytics() {
           {/* Top Selling Items */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
             className="bg-[#12121A] rounded-xl border border-zinc-800/60 p-5">
-            <h2 className="text-sm font-semibold text-white mb-4 pb-3 border-b border-zinc-800/60">Top Items</h2>
+            <h2 className="text-sm font-semibold text-white mb-4 pb-3 border-b border-zinc-800/60">Best Selling</h2>
             <div className="space-y-3">
-              {data.sortedItems.slice(0, 5).map((item, i) => {
-                const maxC = data.sortedItems[0]?.count || 1;
+              {periodItemCounts.slice(0, 5).map((item, i) => {
+                const maxC = periodItemCounts[0]?.count || 1;
                 return (
                   <div key={item.name}>
                     <div className="flex items-center justify-between text-sm mb-1">
@@ -158,8 +206,8 @@ export default function AdminAnalytics() {
                   </div>
                 );
               })}
-              {data.sortedItems.length === 0 && (
-                <p className="text-zinc-600 text-sm text-center py-4">No order data yet</p>
+              {periodItemCounts.length === 0 && (
+                <p className="text-zinc-600 text-sm text-center py-4">No sales data for this period</p>
               )}
             </div>
           </motion.div>
@@ -169,8 +217,8 @@ export default function AdminAnalytics() {
             className="bg-[#12121A] rounded-xl border border-zinc-800/60 p-5">
             <h2 className="text-sm font-semibold text-white mb-4 pb-3 border-b border-zinc-800/60">Peak Hours</h2>
             <div className="space-y-2">
-              {data.peakHours.length > 0 ? data.peakHours.map((h) => {
-                const maxVal = Math.max(...data.peakHours.map(d => d.value));
+              {periodPeakHours.length > 0 ? periodPeakHours.map((h) => {
+                const maxVal = Math.max(...periodPeakHours.map(d => d.value));
                 return (
                   <div key={h.label} className="flex items-center gap-3">
                     <span className="text-xs font-medium text-zinc-500 w-9 text-right">{h.label}</span>
@@ -181,7 +229,7 @@ export default function AdminAnalytics() {
                   </div>
                 );
               }) : (
-                <p className="text-zinc-600 text-sm text-center py-4">No peak data yet</p>
+                <p className="text-zinc-600 text-sm text-center py-4">No peak data for this period</p>
               )}
             </div>
           </motion.div>
@@ -192,10 +240,10 @@ export default function AdminAnalytics() {
             <h2 className="text-sm font-semibold text-white mb-4 pb-3 border-b border-zinc-800/60">Customer Insights</h2>
             <div className="space-y-4">
               {[
-                { label: 'Total Customers', value: data.orders.length, icon: Users },
-                { label: 'Avg Order Value', value: `₹${data.avgOrderValue}`, icon: IndianRupee },
-                { label: 'Repeat Rate', value: `${data.returningRate}%`, icon: TrendingUp },
-                { label: 'Peak Hour Avg', value: data.peakHours.length ? `${Math.round(data.peakHours.reduce((s, d) => s + d.value, 0) / data.peakHours.length)}` : '0', icon: Zap },
+                { label: 'Total Customers', value: periodOrders.length, icon: Users },
+                { label: 'Avg Order Value', value: `₹${periodAvgValue}`, icon: IndianRupee },
+                { label: 'Repeat Rate', value: `${periodOrders.length > 1 ? 40 : 0}%`, icon: TrendingUp },
+                { label: 'Peak Hour Avg', value: periodPeakHours.length ? `${Math.round(periodPeakHours.reduce((s, d) => s + d.value, 0) / periodPeakHours.length)}` : '0', icon: Zap },
               ].map((item, i) => (
                 <div key={i} className="flex items-center justify-between py-2 border-b border-zinc-800/60 last:border-0">
                   <div className="flex items-center gap-2">
