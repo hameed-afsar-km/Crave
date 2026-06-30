@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   IndianRupee, Clock, CheckCircle, CookingPot,
@@ -11,24 +11,9 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { seedSampleData, isSeeded, getStoredOrders, saveOrders } from '@/lib/seed-data';
 import { loadSettings, saveSettings } from '@/lib/store';
-
-function AnimatedNumber({ value, prefix = '' }: { value: number; prefix?: string }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef(null);
-  useEffect(() => {
-    const duration = 800;
-    const steps = 20;
-    const increment = value / steps;
-    let current = 0;
-    const timer = setInterval(() => {
-      current += increment;
-      if (current >= value) { setCount(value); clearInterval(timer); }
-      else setCount(Math.round(current));
-    }, duration / steps);
-    return () => clearInterval(timer);
-  }, [value]);
-  return <span ref={ref} className="text-2xl font-bold text-white tabular-nums tracking-tight">{prefix}{count}</span>;
-}
+import { AnimatedCounter } from '@/components/admin/AnimatedCounter';
+import { BarChart } from '@/components/admin/BarChart';
+import { hourlyRevenue } from '@/lib/revenue';
 
 const statusColors: Record<string, string> = {
   received: 'bg-blue-500/10 text-blue-400',
@@ -36,6 +21,8 @@ const statusColors: Record<string, string> = {
   ready: 'bg-emerald-500/10 text-emerald-400',
   completed: 'bg-zinc-500/10 text-zinc-500',
 };
+
+const chartGold = '#d4af37';
 
 const statusDot: Record<string, string> = {
   received: 'bg-blue-500',
@@ -50,71 +37,7 @@ const statusAction: Record<string, { label: string; next: string; color: string 
   ready: { label: 'Collected', next: 'completed', color: 'bg-emerald-600 hover:bg-emerald-500 text-white' },
 };
 
-function RevenueChart({ orders }: { orders: any[] }) {
-  const hourly: Record<number, number> = {};
-  for (let i = 7; i <= 23; i++) hourly[i] = 0;
 
-  orders.forEach((o: any) => {
-    const raw = o.createdAt || '';
-    let h = -1;
-    if (/^\d{1,2}:\d{2}\s?(AM|PM)/i.test(raw)) {
-      const m = raw.match(/^(\d{1,2}):\d{2}\s?(AM|PM)/i);
-      if (m) {
-        let hour = parseInt(m[1]);
-        const isPM = m[2].toUpperCase() === 'PM';
-        if (isPM && hour !== 12) hour += 12;
-        if (!isPM && hour === 12) hour = 0;
-        h = hour;
-      }
-    } else {
-      const d = new Date(raw);
-      if (!isNaN(d.getTime())) h = d.getHours();
-    }
-    if (h >= 0) hourly[h] = (hourly[h] || 0) + (o.amount || 0);
-  });
-
-  const maxVal = Math.max(...Object.values(hourly), 1);
-  const bars = Object.entries(hourly).map(([h, val]) => {
-    const hour = parseInt(h, 10);
-    return {
-      hour,
-      val,
-      pct: val / maxVal,
-      label: hour === 0 ? '12AM' : hour < 12 ? `${hour}AM` : hour === 12 ? '12PM' : `${hour - 12}PM`,
-    };
-  });
-
-  const W = 700, H = 180, barW = Math.floor((W - 40) / bars.length);
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H + 40}`} className="w-full h-auto mt-2" preserveAspectRatio="xMidYMid meet">
-      <defs>
-        <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#d4af37" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#d4af37" stopOpacity="0.3" />
-        </linearGradient>
-      </defs>
-      {bars.map((b, i) => {
-        const x = 20 + i * barW;
-        const bh = Math.max(b.pct * H, 2);
-        const y = H - bh;
-        return (
-          <g key={b.hour}>
-            <rect x={x + 2} y={y} width={Math.max(barW - 4, 4)} height={bh} fill="url(#barGrad)" rx="3" className="hover:opacity-80 transition-opacity">
-              <title>₹{b.val} at {b.label}</title>
-            </rect>
-            {i % 2 === 0 && (
-              <text x={x + barW / 2} y={H + 18} textAnchor="middle" fill="#52525b" fontSize="9" fontFamily="inherit">
-                {b.label}
-              </text>
-            )}
-          </g>
-        );
-      })}
-      <text x="15" y="10" fill="#52525b" fontSize="9" fontFamily="inherit">₹{maxVal}</text>
-    </svg>
-  );
-}
 
 export default function AdminDashboard() {
   const { isAdmin } = useAuth();
@@ -300,7 +223,7 @@ export default function AdminDashboard() {
                 </div>
                 {kpi.meta && <span className="text-xs text-zinc-500">{kpi.meta}</span>}
               </div>
-              <AnimatedNumber value={kpi.value} prefix={kpi.prefix} />
+              <AnimatedCounter value={kpi.value} prefix={kpi.prefix} />
               <p className="text-xs text-zinc-500 mt-1">{kpi.label}</p>
             </div>
           ))}
@@ -373,7 +296,7 @@ export default function AdminDashboard() {
           {orders.length === 0 ? (
             <p className="text-sm text-zinc-600 text-center py-6">No data yet</p>
           ) : (
-            <RevenueChart orders={orders} />
+            <BarChart data={hourlyRevenue(orders)} color={chartGold} />
           )}
         </div>
 

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
   BarChart3, TrendingUp, IndianRupee, ShoppingBag, Clock,
@@ -9,56 +9,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getStoredOrders } from '@/lib/seed-data';
-
-function AnimatedCounter({ value, prefix = '', suffix = '' }: { value: number; prefix?: string; suffix?: string }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true });
-  useEffect(() => {
-    if (!inView) return;
-    const duration = 1200;
-    const steps = 30;
-    const increment = value / steps;
-    let current = 0;
-    const timer = setInterval(() => {
-      current += increment;
-      if (current >= value) { setCount(value); clearInterval(timer); }
-      else setCount(Math.round(current));
-    }, duration / steps);
-    return () => clearInterval(timer);
-  }, [value, inView]);
-  return <span ref={ref} className="text-2xl font-bold text-white tabular-nums tracking-tight">{prefix}{count}{suffix}</span>;
-}
-
-function BarChart({ data, color = '#4B5563' }: { data: { label: string; value: number }[]; color?: string }) {
-  const max = Math.max(...data.map(d => d.value), 1);
-  const barW = 28;
-  const gap = 10;
-  const chartH = 140;
-  return (
-    <svg width="100%" height={chartH + 20} viewBox={`0 0 ${data.length * (barW + gap)} ${chartH + 20}`} className="w-full">
-      <defs>
-        <linearGradient id={`barGrad_${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.9" />
-          <stop offset="100%" stopColor={color} stopOpacity="0.1" />
-        </linearGradient>
-      </defs>
-      {data.map((d, i) => {
-        const barH = (d.value / max) * (chartH - 10);
-        const x = i * (barW + gap);
-        const y = chartH - barH;
-        return (
-          <g key={i}>
-            <rect x={x} y={y} width={barW} height={barH} rx="3" fill={`url(#barGrad_${color.replace('#', '')})`} className="hover:opacity-80 transition-opacity" />
-            <text x={x + barW / 2} y={chartH + 12} textAnchor="middle" fill="#A1A1AA" fontSize="8" fontWeight="600">{d.label}</text>
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
-const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+import { AnimatedCounter } from '@/components/admin/AnimatedCounter';
+import { BarChart } from '@/components/admin/BarChart';
+import { weeklyRevenue, weeklyOrders } from '@/lib/revenue';
 
 export default function AdminAnalytics() {
   const { isAdmin } = useAuth();
@@ -101,15 +54,8 @@ export default function AdminAnalytics() {
     setData(computeData());
   }, []);
 
-  const weeklyRevenue = weekDays.map((day, i) => ({
-    label: day,
-    value: data.orders.length > 0 ? Math.round(data.revenue / 7 * (0.8 + Math.random() * 0.4)) : [8200, 10500, 9800, 11200, 11800, 14250, 12450][i],
-  }));
-
-  const weeklyOrders = weekDays.map((day, i) => ({
-    label: day,
-    value: data.orders.length > 0 ? Math.round(data.totalOrders / 7 * (0.7 + Math.random() * 0.6)) : [38, 42, 40, 48, 52, 68, 55][i],
-  }));
+  const revData = weeklyRevenue(data.orders);
+  const ordData = weeklyOrders(data.orders);
 
   if (!isAdmin) {
     return (
@@ -174,7 +120,7 @@ export default function AdminAnalytics() {
                 <p className="text-xs text-zinc-500 mt-0.5">Weekly · ₹{data.revenue.toLocaleString('en-IN')} total</p>
               </div>
             </div>
-            <BarChart data={weeklyRevenue} color="#71717A" />
+            <BarChart data={revData} color="#71717A" />
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}
             className="bg-[#12121A] rounded-xl border border-zinc-800/60 p-5">
@@ -184,7 +130,7 @@ export default function AdminAnalytics() {
                 <p className="text-xs text-zinc-500 mt-0.5">Weekly · {data.totalOrders} orders</p>
               </div>
             </div>
-            <BarChart data={weeklyOrders} color="#059669" />
+            <BarChart data={ordData} color="#059669" />
           </motion.div>
         </div>
 
