@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { X, ChevronRight } from 'lucide-react';
-import { subscribeOrder } from '@/lib/firestore-service';
+import { subscribeOrder, subscribeOrders, subscribeSettings } from '@/lib/firestore-service';
 
 interface OrderData {
   id: string;
@@ -42,24 +42,36 @@ function getStatusDisplay(status: string, pickupTime: string): { label: string; 
 export default function QueueWidget() {
   const [visible, setVisible] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const [ahead, setAhead] = useState(8);
-  const [wait, setWait] = useState(12);
+  const [ahead, setAhead] = useState(0);
+  const [wait, setWait] = useState(0);
   const [activeOrder, setActiveOrder] = useState<OrderData | null>(null);
   const [orderDismissed, setOrderDismissed] = useState(false);
+  const allOrdersRef = useRef<any[]>([]);
+  const prepTimeRef = useRef(10);
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 2800);
     return () => clearTimeout(t);
   }, []);
 
+  // Subscribe to all orders + settings for real queue calculation
   useEffect(() => {
-    const interval = setInterval(() => {
-      setAhead(prev => Math.max(1, Math.min(20, prev + (Math.random() > 0.6 ? -1 : 1))));
-      setWait(prev => Math.max(3, Math.min(35, prev + (Math.random() > 0.5 ? 1 : -1))));
-    }, 5000);
-    return () => clearInterval(interval);
+    const unsubOrders = subscribeOrders((allOrders) => {
+      allOrdersRef.current = allOrders;
+      const active = allOrders.filter(
+        o => o.status === 'received' || o.status === 'preparing'
+      );
+      setAhead(active.length);
+      const parallel = Math.max(1, Math.ceil(active.length / 2));
+      setWait(Math.round((active.length * prepTimeRef.current) / parallel));
+    });
+    const unsubSettings = subscribeSettings((settings) => {
+      prepTimeRef.current = settings.averagePrepTime;
+    });
+    return () => { unsubOrders(); unsubSettings(); };
   }, []);
 
+  // Subscribe to the user's active order
   useEffect(() => {
     const raw = localStorage.getItem('crave-last-order');
     if (raw) {
@@ -81,6 +93,16 @@ export default function QueueWidget() {
                 createdAt: typeof updatedOrder.createdAt === 'string' ? updatedOrder.createdAt : new Date().toISOString(),
               };
               setActiveOrder(mapped);
+              // Calculate actual queue position
+              const queueOrders = allOrdersRef.current
+                .filter(o => o.status === 'received' || o.status === 'preparing')
+                .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+              const pos = queueOrders.findIndex(o => o.id === updatedOrder.id);
+              const aheadCount = pos > 0 ? pos : 0;
+              setAhead(aheadCount);
+              const parallel = Math.max(1, Math.ceil(aheadCount / 2));
+              setWait(Math.round((aheadCount * prepTimeRef.current) / parallel));
+
               if (['completed', 'cancelled'].includes(updatedOrder.status)) {
                 setTimeout(() => setActiveOrder(null), 5000);
               }
