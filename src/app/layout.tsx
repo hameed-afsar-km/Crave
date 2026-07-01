@@ -33,6 +33,12 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_IN",
   },
+  manifest: "/manifest.json",
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
+    "apple-mobile-web-app-title": "Crave Express",
+  },
 };
 
 export default function RootLayout({

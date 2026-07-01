@@ -1,0 +1,50 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: check if the requester is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Helper: check if the requester is the admin
+    // Admin is determined by the email in the Firebase Auth token matching the admin email
+    function isAdmin() {
+      return isAuth() && request.auth.token.email == 'kmafsar2006@gmail.com';
+    }
+
+    // Helper: check if the requester owns the document
+    function isOwner(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+
+    // ─── MENU ITEMS ──────────────────────────────────
+    // Public read; admin-only write
+    match /menu-items/{itemId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ─── ORDERS ──────────────────────────────────────
+    // Users can read their own orders; admin can read all
+    match /orders/{orderId} {
+      allow read: if isAdmin() || (isAuth() && resource.data.customerId == request.auth.uid);
+      allow create: if isAuth();
+      allow update, delete: if isAdmin() || (isAuth() && resource.data.customerId == request.auth.uid);
+    }
+
+    // ─── SETTINGS ────────────────────────────────────
+    // Public read (store hours, open/close status)
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ─── USERS ───────────────────────────────────────
+    // Each user can read/write their own profile; admin can read/write all
+    match /users/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+  }
+}

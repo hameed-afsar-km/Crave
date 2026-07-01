@@ -7,6 +7,7 @@ import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
 import Navbar from './Navbar';
 import Footer from './Footer';
+import PWARegister from './PWARegister';
 
 const SplashScreen = dynamic(() => import('./SplashScreen'), { ssr: false });
 const QueueWidget = dynamic(() => import('./QueueWidget'), { ssr: false });
@@ -24,6 +25,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
       <CartProvider>
+        <PWARegister />
         {!splashDone && <SplashScreen onFinish={handleSplashFinish} />}
         {!isAuth && !isAdmin && <Navbar />}
         <main className="flex-1">{children}</main>
