@@ -1,8 +1,7 @@
-const CACHE = 'crave-v1';
+const CACHE = 'crave-v2';
 const STATIC_ASSETS = [
   '/',
   '/menu',
-  '/auth',
   '/manifest.json',
 ];
 
@@ -26,11 +25,21 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Never cache API responses (may contain sensitive data)
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirst(request));
+    event.respondWith(networkOnly(request));
     return;
   }
 
+  // Never cache auth pages
+  if (url.pathname.startsWith('/auth') || url.pathname.startsWith('/admin') ||
+      url.pathname.startsWith('/checkout') || url.pathname.startsWith('/profile') ||
+      url.pathname.startsWith('/orders') || url.pathname.startsWith('/rewards')) {
+    event.respondWith(networkOnly(request));
+    return;
+  }
+
+  // Cache static assets (styles, scripts, fonts, images)
   if (
     request.destination === 'style' ||
     request.destination === 'script' ||
@@ -41,6 +50,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Navigations: network-first for fresh content
   event.respondWith(networkFirst(request));
 });
 
@@ -70,6 +80,14 @@ async function networkFirst(request) {
   } catch {
     const cached = await caches.match(request);
     if (cached) return cached;
+    return new Response('Offline', { status: 503 });
+  }
+}
+
+async function networkOnly(request) {
+  try {
+    return await fetch(request);
+  } catch {
     return new Response('Offline', { status: 503 });
   }
 }

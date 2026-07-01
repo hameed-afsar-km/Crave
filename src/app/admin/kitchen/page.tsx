@@ -63,6 +63,7 @@ export default function KitchenPage() {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
+    const outletFilter = !isAllOutlets && selectedOutletId ? selectedOutletId : undefined;
     const unsub = subscribeOrders((firestoreOrders) => {
       const mapped = firestoreOrders.map((o: any) => ({
         id: o.id,
@@ -78,10 +79,10 @@ export default function KitchenPage() {
         outletName: o.outletName || '',
       }));
       setOrders(mapped);
-    });
+    }, [], outletFilter);
     const timer = setInterval(() => setNow(new Date()), 30000);
     return () => { unsub(); clearInterval(timer); };
-  }, []);
+  }, [selectedOutletId, isAllOutlets]);
 
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
 

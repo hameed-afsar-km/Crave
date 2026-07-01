@@ -410,8 +410,21 @@ export default function AdminMenu() {
                   {(previewUrl || form.image) && (
                     <Image src={previewUrl || form.image} alt="Preview" width={64} height={64} className="rounded-lg object-cover border border-zinc-700 shrink-0" />
                   )}
-                  <input type="file" accept="image/*" onChange={(e) => {
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={(e) => {
                     const file = e.target.files?.[0] || null;
+                    if (file) {
+                      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+                      if (!allowedTypes.includes(file.type)) {
+                        alert('Only JPEG, PNG, WebP, and AVIF images are allowed');
+                        e.target.value = '';
+                        return;
+                      }
+                      if (file.size > 5 * 1024 * 1024) {
+                        alert('Image must be under 5MB');
+                        e.target.value = '';
+                        return;
+                      }
+                    }
                     setImageFile(file);
                     if (previewUrl) URL.revokeObjectURL(previewUrl);
                     setPreviewUrl(file ? URL.createObjectURL(file) : null);

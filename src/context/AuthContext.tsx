@@ -3,6 +3,8 @@
 import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import { UserProfile, UserRole } from '@/types';
 import { saveUserProfile, getUserProfile } from '@/lib/firestore-service';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, getIdToken } from 'firebase/auth';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -24,44 +26,85 @@ export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'kmafsar2006@g
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function setAuthCookie(userData: UserProfile) {
+  const payload = JSON.stringify({
+    uid: userData.uid,
+    email: userData.email,
+    role: userData.role || 'customer',
+    assignedOutletId: userData.assignedOutletId || '',
+    assignedOutletName: userData.assignedOutletName || '',
+  });
+  document.cookie = `crave-user=${encodeURIComponent(payload)};path=/;max-age=2592000;SameSite=Lax;Secure`;
+}
+
+function clearAuthCookie() {
+  document.cookie = 'crave-user=;path=/;max-age=0';
+  document.cookie = 'crave-token=;path=/;max-age=0';
+}
+
+async function setTokenCookie() {
+  if (!auth) return;
+  try {
+    const token = await getIdToken(auth.currentUser!, false);
+    document.cookie = `crave-token=${token};path=/;max-age=1800;SameSite=Lax;Secure`;
+  } catch {
+    // silently fail — token cookie is optional
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const setAuthCookie = useCallback((userData: UserProfile) => {
-    const payload = JSON.stringify({
-      email: userData.email,
-      role: userData.role || 'customer',
-      assignedOutletId: userData.assignedOutletId || '',
-      assignedOutletName: userData.assignedOutletName || '',
-    });
-    document.cookie = `crave-user=${encodeURIComponent(payload)};path=/;max-age=2592000;SameSite=Lax`;
-  }, []);
-
-  const clearAuthCookie = useCallback(() => {
-    document.cookie = 'crave-user=;path=/;max-age=0';
-  }, []);
-
+  // Listen to Firebase Auth state
   useEffect(() => {
-    const saved = localStorage.getItem('crave-user');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as UserProfile;
-        setUser(parsed);
-        setAuthCookie(parsed);
-        if (parsed.uid) {
-          getUserProfile(parsed.uid).then((firestoreUser) => {
-            if (firestoreUser) {
-              setUser(firestoreUser);
-              localStorage.setItem('crave-user', JSON.stringify(firestoreUser));
-              setAuthCookie(firestoreUser);
-            }
-          });
-        }
-      } catch { }
+    if (!auth) {
+      setLoading(false);
+      return;
     }
-    setLoading(false);
-  }, [setAuthCookie]);
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // Firebase Auth has a real session — use it
+        try {
+          const profile = await getUserProfile(firebaseUser.uid);
+          if (profile) {
+            setUser(profile);
+            localStorage.setItem('crave-user', JSON.stringify(profile));
+            setAuthCookie(profile);
+          } else {
+            // User exists in Firebase Auth but not in Firestore — create minimal profile
+            const minimal: UserProfile = {
+              uid: firebaseUser.uid,
+              name: firebaseUser.displayName || '',
+              email: firebaseUser.email || '',
+              phone: firebaseUser.phoneNumber || '',
+              role: 'customer',
+            };
+            setUser(minimal);
+            localStorage.setItem('crave-user', JSON.stringify(minimal));
+            setAuthCookie(minimal);
+            saveUserProfile(firebaseUser.uid, minimal);
+          }
+          await setTokenCookie();
+        } catch {
+          // Firebase available but Firestore read failed — fall through
+        }
+        setLoading(false);
+      } else {
+        // No Firebase Auth session — fall back to localStorage
+        const saved = localStorage.getItem('crave-user');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved) as UserProfile;
+            setUser(parsed);
+            setAuthCookie(parsed);
+          } catch { }
+        }
+        setLoading(false);
+      }
+    });
+    return () => unsub();
+  }, []);
 
   const signIn = useCallback((userData: UserProfile) => {
     setUser(userData);
@@ -70,13 +113,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (userData.uid) {
       saveUserProfile(userData.uid, userData);
     }
-  }, [setAuthCookie]);
+  }, []);
 
   const signOut = useCallback(() => {
     setUser(null);
     localStorage.removeItem('crave-user');
     clearAuthCookie();
-  }, [clearAuthCookie]);
+  }, []);
 
   const updateUser = useCallback((data: Partial<UserProfile>) => {
     setUser((prev) => {
@@ -89,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return updated;
     });
-  }, [setAuthCookie]);
+  }, []);
 
   const userRole = useMemo(() => user?.role || null, [user]);
 

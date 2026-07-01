@@ -47,6 +47,7 @@ export default function AdminOrders() {
   const presetReasons = ['Out of stock', 'Customer request', 'Duplicate order', 'Other'];
 
   useEffect(() => {
+    const outletFilter = !isAllOutlets && selectedOutletId ? selectedOutletId : undefined;
     const unsub = subscribeOrders((firestoreOrders) => {
       const mapped = firestoreOrders.map((o: any) => ({
         id: o.id,
@@ -63,9 +64,9 @@ export default function AdminOrders() {
         outletName: o.outletName || '',
       }));
       setOrders(mapped);
-    });
+    }, [], outletFilter);
     return unsub;
-  }, []);
+  }, [selectedOutletId, isAllOutlets]);
 
   const auditUser = { email: user?.email || '', role: user?.role || '', name: user?.name || '' };
 

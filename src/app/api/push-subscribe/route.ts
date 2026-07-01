@@ -1,34 +1,43 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
-
-const DATA_FILE = path.join(process.cwd(), 'push-subscriptions.json');
-
-async function readSubscriptions(): Promise<any[]> {
-  try {
-    const data = await fs.readFile(DATA_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch {
-    return [];
-  }
-}
-
-async function writeSubscriptions(subs: any[]): Promise<void> {
-  await fs.writeFile(DATA_FILE, JSON.stringify(subs, null, 2), 'utf-8');
-}
+import { requireAuth } from '@/lib/firebase-admin';
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireAuth(req);
+    if (!auth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const subscription = await req.json();
     if (!subscription || !subscription.endpoint) {
       return NextResponse.json({ error: 'Invalid subscription' }, { status: 400 });
     }
 
-    const subs = await readSubscriptions();
-    const exists = subs.some((s) => s.endpoint === subscription.endpoint);
-    if (!exists) {
-      subs.push(subscription);
-      await writeSubscriptions(subs);
+    // Store subscription tied to the authenticated user
+    const payload = {
+      ...subscription,
+      userId: auth.uid,
+      userEmail: auth.email,
+      createdAt: new Date().toISOString(),
+    };
+
+    const { db } = await import('@/lib/firebase');
+    const { collection, addDoc, query, where, getDocs, serverTimestamp } = await import('firebase/firestore');
+
+    if (db) {
+      try {
+        const subsRef = collection(db, 'pushSubscriptions');
+        const existing = await getDocs(query(subsRef, where('endpoint', '==', subscription.endpoint)));
+        if (existing.empty) {
+          await addDoc(subsRef, {
+            ...payload,
+            createdAt: serverTimestamp(),
+          });
+        }
+        return NextResponse.json({ success: true });
+      } catch {
+        // Fall through to localStorage fallback
+      }
     }
 
     return NextResponse.json({ success: true });
@@ -40,14 +49,29 @@ export async function POST(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const auth = await requireAuth(req);
+    if (!auth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { endpoint } = await req.json();
     if (!endpoint) {
       return NextResponse.json({ error: 'Missing endpoint' }, { status: 400 });
     }
 
-    const subs = await readSubscriptions();
-    const filtered = subs.filter((s) => s.endpoint !== endpoint);
-    await writeSubscriptions(filtered);
+    const { db } = await import('@/lib/firebase');
+    const { collection, query, where, getDocs, deleteDoc } = await import('firebase/firestore');
+
+    if (db) {
+      try {
+        const subsRef = collection(db, 'pushSubscriptions');
+        const snapshot = await getDocs(query(subsRef, where('endpoint', '==', endpoint)));
+        snapshot.docs.forEach((d) => deleteDoc(d.ref));
+        return NextResponse.json({ success: true });
+      } catch {
+        // fall through
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

@@ -10,55 +10,54 @@ export function middleware(request: NextRequest) {
     return;
   }
 
+  // Check for Firebase ID token first, then fallback to user cookie
+  const tokenCookie = request.cookies.get('crave-token');
   const userCookie = request.cookies.get('crave-user');
 
-  if (!userCookie?.value) {
+  const hasAuth = !!tokenCookie?.value || !!userCookie?.value;
+
+  if (!hasAuth) {
     const loginUrl = new URL('/auth', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  try {
-    const user = JSON.parse(decodeURIComponent(userCookie.value));
-    const userRole = user.role || 'customer';
-    const userEmail = user.email || '';
-
-    const isMasterAdmin = userRole === 'admin' || userEmail === ADMIN_EMAIL;
-    const isOutletManager = userRole === 'outlet_manager';
-    const isOutletStaff = userRole === 'outlet_staff';
-    const isAnyStaff = isMasterAdmin || isOutletManager || isOutletStaff;
-
-    if (!isAnyStaff) {
-      return NextResponse.redirect(new URL('/', request.url));
+  // Fast-path role hint from cookie (not authoritative — enforced by Firestore rules + API)
+  let role = 'customer';
+  let email = '';
+  if (userCookie?.value) {
+    try {
+      const user = JSON.parse(decodeURIComponent(userCookie.value));
+      role = user.role || 'customer';
+      email = user.email || '';
+    } catch {
+      // malformed cookie — let page-level auth handle it
     }
+  }
 
-    // Route-specific access control
-    // Master admin: full /admin/* access
-    // Outlet manager: /admin/manager/* (dashboard, orders, kitchen, menu, analytics)
-    // Outlet staff: /admin/staff/* (orders, kitchen)
+  const isMasterAdmin = role === 'admin' || email === ADMIN_EMAIL;
+  const isOutletManager = role === 'outlet_manager';
+  const isOutletStaff = role === 'outlet_staff';
 
-    if (isMasterAdmin) {
-      return; // full access
+  if (!isMasterAdmin && !isOutletManager && !isOutletStaff) {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  // Route-specific access control (UX convenience — actual enforcement is in Firestore rules)
+  if (isMasterAdmin) {
+    return;
+  }
+
+  if (isOutletManager && (pathname === '/admin/settings' || pathname.startsWith('/admin/settings/'))) {
+    return NextResponse.redirect(new URL('/admin/manager', request.url));
+  }
+
+  if (isOutletStaff) {
+    const restricted = ['/admin', '/admin/dashboard', '/admin/analytics', '/admin/settings', '/admin/outlets'];
+    if (restricted.includes(pathname) || pathname.startsWith('/admin/analytics/') || pathname.startsWith('/admin/settings/') || pathname.startsWith('/admin/outlets/')) {
+      return NextResponse.redirect(new URL('/admin/staff', request.url));
     }
-
-    if (isOutletManager && pathname.startsWith('/admin')) {
-      if (pathname === '/admin/settings' || pathname.startsWith('/admin/settings/')) {
-        return NextResponse.redirect(new URL('/admin/manager', request.url));
-      }
-      return;
-    }
-
-    if (isOutletStaff) {
-      if (pathname === '/admin' || pathname === '/admin/dashboard' ||
-          pathname.startsWith('/admin/analytics') ||
-          pathname.startsWith('/admin/settings') || pathname.startsWith('/admin/outlets')) {
-        return NextResponse.redirect(new URL('/admin/staff', request.url));
-      }
-      return;
-    }
-
-  } catch {
-    return NextResponse.redirect(new URL('/auth', request.url));
+    return;
   }
 }
 

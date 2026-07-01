@@ -206,7 +206,8 @@ export async function createOrder(order: Record<string, any>): Promise<string> {
 
 export function subscribeOrders(
   callback: (orders: Order[]) => void,
-  constraints: QueryConstraint[] = []
+  constraints: QueryConstraint[] = [],
+  outletId?: string
 ): () => void {
   if (!isReady()) {
     const orders = getStoredOrders() || [];
@@ -214,11 +215,13 @@ export function subscribeOrders(
     return () => {};
   }
 
-  const q = query(
-    collection(db!, COLLECTIONS.ORDERS),
-    orderBy('createdAt', 'desc'),
-    ...constraints
-  );
+  const qConstraints: QueryConstraint[] = [orderBy('createdAt', 'desc')];
+  if (outletId) {
+    qConstraints.push(where('outletId', '==', outletId));
+  }
+  qConstraints.push(...constraints);
+
+  const q = query(collection(db!, COLLECTIONS.ORDERS), ...qConstraints);
 
   const unsubscribe = onSnapshot(q, (snapshot) => {
     const orders = snapshot.docs.map((d) => mapOrderDoc(d));

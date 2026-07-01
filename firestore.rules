@@ -3,51 +3,140 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Master admin check via email
-    function isAdmin() {
-      return request.auth != null && request.auth.token.email == 'kmafsar2006@gmail.com';
-    }
+    // ─── HELPERS ─────────────────────────────────────
 
-    // Authenticated user check
     function isAuth() {
       return request.auth != null;
     }
 
-    // ─── OUTLETS ───────────────────────────────────
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function getUserRole() {
+      let userData = getUserData();
+      return userData != null && userData.exists ? userData.data.role : 'customer';
+    }
+
+    function getUserAssignedOutlet() {
+      let userData = getUserData();
+      return userData != null && userData.exists ? userData.data.assignedOutletId : null;
+    }
+
+    function isAdmin() {
+      return isAuth() && getUserRole() == 'admin';
+    }
+
+    function isManager() {
+      return isAuth() && getUserRole() == 'outlet_manager';
+    }
+
+    function isStaff() {
+      return isAuth() && getUserRole() == 'outlet_staff';
+    }
+
+    function isStaffOrAbove() {
+      return isAdmin() || isManager() || isStaff();
+    }
+
+    function canAccessOutlet(outletId) {
+      return isAdmin() || getUserAssignedOutlet() == outletId;
+    }
+
+    function isOwner(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+
+    // ─── OUTLETS ─────────────────────────────────────
+    // Public read (menu/storefront), admin create/delete,
+    // manager can update their own outlet
+
     match /outlets/{outletId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (isManager() && getUserAssignedOutlet() == outletId);
+      allow delete: if isAdmin();
     }
 
     // ─── MENU ITEMS ──────────────────────────────────
+    // Public read, staff+ can create/update, admin delete
+
     match /menu-items/{itemId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create: if isStaffOrAbove();
+      allow update: if isStaffOrAbove();
+      allow delete: if isAdmin();
     }
 
     // ─── ORDERS ──────────────────────────────────────
-    // Authenticated users can read/create their own.
-    // Admin can read/write all.
-    // App-level filtering handles outlet isolation.
+    // Customers: read/write own orders
+    // Staff/Manager: orders for assigned outlet
+    // Admin: everything
+
     match /orders/{orderId} {
-      allow read: if isAuth();
+      allow read: if isAuth() && (
+        resource.data.customerId == request.auth.uid ||
+        (isStaffOrAbove() && (isAdmin() || canAccessOutlet(resource.data.outletId)))
+      );
       allow create: if isAuth();
-      allow update, delete: if isAdmin() || (isAuth() && resource.data.customerId == request.auth.uid);
+      allow update: if isAuth() && (
+        (resource.data.customerId == request.auth.uid) ||
+        (isStaffOrAbove() && (isAdmin() || canAccessOutlet(resource.data.outletId)))
+      );
+      allow delete: if isAdmin();
     }
 
-    // ─── SETTINGS ────────────────────────────────────
+    // ─── SETTINGS ──────────────────────────────────
+    // Global store settings — admin-only write
+
     match /settings/{settingId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
     // ─── USERS ───────────────────────────────────────
+    // Self-service read/write for own profile
+    // Staff+ can read others; admin can write any
+
     match /users/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
+      allow read: if isAuth() && (isOwner(userId) || isStaffOrAbove());
+      allow create: if isAuth() && isOwner(userId);
+      allow update: if isAuth() && (isOwner(userId) || isAdmin());
+      allow delete: if isAdmin();
     }
 
-    function isOwner(userId) {
-      return isAuth() && request.auth.uid == userId;
+    // ─── AUDIT LOGS ──────────────────────────────────
+    // Immutable record — admin read, authenticated create, admin manage
+
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuth();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ─── BUG REPORTS ─────────────────────────────────
+    // Authenticated create, admin read/manage, author can read own
+
+    match /bugReports/{reportId} {
+      allow read: if isAdmin() || (isAuth() && resource.data.userId == request.auth.uid);
+      allow create: if isAuth();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ─── PUSH SUBSCRIPTIONS ──────────────────────────
+    // Tied to user — self-manage, admin read
+
+    match /pushSubscriptions/{subId} {
+      allow read: if isAdmin() || (isAuth() && resource.data.userId == request.auth.uid);
+      allow create: if isAuth();
+      allow delete: if isAuth() && resource.data.userId == request.auth.uid;
+    }
+
+    // ─── DENY ALL ELSE ──────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

@@ -81,10 +81,13 @@ export default function CheckoutPage() {
       const settings = loadSettings();
       const pointsEarned = Math.floor(total / settings.earnRate);
 
+      // Get auth token for API calls
+      const token = document.cookie.split('; ').find((c) => c.startsWith('crave-token='))?.split('=')[1] || '';
+
       // 1. Create Razorpay order
       const res = await fetch('/api/create-order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
           amount: total,
           outletId: selectedOutletId,
@@ -121,7 +124,7 @@ export default function CheckoutPage() {
           try {
             const verifyRes = await fetch('/api/verify-payment', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
               body: JSON.stringify({
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,

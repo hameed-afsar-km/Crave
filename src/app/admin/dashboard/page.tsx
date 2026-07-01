@@ -55,6 +55,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     setSeeded(isSeeded());
+    const outletFilter = !isAllOutlets && selectedOutletId ? selectedOutletId : undefined;
     const unsubOrders = subscribeOrders((firestoreOrders) => {
       const mapped = firestoreOrders.map((o: any) => ({
         ...o,
@@ -63,7 +64,7 @@ export default function AdminDashboard() {
         items: o.items || [],
       }));
       setOrders(mapped);
-    });
+    }, [], outletFilter);
     const unsubSettings = subscribeSettings((firestoreSettings) => {
       setSettings(firestoreSettings);
     });

@@ -79,11 +79,16 @@ export async function unsubscribeFromPush(): Promise<boolean> {
   }
 }
 
+function getTokenFromCookie(): string {
+  if (typeof document === 'undefined') return '';
+  return document.cookie.split('; ').find((c) => c.startsWith('crave-token='))?.split('=')[1] || '';
+}
+
 async function saveSubscription(subscription: PushSubscription): Promise<void> {
   try {
     await fetch('/api/push-subscribe', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getTokenFromCookie()}` },
       body: JSON.stringify(subscription.toJSON()),
     });
   } catch {
@@ -95,7 +100,7 @@ async function removeSubscription(subscription: PushSubscription): Promise<void>
   try {
     await fetch('/api/push-subscribe', {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getTokenFromCookie()}` },
       body: JSON.stringify({ endpoint: subscription.endpoint }),
     });
   } catch {
