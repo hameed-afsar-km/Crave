@@ -8,6 +8,7 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { formatPrice, generateTimeSlots } from '@/lib/utils';
 import { loadSettings, getTimeUntilOpen } from '@/lib/store';
+import { loadRazorpayScript } from '@/lib/razorpay';
 import { createOrder } from '@/lib/firestore-service';
 import StoreStatusBanner from '@/components/StoreStatusBanner';
 import Link from 'next/link';
@@ -54,40 +55,111 @@ export default function CheckoutPage() {
 
   const isPhoneValid = /^\d{10}$/.test(phone);
 
+  const [paymentError, setPaymentError] = useState('');
+
   const handlePlaceOrder = async () => {
     if (!name || !phone || !isPhoneValid) return;
     const latest = loadSettings();
     if (!latest.storeOpen || !latest.acceptingOrders) { setStoreStatus(latest); return; }
     setProcessing(true);
+    setPaymentError('');
     try {
       const settings = loadSettings();
       const pointsEarned = Math.floor(total / settings.earnRate);
 
-      const orderData = {
-        customerId: user?.uid || 'guest',
-        customerName: name,
-        customerPhone: phone,
-        customerEmail: email,
-        items: items.map(i => ({ name: i.name, qty: i.quantity, price: i.price })),
-        amount: total,
-        pickupTime: selectedTime,
-        status: 'received' as const,
-        paymentStatus: 'pending',
-        estimatedWaitTime: 18,
-        pointsEarned,
+      // 1. Create Razorpay order
+      const res = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: total }),
+      });
+      const razorpayOrder = await res.json();
+      if (!res.ok || !razorpayOrder.id) {
+        throw new Error(razorpayOrder.error || 'Failed to initiate payment');
+      }
+
+      // 2. Load Razorpay checkout script
+      const loaded = await loadRazorpayScript();
+      if (!loaded) {
+        throw new Error('Failed to load payment gateway. Please try again.');
+      }
+
+      // 3. Open Razorpay checkout
+      const options: any = {
+        key: razorpayOrder.key_id,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        name: 'Crave Express',
+        description: `Order • ${formatPrice(total)}`,
+        order_id: razorpayOrder.id,
+        prefill: {
+          name,
+          email: email || '',
+          contact: phone,
+        },
+        theme: { color: '#D4AF37' },
+        handler: async function (response: any) {
+          // 4. Verify payment server-side
+          try {
+            const verifyRes = await fetch('/api/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+
+            if (!verifyData.verified) {
+              setPaymentError('Payment verification failed. Please contact support.');
+              setProcessing(false);
+              return;
+            }
+
+            // 5. Create Firestore order
+            const orderData = {
+              customerId: user?.uid || 'guest',
+              customerName: name,
+              customerPhone: phone,
+              customerEmail: email,
+              items: items.map(i => ({ name: i.name, qty: i.quantity, price: i.price })),
+              amount: total,
+              paymentStatus: 'paid' as const,
+              paymentId: response.razorpay_payment_id,
+              pickupTime: selectedTime,
+              status: 'received' as const,
+              estimatedWaitTime: 18,
+              pointsEarned,
+            };
+
+            const orderId = await createOrder(orderData);
+
+            const order: any = { ...orderData, id: orderId, createdAt: new Date().toISOString() };
+
+            clearCart();
+            setConfirmedOrder(order);
+            setConfirmedOrderId(orderId);
+            setShowConfirmation(true);
+          } catch {
+            setPaymentError('Payment successful but order creation failed. Please contact support.');
+          } finally {
+            setProcessing(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setProcessing(false);
+            setPaymentError('Payment cancelled. You can try again.');
+          },
+        },
       };
 
-      const orderId = await createOrder(orderData);
-
-      const order: any = { ...orderData, id: orderId, createdAt: new Date().toISOString() };
-
-      clearCart();
-      setConfirmedOrder(order);
-      setConfirmedOrderId(orderId);
-      setShowConfirmation(true);
-    } catch {
-      alert('Failed to place order. Please try again.');
-    } finally {
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
+    } catch (err: any) {
+      setPaymentError(err?.message || 'Failed to place order. Please try again.');
       setProcessing(false);
     }
   };
@@ -346,9 +418,9 @@ export default function CheckoutPage() {
                 </p>
               )}
 
-              <p className="text-center text-[10px] text-zinc-700 mt-3 font-semibold tracking-wide">
-                Pay at pickup • No advance payment required
-              </p>
+              {paymentError && (
+                <p className="text-center text-[11px] text-rose-400 font-semibold mt-3">{paymentError}</p>
+              )}
             </motion.div>
           </div>
         </div>
