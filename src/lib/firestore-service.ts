@@ -17,6 +17,7 @@ import {
   deleteDoc,
 } from 'firebase/firestore';
 import { Order, MenuItem, UserProfile, Outlet } from '@/types';
+import { logAction, AuditUser } from './audit';
 import { StoreSettings, loadSettings, saveSettings as saveLocalSettings } from '@/lib/store';
 import { getStoredOrders, saveOrders, getStoredMenuItems, saveMenuItems } from '@/lib/seed-data';
 import { menuItems as defaultMenuItems } from '@/lib/data';
@@ -253,7 +254,8 @@ export function subscribeOrder(
 export async function updateOrderStatus(
   orderId: string,
   status: Order['status'],
-  extraData?: Record<string, any>
+  extraData?: Record<string, any>,
+  loggedBy?: AuditUser
 ): Promise<void> {
   if (isReady()) {
     try {
@@ -274,6 +276,17 @@ export async function updateOrderStatus(
   if (lastOrder && lastOrder.id === orderId) {
     localStorage.setItem('crave-last-order', JSON.stringify({ ...lastOrder, status, ...extraData }));
   }
+
+  const order = updated.find((o: any) => o.id === orderId);
+  logAction(
+    status === 'cancelled' ? 'order.cancelled' : 'order.status_changed',
+    'order',
+    orderId,
+    { previousStatus: order?.['status'], newStatus: status, ...extraData },
+    loggedBy,
+    order?.outletId,
+    order?.outletName
+  );
 }
 
 export async function deleteOrder(orderId: string): Promise<void> {

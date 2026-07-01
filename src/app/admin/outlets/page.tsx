@@ -11,10 +11,11 @@ import { useAuth } from '@/context/AuthContext';
 import { useAdminOutlet } from '@/context/AdminOutletContext';
 import { Outlet } from '@/types';
 import { saveOutletToFirestore, deleteOutletFromFirestore } from '@/lib/firestore-service';
+import { logAction } from '@/lib/audit';
 
 
 export default function OutletManagement() {
-  const { isMasterAdmin } = useAuth();
+  const { isMasterAdmin, user } = useAuth();
   const { outlets } = useAdminOutlet();
   const [showForm, setShowForm] = useState(false);
   const [editingOutlet, setEditingOutlet] = useState<Outlet | null>(null);
@@ -79,6 +80,7 @@ export default function OutletManagement() {
       setEditingOutlet(null);
       setMessage('Outlet saved successfully');
       setTimeout(() => setMessage(''), 3000);
+      logAction(editingOutlet ? 'outlet.updated' : 'outlet.created', 'outlet', id, { name: form.name }, { email: user?.email || '', role: user?.role || '', name: user?.name || '' });
     } catch (err) {
       setMessage('Failed to save outlet');
     }
@@ -91,13 +93,16 @@ export default function OutletManagement() {
       setDeleteConfirm(null);
       setMessage('Outlet deleted');
       setTimeout(() => setMessage(''), 3000);
+      logAction('outlet.deleted', 'outlet', id, {}, { email: user?.email || '', role: user?.role || '', name: user?.name || '' });
     } catch (err) {
       setMessage('Failed to delete outlet');
     }
   };
 
   const toggleOpen = async (outlet: Outlet) => {
-    await saveOutletToFirestore({ ...outlet, isOpen: outlet.isOpen !== false ? false : true });
+    const nextOpen = outlet.isOpen !== false ? false : true;
+    await saveOutletToFirestore({ ...outlet, isOpen: nextOpen });
+    logAction('outlet.updated', 'outlet', outlet.id, { name: outlet.name, isOpen: nextOpen }, { email: user?.email || '', role: user?.role || '', name: user?.name || '' });
   };
 
   if (!isMasterAdmin) {

@@ -56,7 +56,7 @@ function getPriority(order: Order, nowMinutes: number): 'late' | 'urgent' | 'upc
 const filterTabs = ['all', 'received', 'preparing', 'ready'] as const;
 
 export default function KitchenPage() {
-  const { isAdmin, isMasterAdmin } = useAuth();
+  const { isAdmin, isMasterAdmin, user } = useAuth();
   const { selectedOutletId, outlets, setSelectedOutletId, isAllOutlets } = useAdminOutlet();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<string>('all');
@@ -86,7 +86,7 @@ export default function KitchenPage() {
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
   const updateStatus = (orderId: string, newStatus: Order['status']) => {
-    firestoreUpdateStatus(orderId, newStatus);
+    firestoreUpdateStatus(orderId, newStatus, undefined, { email: user?.email || '', role: user?.role || '', name: user?.name || '' });
   };
 
   const outletFiltered = useMemo(() => {

@@ -31,7 +31,7 @@ const statusConfig: Record<string, { label: string; pill: string; dot: string }>
 const statusFlow = ['received', 'preparing', 'ready', 'completed'] as const;
 
 export default function AdminOrders() {
-  const { isAdmin, isMasterAdmin } = useAuth();
+  const { isAdmin, isMasterAdmin, user } = useAuth();
   const { selectedOutletId, outlets, setSelectedOutletId, isAllOutlets } = useAdminOutlet();
   const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState('');
@@ -67,13 +67,15 @@ export default function AdminOrders() {
     return unsub;
   }, []);
 
+  const auditUser = { email: user?.email || '', role: user?.role || '', name: user?.name || '' };
+
   const updateStatus = (orderId: string, newStatus: Order['status']) => {
-    updateOrderStatus(orderId, newStatus);
+    updateOrderStatus(orderId, newStatus, undefined, auditUser);
     if (selectedOrder?.id === orderId) setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
   };
 
   const cancelOrder = (orderId: string, reason: string) => {
-    updateOrderStatus(orderId, 'cancelled' as Order['status'], { cancelReason: reason });
+    updateOrderStatus(orderId, 'cancelled' as Order['status'], { cancelReason: reason }, auditUser);
     if (selectedOrder?.id === orderId) setSelectedOrder(prev => prev ? { ...prev, status: 'cancelled', cancelReason: reason } : null);
     setConfirmAction(null);
     setConfirmOrderId('');

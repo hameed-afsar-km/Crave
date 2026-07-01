@@ -12,9 +12,10 @@ import { MenuItem } from '@/types';
 import { subscribeMenuItems, addMenuItem as addFirestoreItem, updateMenuItem, deleteMenuItem as deleteFirestoreItem } from '@/lib/firestore-service';
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { logAction } from '@/lib/audit';
 
 export default function AdminMenu() {
-  const { isAdmin, isMasterAdmin, isOutletStaff } = useAuth();
+  const { isAdmin, isMasterAdmin, isOutletStaff, user } = useAuth();
   const { selectedOutletId, outlets, setSelectedOutletId, isAllOutlets } = useAdminOutlet();
   const [items, setItems] = useState<MenuItem[]>([]);
   const [search, setSearch] = useState('');
@@ -94,6 +95,7 @@ export default function AdminMenu() {
   const toggleAvailability = (id: string) => {
     const item = items.find(i => i.id === id);
     if (!item) return;
+    const auditUser = { email: user?.email || '', role: user?.role || '', name: user?.name || '' };
     if (isMasterAdmin && !isAllOutlets) {
       const current = item.availableOutlets || [];
       const updated = current.includes(selectedOutletId)
@@ -103,11 +105,15 @@ export default function AdminMenu() {
     } else {
       updateMenuItem(id, { available: !item.available });
     }
+    logAction('menu.updated', 'menu', id, { name: item.name, field: 'availability', toggled: true }, auditUser);
   };
 
   const deleteItem = (id: string) => {
+    const item = items.find(i => i.id === id);
     deleteFirestoreItem(id);
     setItems(prev => prev.filter(i => i.id !== id));
+    const auditUser = { email: user?.email || '', role: user?.role || '', name: user?.name || '' };
+    logAction('menu.deleted', 'menu', id, { name: item?.name || '' }, auditUser);
   };
 
   const openEdit = (item: MenuItem) => {
@@ -149,6 +155,7 @@ export default function AdminMenu() {
         await uploadBytes(storageRef, imageFile);
         imageUrl = await getDownloadURL(storageRef);
       }
+      const auditUser = { email: user?.email || '', role: user?.role || '', name: user?.name || '' };
       if (editingItem) {
         await updateMenuItem(editingItem.id, {
           name: form.name,
@@ -159,8 +166,9 @@ export default function AdminMenu() {
           availableOutlets: form.availableOutlets,
           pricing: form.pricing,
         });
+        logAction('menu.updated', 'menu', editingItem.id, { name: form.name, category: form.category, price: form.price }, auditUser);
       } else {
-        await addFirestoreItem({
+        const newId = await addFirestoreItem({
           name: form.name,
           description: form.description,
           price: Number(form.price),
@@ -171,6 +179,7 @@ export default function AdminMenu() {
           availableOutlets: form.availableOutlets,
           pricing: form.pricing,
         });
+        logAction('menu.created', 'menu', newId || 'unknown', { name: form.name, category: form.category, price: form.price }, auditUser);
       }
       setShowForm(false);
       setEditingItem(null);

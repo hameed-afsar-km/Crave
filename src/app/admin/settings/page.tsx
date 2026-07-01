@@ -14,9 +14,10 @@ import { loadSettings, saveSettings, StoreSettings } from '@/lib/store';
 import { generateTimeSlots } from '@/lib/utils';
 import { getStoredOrders } from '@/lib/seed-data';
 import { saveSettingsToFirestore, subscribeSettings } from '@/lib/firestore-service';
+import { logAction } from '@/lib/audit';
 
 export default function AdminSettings() {
-  const { isAdmin, isMasterAdmin } = useAuth();
+  const { isAdmin, isMasterAdmin, user } = useAuth();
   const { outlets } = useAdminOutlet();
   const [form, setForm] = useState<StoreSettings>(loadSettings());
   const [saved, setSaved] = useState(false);
@@ -39,6 +40,7 @@ export default function AdminSettings() {
     saveSettingsToFirestore(form);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
+    logAction('settings.updated', 'settings', 'global', { storeName: form.storeName, storeOpen: form.storeOpen }, { email: user?.email || '', role: user?.role || '', name: user?.name || '' });
   };
 
   const handleReset = () => {
@@ -62,6 +64,7 @@ export default function AdminSettings() {
     saveSettings(defaults);
     saveSettingsToFirestore(defaults);
     setShowResetConfirm(false);
+    logAction('settings.reset', 'settings', 'global', {}, { email: user?.email || '', role: user?.role || '', name: user?.name || '' });
   };
 
   const handleClearData = () => {
@@ -70,6 +73,7 @@ export default function AdminSettings() {
     localStorage.removeItem('crave-menu-items');
     localStorage.removeItem('crave-seeded');
     setShowClearDataConfirm(false);
+    logAction('data.cleared', 'data', 'all', {}, { email: user?.email || '', role: user?.role || '', name: user?.name || '' });
   };
 
   const [orders, setOrders] = useState<any[]>([]);

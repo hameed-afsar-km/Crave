@@ -42,7 +42,7 @@ const statusAction: Record<string, { label: string; next: string; color: string 
 
 
 export default function AdminDashboard() {
-  const { isAdmin, isMasterAdmin, isOutletStaff } = useAuth();
+  const { isAdmin, isMasterAdmin, isOutletStaff, user } = useAuth();
   const { selectedOutletId, outlets, setSelectedOutletId, isAllOutlets } = useAdminOutlet();
   const [settings, setSettings] = useState(loadSettings());
   const [seeded, setSeeded] = useState(false);
@@ -124,15 +124,20 @@ export default function AdminDashboard() {
     } catch {
       // Firestore may not be available
     }
+    const { logAction } = await import('@/lib/audit');
+    logAction('data.seeded', 'data', 'all', {}, { email: user?.email || '', role: user?.role || '', name: user?.name || '' });
   };
 
   const handleClearData = () => {
     ['crave-orders', 'crave-last-order', 'crave-menu-items', 'crave-seeded'].forEach(k => localStorage.removeItem(k));
     setSeeded(false); setOrders([]); setConfirmClear(false);
+    import('@/lib/audit').then(({ logAction }) =>
+      logAction('data.cleared', 'data', 'all', {}, { email: user?.email || '', role: user?.role || '', name: user?.name || '' })
+    );
   };
 
   const updateStatus = (id: string, status: string) => {
-    updateOrderStatus(id, status as any);
+    updateOrderStatus(id, status as any, undefined, { email: user?.email || '', role: user?.role || '', name: user?.name || '' });
   };
 
   const filteredOrders = isAllOutlets
