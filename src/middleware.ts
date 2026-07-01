@@ -50,7 +50,7 @@ export function middleware(request: NextRequest) {
 
     if (isOutletStaff) {
       if (pathname === '/admin' || pathname === '/admin/dashboard' ||
-          pathname.startsWith('/admin/menu') || pathname.startsWith('/admin/analytics') ||
+          pathname.startsWith('/admin/analytics') ||
           pathname.startsWith('/admin/settings') || pathname.startsWith('/admin/outlets')) {
         return NextResponse.redirect(new URL('/admin/staff', request.url));
       }

@@ -10,9 +10,11 @@ import { useAdminOutlet } from '@/context/AdminOutletContext';
 import { getStoredOrders } from '@/lib/seed-data';
 import { MenuItem } from '@/types';
 import { subscribeMenuItems, addMenuItem as addFirestoreItem, updateMenuItem, deleteMenuItem as deleteFirestoreItem } from '@/lib/firestore-service';
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function AdminMenu() {
-  const { isAdmin, isMasterAdmin } = useAuth();
+  const { isAdmin, isMasterAdmin, isOutletStaff } = useAuth();
   const { selectedOutletId, outlets, setSelectedOutletId, isAllOutlets } = useAdminOutlet();
   const [items, setItems] = useState<MenuItem[]>([]);
   const [search, setSearch] = useState('');
@@ -23,6 +25,9 @@ export default function AdminMenu() {
     availableOutlets: [] as string[],
     pricing: {} as Record<string, number>,
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const unsub = subscribeMenuItems((firestoreItems) => {
@@ -30,6 +35,13 @@ export default function AdminMenu() {
     });
     return unsub;
   }, []);
+
+  useEffect(() => {
+    const url = previewUrl;
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [previewUrl]);
 
   const itemOrderCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -100,6 +112,7 @@ export default function AdminMenu() {
 
   const openEdit = (item: MenuItem) => {
     setEditingItem(item);
+    setImageFile(null);
     setForm({
       name: item.name,
       description: item.description,
@@ -114,6 +127,7 @@ export default function AdminMenu() {
 
   const openAdd = () => {
     setEditingItem(null);
+    setImageFile(null);
     setForm({
       name: '', description: '', price: '', category: 'Burgers',
       image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80',
@@ -125,34 +139,50 @@ export default function AdminMenu() {
 
   const saveItem = async () => {
     if (!form.name || !form.price) return;
-    if (editingItem) {
-      await updateMenuItem(editingItem.id, {
-        name: form.name,
-        description: form.description,
-        price: Number(form.price),
-        category: form.category,
-        image: form.image,
-        availableOutlets: form.availableOutlets,
-        pricing: form.pricing,
-      });
-    } else {
-      await addFirestoreItem({
-        name: form.name,
-        description: form.description,
-        price: Number(form.price),
-        category: form.category,
-        image: form.image || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80',
-        rating: 0,
-        available: true,
-        availableOutlets: form.availableOutlets,
-        pricing: form.pricing,
-      });
+    setUploading(true);
+    try {
+      let imageUrl = form.image;
+      if (imageFile && storage) {
+        const ext = imageFile.name.split('.').pop() || 'jpg';
+        const path = `menu-items/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const storageRef = ref(storage, path);
+        await uploadBytes(storageRef, imageFile);
+        imageUrl = await getDownloadURL(storageRef);
+      }
+      if (editingItem) {
+        await updateMenuItem(editingItem.id, {
+          name: form.name,
+          description: form.description,
+          price: Number(form.price),
+          category: form.category,
+          image: imageUrl,
+          availableOutlets: form.availableOutlets,
+          pricing: form.pricing,
+        });
+      } else {
+        await addFirestoreItem({
+          name: form.name,
+          description: form.description,
+          price: Number(form.price),
+          category: form.category,
+          image: imageUrl || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80',
+          rating: 0,
+          available: true,
+          availableOutlets: form.availableOutlets,
+          pricing: form.pricing,
+        });
+      }
+      setShowForm(false);
+      setEditingItem(null);
+      setImageFile(null);
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    } finally {
+      setUploading(false);
     }
-    setShowForm(false);
-    setEditingItem(null);
   };
 
-  if (!isAdmin) {
+  if (!isAdmin && !isOutletStaff) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-zinc-500 font-medium">Access Denied</p>
@@ -174,15 +204,17 @@ export default function AdminMenu() {
                 <p className="text-zinc-500 text-sm mt-0.5">Add, edit, or remove catalog items</p>
               </div>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={openAdd}
-              className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium rounded-lg transition-all"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add Item
-            </motion.button>
+            {!isOutletStaff && (
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={openAdd}
+                className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium rounded-lg transition-all"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Item
+              </motion.button>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -298,15 +330,19 @@ export default function AdminMenu() {
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex gap-1.5">
-                        <button onClick={() => toggleAvailability(item.id)} className="p-1.5 text-zinc-500 border border-zinc-700 hover:border-zinc-600 hover:text-zinc-300 rounded-lg transition-all" title={isItemAvailableAtOutlet(item, selectedOutletId) ? 'Disable' : 'Enable'}>
-                          {isItemAvailableAtOutlet(item, selectedOutletId) ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                        </button>
-                        <button onClick={() => openEdit(item)} className="p-1.5 text-zinc-400 border border-zinc-700 hover:border-zinc-600 hover:text-zinc-200 rounded-lg transition-all" title="Edit">
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => deleteItem(item.id)} className="p-1.5 text-red-400 border border-red-500/20 hover:border-red-500/40 hover:bg-red-500/10 rounded-lg transition-all" title="Delete">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {!isOutletStaff && (
+                          <>
+                            <button onClick={() => toggleAvailability(item.id)} className="p-1.5 text-zinc-500 border border-zinc-700 hover:border-zinc-600 hover:text-zinc-300 rounded-lg transition-all" title={isItemAvailableAtOutlet(item, selectedOutletId) ? 'Disable' : 'Enable'}>
+                              {isItemAvailableAtOutlet(item, selectedOutletId) ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                            <button onClick={() => openEdit(item)} className="p-1.5 text-zinc-400 border border-zinc-700 hover:border-zinc-600 hover:text-zinc-200 rounded-lg transition-all" title="Edit">
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => deleteItem(item.id)} className="p-1.5 text-red-400 border border-red-500/20 hover:border-red-500/40 hover:bg-red-500/10 rounded-lg transition-all" title="Delete">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </motion.tr>
@@ -322,7 +358,7 @@ export default function AdminMenu() {
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowForm(false)} />
+          <div className="absolute inset-0 bg-black/50" onClick={() => { setShowForm(false); setImageFile(null); if (previewUrl) URL.revokeObjectURL(previewUrl); setPreviewUrl(null); }} />
           <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }}
             className="relative bg-[#12121A] border border-zinc-800/60 rounded-2xl p-6 w-full max-w-2xl shadow-xl z-10 max-h-[90vh] overflow-y-auto"
           >
@@ -360,9 +396,19 @@ export default function AdminMenu() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-zinc-500 mb-1">Image URL</label>
-                <input type="text" value={form.image} onChange={(e) => setForm({...form, image: e.target.value})}
-                  className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" />
+                <label className="block text-xs font-medium text-zinc-500 mb-1">Image</label>
+                <div className="flex items-center gap-3">
+                  {(previewUrl || form.image) && (
+                    <Image src={previewUrl || form.image} alt="Preview" width={64} height={64} className="rounded-lg object-cover border border-zinc-700 shrink-0" />
+                  )}
+                  <input type="file" accept="image/*" onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setImageFile(file);
+                    if (previewUrl) URL.revokeObjectURL(previewUrl);
+                    setPreviewUrl(file ? URL.createObjectURL(file) : null);
+                  }}
+                    className="w-full text-sm text-zinc-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-zinc-800 file:text-zinc-300 hover:file:bg-zinc-700 file:cursor-pointer cursor-pointer" />
+                </div>
               </div>
 
               {isMasterAdmin && outlets.length > 0 && (
@@ -406,11 +452,15 @@ export default function AdminMenu() {
               )}
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 border border-zinc-700 text-zinc-400 text-xs font-medium rounded-lg hover:bg-zinc-800 transition-all">
+              <button onClick={() => { setShowForm(false); setImageFile(null); if (previewUrl) URL.revokeObjectURL(previewUrl); setPreviewUrl(null); }} disabled={uploading} className="flex-1 py-2.5 border border-zinc-700 text-zinc-400 text-xs font-medium rounded-lg hover:bg-zinc-800 transition-all disabled:opacity-50">
                 Cancel
               </button>
-              <button onClick={saveItem} className="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium rounded-lg transition-all">
-                {editingItem ? 'Save Changes' : 'Add Item'}
+              <button onClick={saveItem} disabled={uploading} className="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                {uploading ? (
+                  <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Uploading...</>
+                ) : (
+                  editingItem ? 'Save Changes' : 'Add Item'
+                )}
               </button>
             </div>
           </motion.div>

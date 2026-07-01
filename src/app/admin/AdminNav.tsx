@@ -30,8 +30,10 @@ export default function AdminNav() {
     ? [
         { href: '/admin/orders', label: 'Orders', icon: ClipboardList },
         { href: '/admin/kitchen', label: 'Kitchen', icon: CookingPot },
+        { href: '/admin/menu', label: 'Menu', icon: UtensilsCrossed },
       ]
     : [
+        { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/admin/orders', label: 'Orders', icon: ClipboardList },
         { href: '/admin/kitchen', label: 'Kitchen', icon: CookingPot },
         { href: '/admin/menu', label: 'Menu', icon: UtensilsCrossed },
