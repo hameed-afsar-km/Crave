@@ -22,6 +22,35 @@ export interface AuditUser {
   name: string;
 }
 
+function maskEmail(email: string): string {
+  const at = email.indexOf('@');
+  if (at <= 1) return email;
+  return email[0] + '***' + email.slice(at - 1);
+}
+
+function maskPhone(phone: string): string {
+  if (phone.length < 8) return phone;
+  return phone.slice(0, 2) + '****' + phone.slice(-2);
+}
+
+function maskPII(obj: Record<string, any>): Record<string, any> {
+  const masked: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === 'string') {
+      if (/email/i.test(key)) {
+        masked[key] = maskEmail(value);
+      } else if (/phone/i.test(key) || /contact/i.test(key)) {
+        masked[key] = maskPhone(value);
+      } else {
+        masked[key] = value;
+      }
+    } else {
+      masked[key] = value;
+    }
+  }
+  return masked;
+}
+
 export async function logAction(
   action: AuditAction,
   targetType: string,
@@ -39,8 +68,8 @@ export async function logAction(
       action,
       targetType,
       targetId,
-      details,
-      userEmail: user?.email || 'unknown',
+      details: maskPII(details),
+      userEmail: user?.email ? maskEmail(user.email) : 'unknown',
       userRole: user?.role || 'unknown',
       userName: user?.name || 'unknown',
       outletId: outletId || '',

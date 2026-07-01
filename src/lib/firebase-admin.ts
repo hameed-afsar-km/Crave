@@ -1,7 +1,10 @@
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { getFirestore as getAdminFirestore, Firestore } from 'firebase-admin/firestore';
 
 const FIREBASE_ADMIN_PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'crave-538c0';
+
+let adminDb: Firestore | null = null;
 
 function initAdmin() {
   if (getApps().length) return;
@@ -14,6 +17,7 @@ function initAdmin() {
         Buffer.from(serviceAccountBase64, 'base64').toString('utf-8')
       );
       initializeApp({ credential: cert(serviceAccount) });
+      adminDb = getAdminFirestore();
       return;
     } catch {
       // fall through
@@ -22,10 +26,11 @@ function initAdmin() {
 
   // Fallback: initialize with project ID only
   // Token verification works without credentials (fetches JWKS keys from Google)
+  // Firestore reads without credentials will fail — caller must handle fallback
   try {
     initializeApp({ projectId: FIREBASE_ADMIN_PROJECT_ID });
   } catch {
-    // Admin SDK unavailable — API routes will use lightweight verification
+    // Admin SDK unavailable
   }
 }
 
@@ -34,6 +39,16 @@ initAdmin();
 export function getAdminAuth() {
   try {
     return getAuth();
+  } catch {
+    return null;
+  }
+}
+
+export function getAdminDb(): Firestore | null {
+  if (adminDb) return adminDb;
+  try {
+    adminDb = getAdminFirestore();
+    return adminDb;
   } catch {
     return null;
   }

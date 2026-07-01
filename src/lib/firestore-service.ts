@@ -15,6 +15,7 @@ import {
   QueryConstraint,
   serverTimestamp,
   deleteDoc,
+  runTransaction,
 } from 'firebase/firestore';
 import { Order, MenuItem, UserProfile, Outlet } from '@/types';
 import { logAction, AuditUser } from './audit';
@@ -181,6 +182,18 @@ export async function createOrder(order: Record<string, any>): Promise<string> {
 
   if (isReady()) {
     try {
+      // Idempotency: check for existing order with same paymentId
+      if (order.paymentId) {
+        const existingQuery = query(
+          collection(db!, COLLECTIONS.ORDERS),
+          where('paymentId', '==', order.paymentId)
+        );
+        const existingSnapshot = await getDocs(existingQuery);
+        if (!existingSnapshot.empty) {
+          return existingSnapshot.docs[0].id;
+        }
+      }
+
       const docRef = await addDoc(collection(db!, COLLECTIONS.ORDERS), {
         ...order,
         createdAt: serverTimestamp(),
@@ -540,14 +553,64 @@ export async function updateLoyaltyPoints(
   if (isReady() && uid) {
     try {
       const docRef = doc(db!, COLLECTIONS.USERS, uid);
-      await updateDoc(docRef, {
-        loyaltyPoints: (await getDoc(docRef)).data()?.loyaltyPoints || 0 + points,
-        updatedAt: serverTimestamp(),
+      await runTransaction(db!, async (transaction) => {
+        const snapshot = await transaction.get(docRef);
+        const existing = snapshot.data()?.loyaltyPoints || 0;
+        transaction.update(docRef, {
+          loyaltyPoints: existing + points,
+          updatedAt: serverTimestamp(),
+        });
       });
     } catch {
       // silently fail
     }
   }
+}
+
+export async function redeemReward(
+  uid: string,
+  reward: RewardConfig
+): Promise<{ success: boolean; newPoints: number }> {
+  const stored = parseInt(localStorage.getItem('crave-points') || '0', 10);
+
+  if (isReady() && uid) {
+    try {
+      const docRef = doc(db!, COLLECTIONS.USERS, uid);
+      const result = await runTransaction(db!, async (transaction) => {
+        const snapshot = await transaction.get(docRef);
+        const currentPoints = snapshot.data()?.loyaltyPoints || 0;
+        if (currentPoints < reward.cost) {
+          return { success: false, newPoints: currentPoints };
+        }
+        const newPoints = currentPoints - reward.cost;
+        transaction.update(docRef, {
+          loyaltyPoints: newPoints,
+          updatedAt: serverTimestamp(),
+        });
+        return { success: true, newPoints };
+      });
+
+      if (result.success) {
+        localStorage.setItem('crave-points', String(result.newPoints));
+      }
+      return result;
+    } catch {
+      const newPoints = stored - reward.cost;
+      if (stored >= reward.cost) {
+        localStorage.setItem('crave-points', String(newPoints));
+        return { success: true, newPoints };
+      }
+      return { success: false, newPoints: stored };
+    }
+  }
+
+  // Fallback: local-only
+  const newPoints = stored - reward.cost;
+  if (stored >= reward.cost) {
+    localStorage.setItem('crave-points', String(newPoints));
+    return { success: true, newPoints };
+  }
+  return { success: false, newPoints: stored };
 }
 
 export async function getLoyaltyPoints(uid: string): Promise<number> {

@@ -13,6 +13,7 @@ import { subscribeMenuItems, addMenuItem as addFirestoreItem, updateMenuItem, de
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { logAction } from '@/lib/audit';
+import { validateImageMagicBytes } from '@/lib/validate-image';
 
 export default function AdminMenu() {
   const { isAdmin, isMasterAdmin, isOutletStaff, user } = useAuth();
@@ -150,7 +151,8 @@ export default function AdminMenu() {
       let imageUrl = form.image;
       if (imageFile && storage) {
         const ext = imageFile.name.split('.').pop() || 'jpg';
-        const path = `menu-items/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const id = crypto.randomUUID();
+        const path = `menu-items/${id}.${ext}`;
         const storageRef = ref(storage, path);
         await uploadBytes(storageRef, imageFile);
         imageUrl = await getDownloadURL(storageRef);
@@ -410,7 +412,7 @@ export default function AdminMenu() {
                   {(previewUrl || form.image) && (
                     <Image src={previewUrl || form.image} alt="Preview" width={64} height={64} className="rounded-lg object-cover border border-zinc-700 shrink-0" />
                   )}
-                  <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={(e) => {
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={async (e) => {
                     const file = e.target.files?.[0] || null;
                     if (file) {
                       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
@@ -421,6 +423,12 @@ export default function AdminMenu() {
                       }
                       if (file.size > 5 * 1024 * 1024) {
                         alert('Image must be under 5MB');
+                        e.target.value = '';
+                        return;
+                      }
+                      const magicResult = await validateImageMagicBytes(file);
+                      if (!magicResult.valid) {
+                        alert(magicResult.error);
                         e.target.value = '';
                         return;
                       }

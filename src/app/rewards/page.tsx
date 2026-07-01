@@ -7,7 +7,7 @@ import { Gift, Star, ArrowLeft, ShoppingBag, CheckCircle, Zap, Coffee, Sandwich,
 import { useAuth } from '@/context/AuthContext';
 import { loadSettings, RewardConfig, saveSettings } from '@/lib/store';
 import Link from 'next/link';
-import { getLoyaltyPoints, saveSettingsToFirestore, saveUserProfile } from '@/lib/firestore-service';
+import { getLoyaltyPoints, redeemReward } from '@/lib/firestore-service';
 
 const rewardIcons: Record<string, React.ReactNode> = {
   fries: <Coffee className="w-5 h-5" />,
@@ -46,20 +46,21 @@ export default function RewardsPage() {
 
   if (loading || !user) return null;
 
-  const handleRedeem = (reward: RewardConfig) => {
+  const handleRedeem = async (reward: RewardConfig) => {
     if (points < reward.cost) return;
 
-    const newPoints = points - reward.cost;
-    setPoints(newPoints);
-    localStorage.setItem('crave-points', String(newPoints));
+    const result = await redeemReward(user.uid, reward);
+    if (!result.success) {
+      setMessage({ type: 'error', text: 'Insufficient points' });
+      setTimeout(() => setMessage(null), 4000);
+      return;
+    }
+
+    setPoints(result.newPoints);
 
     const newRedeemed = [...redeemed, reward.id];
     setRedeemed(newRedeemed);
     localStorage.setItem('crave-redeemed', JSON.stringify(newRedeemed));
-
-    if (user?.uid) {
-      saveUserProfile(user.uid, { loyaltyPoints: newPoints });
-    }
 
     setMessage({ type: 'success', text: `${reward.name} redeemed! Show this at the counter.` });
     setTimeout(() => setMessage(null), 4000);

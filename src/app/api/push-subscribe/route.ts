@@ -1,11 +1,20 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/firebase-admin';
+import { rateLimit } from '@/lib/rate-limiter';
 
 export async function POST(req: Request) {
   try {
     const auth = await requireAuth(req);
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const rl = rateLimit(`push-subscribe:${auth.uid}`);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: `Too many requests. Try again in ${rl.resetIn}s` },
+        { status: 429, headers: { 'Retry-After': String(rl.resetIn) } }
+      );
     }
 
     const subscription = await req.json();
@@ -52,6 +61,14 @@ export async function DELETE(req: Request) {
     const auth = await requireAuth(req);
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const rl = rateLimit(`push-unsubscribe:${auth.uid}`);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: `Too many requests. Try again in ${rl.resetIn}s` },
+        { status: 429, headers: { 'Retry-After': String(rl.resetIn) } }
+      );
     }
 
     const { endpoint } = await req.json();

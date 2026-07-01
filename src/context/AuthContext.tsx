@@ -118,6 +118,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(() => {
     setUser(null);
     localStorage.removeItem('crave-user');
+    localStorage.removeItem('crave-points');
+    localStorage.removeItem('crave-redeemed');
     clearAuthCookie();
   }, []);
 

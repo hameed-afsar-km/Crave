@@ -9,7 +9,8 @@ import { useAuth } from '@/context/AuthContext';
 import { formatPrice, generateTimeSlots } from '@/lib/utils';
 import { loadSettings, getTimeUntilOpen } from '@/lib/store';
 import { loadRazorpayScript } from '@/lib/razorpay';
-import { createOrder } from '@/lib/firestore-service';
+import { createOrder, updateLoyaltyPoints } from '@/lib/firestore-service';
+import { sanitizeString, sanitizePhone, sanitizeEmail } from '@/lib/sanitize';
 import { loadOutlets, getOpenOutlets, getOutlet } from '@/lib/outlets';
 import StoreStatusBanner from '@/components/StoreStatusBanner';
 import Link from 'next/link';
@@ -79,17 +80,16 @@ export default function CheckoutPage() {
     setPaymentError('');
     try {
       const settings = loadSettings();
-      const pointsEarned = Math.floor(total / settings.earnRate);
 
       // Get auth token for API calls
       const token = document.cookie.split('; ').find((c) => c.startsWith('crave-token='))?.split('=')[1] || '';
 
-      // 1. Create Razorpay order
+      // 1. Server-side price calculation — client sends cart items, NOT amount
       const res = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
-          amount: total,
+          cartItems: items.map((i) => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
           outletId: selectedOutletId,
           outletName: selectedOutletName,
         }),
@@ -98,6 +98,11 @@ export default function CheckoutPage() {
       if (!res.ok || !razorpayOrder.id) {
         throw new Error(razorpayOrder.error || 'Failed to initiate payment');
       }
+
+      // Use server-calculated total
+      const serverTotal = razorpayOrder.total;
+      const serverItems = razorpayOrder.items || [];
+      const pointsEarned = Math.floor(serverTotal / (settings.earnRate || 10));
 
       // 2. Load Razorpay checkout script
       const loaded = await loadRazorpayScript();
@@ -111,7 +116,7 @@ export default function CheckoutPage() {
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
         name: 'Crave Express',
-        description: `Order • ${formatPrice(total)}`,
+        description: `Order • ${formatPrice(serverTotal)}`,
         order_id: razorpayOrder.id,
         prefill: {
           name,
@@ -129,6 +134,8 @@ export default function CheckoutPage() {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
+                expectedAmount: serverTotal,
+                expectedCurrency: 'INR',
               }),
             });
             const verifyData = await verifyRes.json();
@@ -139,18 +146,46 @@ export default function CheckoutPage() {
               return;
             }
 
+            // Handle duplicate payment — payment already used for a previous order
+            if (verifyData.duplicate && verifyData.existingOrderId) {
+              const orderData = {
+                outletId: selectedOutletId || 'lic',
+                outletName: selectedOutletName || 'Crave LIC Metro',
+                customerId: user?.uid || 'guest',
+                customerName: sanitizeString(name, 100),
+                customerPhone: sanitizePhone(phone),
+                customerEmail: sanitizeEmail(email || ''),
+                items: items.map((i: any) => ({ name: i.name, qty: i.quantity, price: i.price })),
+                amount: razorpayOrder.total || total,
+                paymentStatus: 'paid' as const,
+                paymentId: response.razorpay_payment_id,
+                pickupTime: selectedTime,
+                status: 'received' as const,
+                estimatedWaitTime: 18,
+                pointsEarned: Math.floor((razorpayOrder.total || total) / (settings.earnRate || 10)),
+              };
+              const order: any = { ...orderData, id: verifyData.existingOrderId, createdAt: new Date().toISOString() };
+              clearCart();
+              setConfirmedOrder(order);
+              setConfirmedOrderId(verifyData.existingOrderId);
+              setShowConfirmation(true);
+              setProcessing(false);
+              return;
+            }
+
             // 5. Create Firestore order
             const orderData = {
               outletId: selectedOutletId || 'lic',
               outletName: selectedOutletName || 'Crave LIC Metro',
               customerId: user?.uid || 'guest',
-              customerName: name,
-              customerPhone: phone,
-              customerEmail: email,
-              items: items.map(i => ({ name: i.name, qty: i.quantity, price: i.price })),
-              amount: total,
+              customerName: sanitizeString(name, 100),
+              customerPhone: sanitizePhone(phone),
+              customerEmail: sanitizeEmail(email || ''),
+              items: serverItems.map((i: any) => ({ name: i.name, qty: i.quantity, price: i.price })),
+              amount: serverTotal,
               paymentStatus: 'paid' as const,
               paymentId: response.razorpay_payment_id,
+              razorpayOrderId: response.razorpay_order_id,
               pickupTime: selectedTime,
               status: 'received' as const,
               estimatedWaitTime: 18,
@@ -158,6 +193,11 @@ export default function CheckoutPage() {
             };
 
             const orderId = await createOrder(orderData);
+
+            // Award loyalty points atomically
+            if (user?.uid && pointsEarned > 0) {
+              await updateLoyaltyPoints(user.uid, pointsEarned);
+            }
 
             const order: any = { ...orderData, id: orderId, createdAt: new Date().toISOString() };
 
