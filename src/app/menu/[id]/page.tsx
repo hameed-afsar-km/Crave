@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Star, Minus, Plus, ShoppingCart, ArrowLeft, Check } from 'lucide-react';
-import { menuItems } from '@/lib/data';
 import { formatPrice } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
 import Link from 'next/link';
+import { subscribeMenuItems } from '@/lib/firestore-service';
+import type { MenuItem } from '@/types';
 
 const extras = [
   { label: 'Extra Cheese', price: 30 },
@@ -18,10 +19,19 @@ const extras = [
 
 export default function FoodDetailPage() {
   const params = useParams();
-  const item = menuItems.find(i => i.id === params.id);
+  const [items, setItems] = useState<MenuItem[]>([]);
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
+
+  useEffect(() => {
+    const unsub = subscribeMenuItems((menuItems) => {
+      setItems(menuItems);
+    });
+    return unsub;
+  }, []);
+
+  const item = items.find(i => i.id === params.id);
 
   if (!item) return notFound();
 

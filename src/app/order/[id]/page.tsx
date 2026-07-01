@@ -8,6 +8,7 @@ import { formatPrice } from '@/lib/utils';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 import Link from 'next/link';
+import { subscribeOrder } from '@/lib/firestore-service';
 
 const statusSteps = ['received', 'preparing', 'ready', 'completed'];
 
@@ -67,16 +68,19 @@ export default function OrderTrackingPage() {
   };
 
   useEffect(() => {
-    const orders = JSON.parse(localStorage.getItem('crave-orders') || '[]');
-    const found = orders.find((o: any) => o.id === params.id);
-    if (found) {
-      setOrderInfo(found);
-    } else {
-      const saved = localStorage.getItem('crave-last-order');
-      if (saved) {
-        try { setOrderInfo(JSON.parse(saved)); } catch {}
+    if (!params.id) return;
+    const orderId = params.id as string;
+    const unsub = subscribeOrder(orderId, (order) => {
+      if (order) {
+        setOrderInfo(order);
+      } else {
+        const saved = localStorage.getItem('crave-last-order');
+        if (saved) {
+          try { setOrderInfo(JSON.parse(saved)); } catch {}
+        }
       }
-    }
+    });
+    return unsub;
   }, [params.id]);
 
   const order = orderInfo || {

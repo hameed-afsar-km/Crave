@@ -19,6 +19,10 @@ export default function AuthPage() {
   const handleGoogleSignIn = async () => {
     try {
       setError('');
+      if (!auth) {
+        setError('Firebase authentication is not available. Please check your configuration.');
+        return;
+      }
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const firebaseUser = result.user;

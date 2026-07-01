@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
@@ -9,7 +9,7 @@ import {
   Copy, MessageCircle, Ban, Trash2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { getStoredOrders, saveOrders } from '@/lib/seed-data';
+import { subscribeOrders, updateOrderStatus, deleteOrder as deleteOrderFromFirestore } from '@/lib/firestore-service';
 
 interface OrderItem { name: string; qty: number; }
 interface Order {
@@ -28,20 +28,9 @@ const statusConfig: Record<string, { label: string; pill: string; dot: string }>
 
 const statusFlow = ['received', 'preparing', 'ready', 'completed'] as const;
 
-const initialOrders: Order[] = [
-  { id: 'CRV-048', customer: 'Rahul Kumar', phone: '+91 98765 43210', items: [{ name: 'Chicken Shawarma', qty: 2 }, { name: 'French Fries', qty: 1 }], amount: 480, pickupTime: '18:30', status: 'preparing', notes: 'Extra garlic sauce please', createdAt: '5:12 PM' },
-  { id: 'CRV-047', customer: 'Priya Sharma', phone: '+91 87654 32109', items: [{ name: 'Beef Burger', qty: 1 }, { name: 'Lemon Mint', qty: 1 }], amount: 330, pickupTime: '18:15', status: 'ready', createdAt: '5:05 PM' },
-  { id: 'CRV-046', customer: 'Amit Patel', phone: '+91 76543 21098', items: [{ name: 'Chicken Combo', qty: 1 }, { name: 'Brownie Sundae', qty: 1 }], amount: 550, pickupTime: '18:00', status: 'completed', createdAt: '4:50 PM' },
-  { id: 'CRV-045', customer: 'Divya Rajan', phone: '+91 65432 10987', items: [{ name: 'Chicken Shawarma', qty: 1 }], amount: 180, pickupTime: '18:45', status: 'received', createdAt: '5:30 PM' },
-  { id: 'CRV-044', customer: 'Vikram Singh', phone: '+91 54321 09876', items: [{ name: 'Veg Shawarma', qty: 2 }, { name: 'French Fries', qty: 1 }], amount: 530, pickupTime: '19:00', status: 'received', createdAt: '5:35 PM' },
-  { id: 'CRV-043', customer: 'Ananya Patel', phone: '+91 43210 98765', items: [{ name: 'Chicken Burger', qty: 2 }], amount: 400, pickupTime: '19:15', status: 'preparing', notes: 'No onions', createdAt: '5:40 PM' },
-  { id: 'CRV-042', customer: 'Sneha Kapoor', phone: '+91 32109 87654', items: [{ name: 'Chocolate Milkshake', qty: 2 }, { name: 'French Fries', qty: 1 }], amount: 400, pickupTime: '18:20', status: 'ready', createdAt: '5:10 PM' },
-  { id: 'CRV-041', customer: 'Arun Kumar', phone: '+91 21098 76543', items: [{ name: 'Chicken Shawarma', qty: 1 }, { name: 'Lemon Mint', qty: 1 }], amount: 260, pickupTime: '18:50', status: 'received', createdAt: '5:32 PM' },
-];
-
 export default function AdminOrders() {
   const { isAdmin } = useAuth();
-  const [orders, setOrders] = useState<Order[]>(() => getStoredOrders() ?? initialOrders);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -54,21 +43,40 @@ export default function AdminOrders() {
 
   const presetReasons = ['Out of stock', 'Customer request', 'Duplicate order', 'Other'];
 
+  useEffect(() => {
+    const unsub = subscribeOrders((firestoreOrders) => {
+      const mapped = firestoreOrders.map((o: any) => ({
+        id: o.id,
+        customer: o.customerName || '',
+        phone: o.customerPhone || '',
+        items: o.items || [],
+        amount: o.amount || 0,
+        pickupTime: o.pickupTime || '',
+        status: o.status || 'received',
+        notes: o.notes || o.cancelReason || '',
+        cancelReason: o.cancelReason || '',
+        createdAt: o.createdAt ? new Date(o.createdAt).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }) : '',
+      }));
+      setOrders(mapped);
+    });
+    return unsub;
+  }, []);
+
   const updateStatus = (orderId: string, newStatus: Order['status']) => {
-    setOrders(prev => { const updated = prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o); saveOrders(updated); return updated; });
+    updateOrderStatus(orderId, newStatus);
     if (selectedOrder?.id === orderId) setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
   };
 
   const cancelOrder = (orderId: string, reason: string) => {
-    setOrders(prev => { const updated = prev.map(o => o.id === orderId ? { ...o, status: 'cancelled' as Order['status'], cancelReason: reason } : o); saveOrders(updated); return updated; });
+    updateOrderStatus(orderId, 'cancelled' as Order['status'], { cancelReason: reason });
     if (selectedOrder?.id === orderId) setSelectedOrder(prev => prev ? { ...prev, status: 'cancelled', cancelReason: reason } : null);
     setConfirmAction(null);
     setConfirmOrderId('');
     setCancelReason('');
   };
 
-  const deleteOrder = (orderId: string) => {
-    setOrders(prev => { const updated = prev.filter(o => o.id !== orderId); saveOrders(updated); return updated; });
+  const deleteOrder = async (orderId: string) => {
+    await deleteOrderFromFirestore(orderId);
     if (selectedOrder?.id === orderId) setSelectedOrder(null);
     setConfirmAction(null);
     setConfirmOrderId('');

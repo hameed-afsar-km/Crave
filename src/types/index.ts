@@ -25,7 +25,8 @@ export interface Order {
   customerId: string;
   customerName: string;
   customerPhone: string;
-  items: CartItem[];
+  customerEmail?: string;
+  items: any[];
   amount: number;
   pickupTime: string;
   status: 'pending' | 'received' | 'preparing' | 'ready' | 'completed' | 'cancelled';
@@ -34,6 +35,8 @@ export interface Order {
   queuePosition?: number;
   estimatedWaitTime?: number;
   pointsEarned?: number;
+  cancelReason?: string;
+  notes?: string;
   createdAt: string;
 }
 

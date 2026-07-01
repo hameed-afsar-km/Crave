@@ -7,6 +7,7 @@ import { Package, ArrowLeft, Clock, ChefHat, CheckCircle, MapPin, Flame, Receipt
 import { useAuth } from '@/context/AuthContext';
 import { formatPrice } from '@/lib/utils';
 import Link from 'next/link';
+import { subscribeCustomerOrders } from '@/lib/firestore-service';
 
 const statusIcons: Record<string, React.ReactNode> = {
   received: <Clock className="w-3.5 h-3.5" />,
@@ -36,9 +37,12 @@ export default function OrdersPage() {
   }, [loading, user, router]);
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('crave-orders') || '[]');
-    setOrders(stored);
-  }, []);
+    if (!user?.uid) return;
+    const unsub = subscribeCustomerOrders(user.uid, (firestoreOrders) => {
+      setOrders(firestoreOrders);
+    });
+    return unsub;
+  }, [user?.uid]);
 
   if (loading || !user) return null;
 

@@ -9,8 +9,9 @@ import {
   Gift, Plus, Trash2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { seedSampleData, isSeeded, getStoredOrders, saveOrders } from '@/lib/seed-data';
+import { seedSampleData, isSeeded } from '@/lib/seed-data';
 import { loadSettings, saveSettings } from '@/lib/store';
+import { subscribeOrders, updateOrderStatus, subscribeSettings, saveSettingsToFirestore, syncLocalToFirestore } from '@/lib/firestore-service';
 import { AnimatedCounter } from '@/components/admin/AnimatedCounter';
 import { BarChart } from '@/components/admin/BarChart';
 import { hourlyRevenue } from '@/lib/revenue';
@@ -52,8 +53,19 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     setSeeded(isSeeded());
-    const stored = getStoredOrders();
-    if (stored) setOrders(stored);
+    const unsubOrders = subscribeOrders((firestoreOrders) => {
+      const mapped = firestoreOrders.map((o: any) => ({
+        ...o,
+        customer: o.customerName || o.customer || '',
+        phone: o.customerPhone || o.phone || '',
+        items: o.items || [],
+      }));
+      setOrders(mapped);
+    });
+    const unsubSettings = subscribeSettings((firestoreSettings) => {
+      setSettings(firestoreSettings);
+    });
+    return () => { unsubOrders(); unsubSettings(); };
   }, []);
 
   useEffect(() => {
@@ -78,34 +90,38 @@ export default function AdminDashboard() {
     const next = { ...settings, earnRate: localEarnRate, rewards: localRewards };
     setSettings(next);
     saveSettings(next);
+    saveSettingsToFirestore(next);
   };
 
   const toggleStore = () => {
     if (settings.storeOpen) { setConfirmClose(true); return; }
     const next = { ...settings, storeOpen: true };
-    setSettings(next); saveSettings(next);
+    setSettings(next); saveSettings(next); saveSettingsToFirestore(next);
   };
 
   const handleCloseConfirm = () => {
     const next = { ...settings, storeOpen: false };
-    setSettings(next); saveSettings(next); setConfirmClose(false);
+    setSettings(next); saveSettings(next); saveSettingsToFirestore(next); setConfirmClose(false);
   };
 
   const toggleAccepting = () => {
     if (settings.acceptingOrders) { setConfirmPause(true); return; }
     const next = { ...settings, acceptingOrders: true };
-    setSettings(next); saveSettings(next);
+    setSettings(next); saveSettings(next); saveSettingsToFirestore(next);
   };
 
   const handlePauseConfirm = () => {
     const next = { ...settings, acceptingOrders: false };
-    setSettings(next); saveSettings(next); setConfirmPause(false);
+    setSettings(next); saveSettings(next); saveSettingsToFirestore(next); setConfirmPause(false);
   };
 
-  const handleSeedData = () => {
+  const handleSeedData = async () => {
     seedSampleData(); setSeeded(true);
-    const stored = getStoredOrders();
-    if (stored) setOrders(stored);
+    try {
+      await syncLocalToFirestore();
+    } catch {
+      // Firestore may not be available
+    }
   };
 
   const handleClearData = () => {
@@ -114,11 +130,7 @@ export default function AdminDashboard() {
   };
 
   const updateStatus = (id: string, status: string) => {
-    setOrders(prev => {
-      const updated = prev.map(o => o.id === id ? { ...o, status } : o);
-      saveOrders(updated);
-      return updated;
-    });
+    updateOrderStatus(id, status as any);
   };
 
   const now = new Date();

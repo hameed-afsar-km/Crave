@@ -1,22 +1,29 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Plus, Edit2, Trash2, Search, Eye, EyeOff, TrendingUp, TrendingDown } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { menuItems as initialItems } from '@/lib/data';
-import { getStoredMenuItems, getStoredOrders, saveMenuItems } from '@/lib/seed-data';
+import { getStoredOrders } from '@/lib/seed-data';
 import { MenuItem } from '@/types';
+import { subscribeMenuItems, addMenuItem as addFirestoreItem, updateMenuItem, deleteMenuItem as deleteFirestoreItem } from '@/lib/firestore-service';
 
 export default function AdminMenu() {
   const { isAdmin } = useAuth();
-  const [items, setItems] = useState<MenuItem[]>(() => getStoredMenuItems() ?? initialItems);
+  const [items, setItems] = useState<MenuItem[]>([]);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [form, setForm] = useState({ name: '', description: '', price: '', category: 'Burgers', image: '' });
+
+  useEffect(() => {
+    const unsub = subscribeMenuItems((firestoreItems) => {
+      setItems(firestoreItems);
+    });
+    return unsub;
+  }, []);
 
   const itemOrderCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -44,19 +51,15 @@ export default function AdminMenu() {
   );
 
   const toggleAvailability = (id: string) => {
-    setItems(prev => {
-      const updated = prev.map(i => i.id === id ? { ...i, available: !i.available } : i);
-      saveMenuItems(updated);
-      return updated;
-    });
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    updateMenuItem(id, { available: !item.available });
+    setItems(prev => prev.map(i => i.id === id ? { ...i, available: !i.available } : i));
   };
 
   const deleteItem = (id: string) => {
-    setItems(prev => {
-      const updated = prev.filter(i => i.id !== id);
-      saveMenuItems(updated);
-      return updated;
-    });
+    deleteFirestoreItem(id);
+    setItems(prev => prev.filter(i => i.id !== id));
   };
 
   const openEdit = (item: MenuItem) => {
@@ -71,30 +74,27 @@ export default function AdminMenu() {
     setShowForm(true);
   };
 
-  const saveItem = () => {
+  const saveItem = async () => {
     if (!form.name || !form.price) return;
-    setItems(prev => {
-      let updated: MenuItem[];
-      if (editingItem) {
-        updated = prev.map(i => i.id === editingItem.id ? {
-          ...i, name: form.name, description: form.description, price: Number(form.price), category: form.category, image: form.image,
-        } : i);
-      } else {
-        const newItem: MenuItem = {
-          id: String(Date.now()),
-          name: form.name,
-          description: form.description,
-          price: Number(form.price),
-          category: form.category,
-          image: form.image || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80',
-          rating: 0,
-          available: true,
-        };
-        updated = [newItem, ...prev];
-      }
-      saveMenuItems(updated);
-      return updated;
-    });
+    if (editingItem) {
+      await updateMenuItem(editingItem.id, {
+        name: form.name,
+        description: form.description,
+        price: Number(form.price),
+        category: form.category,
+        image: form.image,
+      });
+    } else {
+      await addFirestoreItem({
+        name: form.name,
+        description: form.description,
+        price: Number(form.price),
+        category: form.category,
+        image: form.image || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80',
+        rating: 0,
+        available: true,
+      });
+    }
     setShowForm(false);
     setEditingItem(null);
   };

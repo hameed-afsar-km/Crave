@@ -12,6 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 import { loadSettings, saveSettings, StoreSettings } from '@/lib/store';
 import { generateTimeSlots } from '@/lib/utils';
 import { getStoredOrders } from '@/lib/seed-data';
+import { saveSettingsToFirestore, subscribeSettings } from '@/lib/firestore-service';
 
 export default function AdminSettings() {
   const { isAdmin } = useAuth();
@@ -21,7 +22,10 @@ export default function AdminSettings() {
   const [showClearDataConfirm, setShowClearDataConfirm] = useState(false);
 
   useEffect(() => {
-    setForm(loadSettings());
+    const unsub = subscribeSettings((firestoreSettings) => {
+      setForm(firestoreSettings);
+    });
+    return unsub;
   }, []);
 
   const update = (key: keyof StoreSettings, value: any) => {
@@ -30,6 +34,7 @@ export default function AdminSettings() {
 
   const handleSave = () => {
     saveSettings(form);
+    saveSettingsToFirestore(form);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
@@ -53,6 +58,7 @@ export default function AdminSettings() {
     };
     setForm(defaults);
     saveSettings(defaults);
+    saveSettingsToFirestore(defaults);
     setShowResetConfirm(false);
   };
 

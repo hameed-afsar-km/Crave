@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { User, Phone, Mail, Package, LogOut, ArrowLeft, Star, ShoppingBag } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
+import { subscribeCustomerOrders, getLoyaltyPoints } from '@/lib/firestore-service';
 
 export default function ProfilePage() {
   const { user, signOut, loading } = useAuth();
@@ -14,10 +15,19 @@ export default function ProfilePage() {
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
 
   useEffect(() => {
+    if (user?.uid) {
+      const unsub = subscribeCustomerOrders(user.uid, (firestoreOrders) => {
+        setPastOrders(firestoreOrders);
+      });
+      getLoyaltyPoints(user.uid).then((points) => {
+        setLoyaltyPoints(points);
+      });
+      return unsub;
+    }
     const stored = JSON.parse(localStorage.getItem('crave-orders') || '[]');
     setPastOrders(stored);
     setLoyaltyPoints(parseInt(localStorage.getItem('crave-points') || '0', 10));
-  }, []);
+  }, [user?.uid]);
 
   useEffect(() => {
     if (!loading && !user) {

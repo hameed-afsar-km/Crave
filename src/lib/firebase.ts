@@ -12,10 +12,10 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-let app: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
-let storage: FirebaseStorage;
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
 
 try {
   if (!getApps().length) {
@@ -28,6 +28,10 @@ try {
   storage = getStorage(app);
 } catch {
   console.warn('Firebase initialization failed. Using mock data.');
+}
+
+export function isFirebaseReady(): boolean {
+  return !!db && !!auth;
 }
 
 export { app, auth, db, storage };

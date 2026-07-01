@@ -6,8 +6,9 @@ import { useRouter } from 'next/navigation';
 import { Clock, ShoppingBag, ArrowLeft, User, Mail, CheckCircle, ArrowRight, Store, Ban } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import { formatPrice, generateTimeSlots, generateOrderId } from '@/lib/utils';
+import { formatPrice, generateTimeSlots } from '@/lib/utils';
 import { loadSettings, getTimeUntilOpen } from '@/lib/store';
+import { createOrder } from '@/lib/firestore-service';
 import StoreStatusBanner from '@/components/StoreStatusBanner';
 import Link from 'next/link';
 
@@ -59,16 +60,10 @@ export default function CheckoutPage() {
     if (!latest.storeOpen || !latest.acceptingOrders) { setStoreStatus(latest); return; }
     setProcessing(true);
     try {
-      const orderId = generateOrderId();
-
-      // Earn loyalty points based on store earn rate
       const settings = loadSettings();
       const pointsEarned = Math.floor(total / settings.earnRate);
-      const currentPoints = parseInt(localStorage.getItem('crave-points') || '0', 10);
-      localStorage.setItem('crave-points', String(currentPoints + pointsEarned));
 
-      const order: any = {
-        id: orderId,
+      const orderData = {
         customerId: user?.uid || 'guest',
         customerName: name,
         customerPhone: phone,
@@ -80,14 +75,11 @@ export default function CheckoutPage() {
         paymentStatus: 'pending',
         estimatedWaitTime: 18,
         pointsEarned,
-        createdAt: new Date().toISOString(),
       };
 
-      // Save to order history
-      const existing = JSON.parse(localStorage.getItem('crave-orders') || '[]');
-      existing.unshift(order);
-      localStorage.setItem('crave-orders', JSON.stringify(existing));
-      localStorage.setItem('crave-last-order', JSON.stringify(order));
+      const orderId = await createOrder(orderData);
+
+      const order: any = { ...orderData, id: orderId, createdAt: new Date().toISOString() };
 
       clearCart();
       setConfirmedOrder(order);

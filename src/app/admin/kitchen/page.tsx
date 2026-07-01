@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { CookingPot, Clock, Phone, AlertTriangle, ChefHat, CheckCircle, Package } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { getStoredOrders, saveOrders } from '@/lib/seed-data';
+import { subscribeOrders, updateOrderStatus as firestoreUpdateStatus } from '@/lib/firestore-service';
 
 interface OrderItem {
   name: string;
@@ -59,20 +59,28 @@ export default function KitchenPage() {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
-    const stored = getStoredOrders();
-    if (stored) setOrders(stored);
+    const unsub = subscribeOrders((firestoreOrders) => {
+      const mapped = firestoreOrders.map((o: any) => ({
+        id: o.id,
+        customer: o.customerName || '',
+        phone: o.customerPhone || '',
+        items: o.items || [],
+        amount: o.amount || 0,
+        pickupTime: o.pickupTime || '',
+        status: o.status || 'received',
+        notes: o.notes || '',
+        createdAt: o.createdAt || new Date().toISOString(),
+      }));
+      setOrders(mapped);
+    });
     const timer = setInterval(() => setNow(new Date()), 30000);
-    return () => clearInterval(timer);
+    return () => { unsub(); clearInterval(timer); };
   }, []);
 
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
   const updateStatus = (orderId: string, newStatus: Order['status']) => {
-    setOrders(prev => {
-      const updated = prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
-      saveOrders(updated);
-      return updated;
-    });
+    firestoreUpdateStatus(orderId, newStatus);
   };
 
   const filtered = useMemo(() => {

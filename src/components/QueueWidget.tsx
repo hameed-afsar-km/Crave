@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { X, ChevronRight } from 'lucide-react';
+import { subscribeOrder } from '@/lib/firestore-service';
 
 interface OrderData {
   id: string;
@@ -60,22 +61,38 @@ export default function QueueWidget() {
   }, []);
 
   useEffect(() => {
-    const checkOrder = () => {
+    const raw = localStorage.getItem('crave-last-order');
+    if (raw) {
       try {
-        const raw = localStorage.getItem('crave-last-order');
-        if (raw) {
-          const order = JSON.parse(raw);
-          if (order.status && !['completed', 'cancelled'].includes(order.status)) {
-            setActiveOrder(order);
-            return;
-          }
+        const order = JSON.parse(raw);
+        if (order.id && order.status && !['completed', 'cancelled'].includes(order.status)) {
+          const unsub = subscribeOrder(order.id, (updatedOrder) => {
+            if (updatedOrder) {
+              const mapped: OrderData = {
+                id: updatedOrder.id,
+                items: (updatedOrder.items || []).map((i: any) => ({
+                  name: i.name || '',
+                  qty: i.qty || i.quantity || 0,
+                  price: i.price || 0,
+                })),
+                amount: updatedOrder.amount,
+                pickupTime: updatedOrder.pickupTime,
+                status: updatedOrder.status,
+                createdAt: typeof updatedOrder.createdAt === 'string' ? updatedOrder.createdAt : new Date().toISOString(),
+              };
+              setActiveOrder(mapped);
+              if (['completed', 'cancelled'].includes(updatedOrder.status)) {
+                setTimeout(() => setActiveOrder(null), 5000);
+              }
+            } else {
+              setActiveOrder(null);
+            }
+          });
+          return unsub;
         }
       } catch { /* ignore */ }
-      setActiveOrder(null);
-    };
-    checkOrder();
-    const interval = setInterval(checkOrder, 5000);
-    return () => clearInterval(interval);
+    }
+    setActiveOrder(null);
   }, []);
 
   const hasActiveOrder = activeOrder && !orderDismissed;

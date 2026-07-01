@@ -1,17 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
-import { menuItems, categories } from '@/lib/data';
+import { categories } from '@/lib/data';
 import FoodCard from '@/components/FoodCard';
 import StoreStatusBanner from '@/components/StoreStatusBanner';
 import { MenuGridSkeleton } from '@/components/LoadingSkeleton';
+import { subscribeMenuItems } from '@/lib/firestore-service';
+import type { MenuItem } from '@/types';
 
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading] = useState(false);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = subscribeMenuItems((items) => {
+      setMenuItems(items);
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
 
   const filtered = menuItems.filter(item => {
     const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
