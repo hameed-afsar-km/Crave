@@ -3,75 +3,51 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper: check if the requester is authenticated
+    // Master admin check via email
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'kmafsar2006@gmail.com';
+    }
+
+    // Authenticated user check
     function isAuth() {
       return request.auth != null;
     }
 
-    // Helper: check if the requester is the master admin
-    function isAdmin() {
-      return isAuth() && request.auth.token.email == 'kmafsar2006@gmail.com';
-    }
-
-    // Helper: check if the requester owns the document
-    function isOwner(userId) {
-      return isAuth() && request.auth.uid == userId;
-    }
-
-    // Helper: get the user's role from the users collection
-    function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
-    }
-
-    // Helper: get the user's assigned outlet
-    function getUserOutlet() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.assignedOutletId;
-    }
-
-    // Helper: check if user is outlet staff or manager
-    function isOutletStaff() {
-      return isAuth() && (getUserRole() == 'outlet_staff' || getUserRole() == 'outlet_manager');
-    }
-
     // ─── OUTLETS ───────────────────────────────────
-    // Admin only for write; authenticated users can read
     match /outlets/{outletId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
 
     // ─── MENU ITEMS ──────────────────────────────────
-    // Public read; admin/manager write
     match /menu-items/{itemId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin() || isOutletStaff();
+      allow create, update, delete: if isAdmin();
     }
 
     // ─── ORDERS ──────────────────────────────────────
-    // Admin: all orders
-    // Outlet staff/manager: only their outlet's orders
-    // Customer: only their own orders
+    // Authenticated users can read/create their own.
+    // Admin can read/write all.
+    // App-level filtering handles outlet isolation.
     match /orders/{orderId} {
-      allow read: if isAdmin()
-                  || (isOutletStaff() && resource.data.outletId == getUserOutlet())
-                  || (isAuth() && resource.data.customerId == request.auth.uid);
+      allow read: if isAuth();
       allow create: if isAuth();
-      allow update, delete: if isAdmin()
-                            || (isOutletStaff() && resource.data.outletId == getUserOutlet())
-                            || (isAuth() && resource.data.customerId == request.auth.uid);
+      allow update, delete: if isAdmin() || (isAuth() && resource.data.customerId == request.auth.uid);
     }
 
     // ─── SETTINGS ────────────────────────────────────
-    // Public read; admin write only
     match /settings/{settingId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
     // ─── USERS ───────────────────────────────────────
-    // Each user can read/write their own profile; admin can read/write all
     match /users/{userId} {
       allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    function isOwner(userId) {
+      return isAuth() && request.auth.uid == userId;
     }
   }
 }
