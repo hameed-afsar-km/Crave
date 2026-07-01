@@ -9,6 +9,7 @@ import {
   Copy, MessageCircle, Ban, Trash2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useAdminOutlet } from '@/context/AdminOutletContext';
 import { subscribeOrders, updateOrderStatus, deleteOrder as deleteOrderFromFirestore } from '@/lib/firestore-service';
 
 interface OrderItem { name: string; qty: number; }
@@ -16,6 +17,7 @@ interface Order {
   id: string; customer: string; phone: string; items: OrderItem[];
   amount: number; pickupTime: string;   status: 'received' | 'preparing' | 'ready' | 'completed' | 'cancelled';
   notes?: string; cancelReason?: string; createdAt: string;
+  outletId?: string; outletName?: string;
 }
 
 const statusConfig: Record<string, { label: string; pill: string; dot: string }> = {
@@ -29,7 +31,8 @@ const statusConfig: Record<string, { label: string; pill: string; dot: string }>
 const statusFlow = ['received', 'preparing', 'ready', 'completed'] as const;
 
 export default function AdminOrders() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isMasterAdmin } = useAuth();
+  const { selectedOutletId, outlets, setSelectedOutletId, isAllOutlets } = useAdminOutlet();
   const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -56,6 +59,8 @@ export default function AdminOrders() {
         notes: o.notes || o.cancelReason || '',
         cancelReason: o.cancelReason || '',
         createdAt: o.createdAt ? new Date(o.createdAt).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }) : '',
+        outletId: o.outletId || '',
+        outletName: o.outletName || '',
       }));
       setOrders(mapped);
     });
@@ -109,7 +114,11 @@ export default function AdminOrders() {
     if (diff < 0) return 'Overdue'; if (diff === 0) return 'Now'; return `${diff} min`;
   };
 
-  const filtered = orders.filter(o => {
+  const outletFiltered = isAllOutlets
+    ? orders
+    : orders.filter(o => o.outletId === selectedOutletId);
+
+  const filtered = outletFiltered.filter(o => {
     const matchSearch = o.id.toLowerCase().includes(search.toLowerCase()) || o.customer.toLowerCase().includes(search.toLowerCase());
     return matchSearch && (statusFilter === 'all' || o.status === statusFilter);
   });
@@ -151,7 +160,7 @@ export default function AdminOrders() {
         @media print { body { width: auto; padding: 0; } }
       </style></head>
       <body>
-        <h1>CRAVE</h1><p class="sub">LIC Metro, Chennai</p>
+        <h1>CRAVE</h1><p class="sub">${order.outletName || 'LIC Metro, Chennai'}</p>
         <p class="sub">${new Date().toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })} ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>
         <hr class="divider" /><span class="badge">${order.id}</span><hr class="divider" />
         <p class="info"><strong>Customer</strong> ${order.customer}</p><p class="info"><strong>Phone</strong> ${order.phone}</p><p class="info"><strong>Pickup</strong> ${order.pickupTime}</p>
@@ -167,8 +176,8 @@ export default function AdminOrders() {
   if (!isAdmin) return <div className="min-h-screen flex items-center justify-center"><p className="text-zinc-500 font-medium">Access Denied</p></div>;
 
   const filterTabs = ['all', 'received', 'preparing', 'ready', 'completed', 'cancelled'];
-  const counts = { all: orders.length } as Record<string, number>;
-  filterTabs.forEach(t => { counts[t] = t === 'all' ? orders.length : orders.filter(o => o.status === t).length; });
+  const counts = { all: outletFiltered.length } as Record<string, number>;
+  filterTabs.forEach(t => { counts[t] = t === 'all' ? outletFiltered.length : outletFiltered.filter(o => o.status === t).length; });
 
   return (
     <div className="min-h-screen bg-[#0A0A0F]">
@@ -178,7 +187,7 @@ export default function AdminOrders() {
             <Link href="/admin/dashboard" className="p-1.5 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all"><ArrowLeft className="w-4 h-4" /></Link>
             <div className="flex-1">
               <h1 className="text-xl font-bold text-white">Order Management</h1>
-              <p className="text-zinc-500 text-sm mt-0.5">{orders.length} total · {orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled').length} active</p>
+              <p className="text-zinc-500 text-sm mt-0.5">{outletFiltered.length} total · {outletFiltered.filter(o => o.status !== 'completed' && o.status !== 'cancelled').length} active</p>
             </div>
             <button onClick={exportCSV} className="hidden sm:flex items-center gap-2 px-3.5 py-2 border border-zinc-700 bg-zinc-800/50 hover:bg-zinc-700 text-zinc-400 rounded-lg transition-all text-xs font-medium"><Download className="w-3.5 h-3.5" /> Export</button>
           </div>
@@ -200,6 +209,38 @@ export default function AdminOrders() {
               ))}
             </div>
           </div>
+
+          {/* Outlet selector for Master Admin */}
+          {isMasterAdmin && outlets.length > 0 && (
+            <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-0.5">
+              <button
+                onClick={() => setSelectedOutletId('all')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border ${
+                  isAllOutlets ? 'bg-white text-black border-white' : 'bg-zinc-800/50 text-zinc-400 border-zinc-700 hover:bg-zinc-700 hover:text-zinc-300'
+                }`}
+              >
+                <MapPin className="w-3 h-3" />
+                All Outlets
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isAllOutlets ? 'bg-black/20 text-black' : 'bg-zinc-700 text-zinc-500'}`}>
+                  {orders.length}
+                </span>
+              </button>
+              {outlets.map((outlet) => (
+                <button
+                  key={outlet.id}
+                  onClick={() => setSelectedOutletId(outlet.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border ${
+                    selectedOutletId === outlet.id ? 'bg-white text-black border-white' : 'bg-zinc-800/50 text-zinc-400 border-zinc-700 hover:bg-zinc-700 hover:text-zinc-300'
+                  }`}
+                >
+                  {outlet.name}
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${selectedOutletId === outlet.id ? 'bg-black/20 text-black' : 'bg-zinc-700 text-zinc-500'}`}>
+                    {orders.filter((o: any) => o.outletId === outlet.id).length}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -236,6 +277,9 @@ export default function AdminOrders() {
                         <button onClick={(e) => { e.stopPropagation(); copyPhone(order.phone); }} className="p-0.5 hover:text-zinc-300 transition-colors shrink-0">{copied === order.phone ? <span className="text-emerald-400 text-[10px]">Copied!</span> : <Copy className="w-3 h-3" />}</button>
                         <a href={`tel:${order.phone}`} onClick={(e) => e.stopPropagation()} className="p-0.5 hover:text-zinc-300 shrink-0"><Phone className="w-3 h-3" /></a>
                         <span className="text-zinc-700">·</span><MapPin className="w-3 h-3 shrink-0" />{order.pickupTime}
+                        {order.outletName && order.outletName !== (outlets.find(o => o.id === selectedOutletId)?.name) && !isAllOutlets && isMasterAdmin && (
+                          <><span className="text-zinc-700">·</span><span className="text-zinc-500">{order.outletName}</span></>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
@@ -325,6 +369,9 @@ export default function AdminOrders() {
                 <div className="grid grid-cols-2 gap-4">
                   <div><h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">Customer</h3><p className="text-sm font-medium text-white">{selectedOrder.customer}</p><p className="text-xs text-zinc-500 mt-0.5 flex items-center gap-1"><Phone className="w-3 h-3" />{selectedOrder.phone}</p></div>
                   <div><h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">Pickup</h3><p className="text-sm font-medium text-white flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{selectedOrder.pickupTime}</p><p className="text-xs text-zinc-500 mt-0.5">{selectedOrder.createdAt}</p></div>
+                  {selectedOrder.outletName && (isMasterAdmin || isAllOutlets) && (
+                    <div className="col-span-2"><h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">Outlet</h3><p className="text-sm font-medium text-white flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{selectedOrder.outletName}</p></div>
+                  )}
                 </div>
                 <div>
                   <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Items</h3>

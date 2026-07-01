@@ -6,24 +6,37 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, ClipboardList, CookingPot, UtensilsCrossed,
   BarChart3, Settings, LogOut, ExternalLink, Menu, X,
-  ChevronLeft
+  ChevronLeft, Store
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
-const links = [
-  { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/orders', label: 'Orders', icon: ClipboardList },
-  { href: '/admin/kitchen', label: 'Kitchen', icon: CookingPot },
-  { href: '/admin/menu', label: 'Menu', icon: UtensilsCrossed },
-  { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/admin/settings', label: 'Settings', icon: Settings },
-];
-
 export default function AdminNav() {
   const pathname = usePathname();
-  const { signOut } = useAuth();
+  const { signOut, isMasterAdmin, isOutletStaff, assignedOutletName } = useAuth();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+
+  const links = isMasterAdmin
+    ? [
+        { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { href: '/admin/orders', label: 'Orders', icon: ClipboardList },
+        { href: '/admin/kitchen', label: 'Kitchen', icon: CookingPot },
+        { href: '/admin/menu', label: 'Menu', icon: UtensilsCrossed },
+        { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+        { href: '/admin/outlets', label: 'Outlets', icon: Store },
+        { href: '/admin/settings', label: 'Settings', icon: Settings },
+      ]
+    : isOutletStaff
+    ? [
+        { href: '/admin/orders', label: 'Orders', icon: ClipboardList },
+        { href: '/admin/kitchen', label: 'Kitchen', icon: CookingPot },
+      ]
+    : [
+        { href: '/admin/orders', label: 'Orders', icon: ClipboardList },
+        { href: '/admin/kitchen', label: 'Kitchen', icon: CookingPot },
+        { href: '/admin/menu', label: 'Menu', icon: UtensilsCrossed },
+        { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+      ];
 
   const nav = (
     <nav className={`flex flex-col h-full ${collapsed ? 'items-center px-2' : 'px-3'}`}>
@@ -34,7 +47,9 @@ export default function AdminNav() {
           ) : (
             <>
               <span className="text-base font-bold tracking-tight text-white">Crave</span>
-              <span className="text-[9px] font-medium text-zinc-500 uppercase tracking-wider border border-zinc-700 px-1.5 py-0.5 rounded">Admin</span>
+              <span className="text-[9px] font-medium text-zinc-500 uppercase tracking-wider border border-zinc-700 px-1.5 py-0.5 rounded">
+                {isMasterAdmin ? 'Admin' : isOutletStaff ? 'Staff' : 'Manager'}
+              </span>
             </>
           )}
         </Link>
@@ -45,6 +60,12 @@ export default function AdminNav() {
           <ChevronLeft className={`w-3.5 h-3.5 transition-transform ${collapsed ? 'rotate-180' : ''}`} />
         </button>
       </div>
+
+      {!collapsed && assignedOutletName && !isMasterAdmin && (
+        <div className="mx-2 mt-1 mb-2 px-2.5 py-1.5 rounded-lg bg-zinc-800/30 border border-zinc-700/50 text-xs text-zinc-400 truncate">
+          {assignedOutletName}
+        </div>
+      )}
 
       <div className={`mt-2 flex-1 space-y-0.5 ${collapsed ? 'flex flex-col items-center' : ''}`}>
         {links.map(link => {
@@ -106,7 +127,9 @@ export default function AdminNav() {
       <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#0A0A0F] border-b border-zinc-800/60 z-40 flex items-center justify-between px-4">
         <Link href="/admin/dashboard" className="flex items-center gap-1.5">
           <span className="text-base font-bold tracking-tight text-white">Crave</span>
-          <span className="text-[9px] font-medium text-zinc-500 uppercase tracking-wider border border-zinc-700 px-1.5 py-0.5 rounded">Admin</span>
+          <span className="text-[9px] font-medium text-zinc-500 uppercase tracking-wider border border-zinc-700 px-1.5 py-0.5 rounded">
+            {isMasterAdmin ? 'Admin' : isOutletStaff ? 'Staff' : 'Manager'}
+          </span>
         </Link>
         <button onClick={() => setOpen(true)} className="p-2 -mr-2 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
           <Menu className="w-5 h-5" />
@@ -123,6 +146,9 @@ export default function AdminNav() {
                 <X className="w-5 h-5" />
               </button>
             </div>
+            {assignedOutletName && !isMasterAdmin && (
+              <div className="px-4 py-2 text-xs text-zinc-400 border-b border-zinc-800/60">{assignedOutletName}</div>
+            )}
             <div className="p-2">
               {links.map(link => {
                 const active = pathname.startsWith(link.href);

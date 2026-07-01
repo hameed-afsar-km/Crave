@@ -8,7 +8,7 @@ const razorpay = new Razorpay({
 
 export async function POST(req: Request) {
   try {
-    const { amount, currency = 'INR', receipt } = await req.json();
+    const { amount, currency = 'INR', receipt, outletId, outletName } = await req.json();
 
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
@@ -18,6 +18,10 @@ export async function POST(req: Request) {
       amount: Math.round(amount * 100),
       currency,
       receipt: receipt || `rcpt_${Date.now()}`,
+      notes: {
+        outletId: outletId || '',
+        outletName: outletName || '',
+      },
     });
 
     return NextResponse.json({
@@ -25,6 +29,8 @@ export async function POST(req: Request) {
       amount: order.amount,
       currency: order.currency,
       key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      outletId: order.notes?.outletId,
+      outletName: order.notes?.outletName,
     });
   } catch (err: any) {
     console.error('create-order error:', err);

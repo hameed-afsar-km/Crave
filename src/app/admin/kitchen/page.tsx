@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { CookingPot, Clock, Phone, AlertTriangle, ChefHat, CheckCircle, Package } from 'lucide-react';
+import { CookingPot, Clock, Phone, AlertTriangle, ChefHat, CheckCircle, Package, MapPin } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useAdminOutlet } from '@/context/AdminOutletContext';
 import { subscribeOrders, updateOrderStatus as firestoreUpdateStatus } from '@/lib/firestore-service';
 
 interface OrderItem {
@@ -21,6 +22,8 @@ interface Order {
   status: 'received' | 'preparing' | 'ready' | 'completed';
   notes?: string;
   createdAt: string;
+  outletId?: string;
+  outletName?: string;
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string; border: string; dot: string; next: string | null; nextAction: string | null }> = {
@@ -53,7 +56,8 @@ function getPriority(order: Order, nowMinutes: number): 'late' | 'urgent' | 'upc
 const filterTabs = ['all', 'received', 'preparing', 'ready'] as const;
 
 export default function KitchenPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isMasterAdmin } = useAuth();
+  const { selectedOutletId, outlets, setSelectedOutletId, isAllOutlets } = useAdminOutlet();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<string>('all');
   const [now, setNow] = useState(new Date());
@@ -70,6 +74,8 @@ export default function KitchenPage() {
         status: o.status || 'received',
         notes: o.notes || '',
         createdAt: o.createdAt || new Date().toISOString(),
+        outletId: o.outletId || '',
+        outletName: o.outletName || '',
       }));
       setOrders(mapped);
     });
@@ -83,8 +89,12 @@ export default function KitchenPage() {
     firestoreUpdateStatus(orderId, newStatus);
   };
 
+  const outletFiltered = useMemo(() => {
+    return isAllOutlets ? orders : orders.filter(o => o.outletId === selectedOutletId);
+  }, [orders, selectedOutletId, isAllOutlets]);
+
   const filtered = useMemo(() => {
-    return orders
+    return outletFiltered
       .filter(o => o.status !== 'completed')
       .filter(o => filter === 'all' || o.status === filter)
       .sort((a, b) => {
@@ -94,14 +104,14 @@ export default function KitchenPage() {
         if (rank[pa] !== rank[pb]) return rank[pa] - rank[pb];
         return a.pickupTime.localeCompare(b.pickupTime);
       });
-  }, [orders, filter, nowMinutes]);
+  }, [outletFiltered, filter, nowMinutes]);
 
   const counts = useMemo(() => ({
-    all: orders.filter(o => o.status !== 'completed').length,
-    received: orders.filter(o => o.status === 'received').length,
-    preparing: orders.filter(o => o.status === 'preparing').length,
-    ready: orders.filter(o => o.status === 'ready').length,
-  }), [orders]);
+    all: outletFiltered.filter(o => o.status !== 'completed').length,
+    received: outletFiltered.filter(o => o.status === 'received').length,
+    preparing: outletFiltered.filter(o => o.status === 'preparing').length,
+    ready: outletFiltered.filter(o => o.status === 'ready').length,
+  }), [outletFiltered]);
 
   if (!isAdmin) {
     return (
@@ -151,6 +161,37 @@ export default function KitchenPage() {
               ))}
             </div>
           </div>
+          {/* Outlet selector for Master Admin */}
+          {isMasterAdmin && outlets.length > 0 && (
+            <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-0.5">
+              <button
+                onClick={() => setSelectedOutletId('all')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border ${
+                  isAllOutlets ? 'bg-white text-black border-white' : 'bg-zinc-800/50 text-zinc-400 border-zinc-700 hover:bg-zinc-700 hover:text-zinc-300'
+                }`}
+              >
+                <MapPin className="w-3 h-3" />
+                All Outlets
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isAllOutlets ? 'bg-black/20 text-black' : 'bg-zinc-700 text-zinc-500'}`}>
+                  {outletFiltered.filter(o => o.status !== 'completed').length}
+                </span>
+              </button>
+              {outlets.map((outlet) => (
+                <button
+                  key={outlet.id}
+                  onClick={() => setSelectedOutletId(outlet.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border ${
+                    selectedOutletId === outlet.id ? 'bg-white text-black border-white' : 'bg-zinc-800/50 text-zinc-400 border-zinc-700 hover:bg-zinc-700 hover:text-zinc-300'
+                  }`}
+                >
+                  {outlet.name}
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${selectedOutletId === outlet.id ? 'bg-black/20 text-black' : 'bg-zinc-700 text-zinc-500'}`}>
+                    {orders.filter((o: any) => o.outletId === outlet.id && o.status !== 'completed').length}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -192,6 +233,11 @@ export default function KitchenPage() {
                           {priority === 'late' && <AlertTriangle className="w-3.5 h-3.5 text-red-400" />}
                         </div>
                         <p className="text-sm text-zinc-400 mt-0.5">{order.customer}</p>
+                        {isMasterAdmin && order.outletName && (
+                          <p className="text-[10px] text-zinc-500 mt-0.5 flex items-center gap-1">
+                            <MapPin className="w-2.5 h-2.5" />{order.outletName}
+                          </p>
+                        )}
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium border ${sc.bg} ${sc.color} ${sc.border}`}>

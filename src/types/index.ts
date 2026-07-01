@@ -1,12 +1,38 @@
+export interface Outlet {
+  id: string;
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  openingHours: string;
+  closingHours: string;
+  preparationTime: number;
+  maxOrdersPerSlot: number;
+  pickupWindow: number;
+  isOpen: boolean;
+  status: 'active' | 'inactive';
+  latitude?: number;
+  longitude?: number;
+  bannerImage?: string;
+  logo?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type UserRole = 'customer' | 'outlet_staff' | 'outlet_manager' | 'admin';
+
 export interface MenuItem {
   id: string;
   name: string;
   description: string;
   price: number;
+  pricing?: Record<string, number>;
   image: string;
   category: string;
   rating: number;
   available: boolean;
+  availableOutlets?: string[];
+  availability?: Record<string, boolean>;
   createdAt?: string;
 }
 
@@ -22,6 +48,8 @@ export interface CartItem {
 
 export interface Order {
   id: string;
+  outletId: string;
+  outletName: string;
   customerId: string;
   customerName: string;
   customerPhone: string;
@@ -45,7 +73,9 @@ export interface UserProfile {
   name: string;
   email: string;
   phone: string;
-  role: 'customer' | 'admin';
+  role: UserRole;
+  assignedOutletId?: string;
+  assignedOutletName?: string;
   loyaltyPoints?: number;
   createdAt?: string;
 }
@@ -62,12 +92,4 @@ export interface TimeSlot {
   time: string;
   available: boolean;
   label: string;
-}
-
-export interface StoreSettings {
-  storeName: string;
-  storeStatus: 'open' | 'closed';
-  estimatedWaitTime: number;
-  openingTime: string;
-  closingTime: string;
 }

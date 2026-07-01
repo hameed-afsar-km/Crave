@@ -8,8 +8,7 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Helper: check if the requester is the admin
-    // Admin is determined by the email in the Firebase Auth token matching the admin email
+    // Helper: check if the requester is the master admin
     function isAdmin() {
       return isAuth() && request.auth.token.email == 'kmafsar2006@gmail.com';
     }
@@ -19,23 +18,51 @@ service cloud.firestore {
       return isAuth() && request.auth.uid == userId;
     }
 
-    // ─── MENU ITEMS ──────────────────────────────────
-    // Public read; admin-only write
-    match /menu-items/{itemId} {
+    // Helper: get the user's role from the users collection
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    // Helper: get the user's assigned outlet
+    function getUserOutlet() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.assignedOutletId;
+    }
+
+    // Helper: check if user is outlet staff or manager
+    function isOutletStaff() {
+      return isAuth() && (getUserRole() == 'outlet_staff' || getUserRole() == 'outlet_manager');
+    }
+
+    // ─── OUTLETS ───────────────────────────────────
+    // Admin only for write; authenticated users can read
+    match /outlets/{outletId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
 
+    // ─── MENU ITEMS ──────────────────────────────────
+    // Public read; admin/manager write
+    match /menu-items/{itemId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin() || isOutletStaff();
+    }
+
     // ─── ORDERS ──────────────────────────────────────
-    // Users can read their own orders; admin can read all
+    // Admin: all orders
+    // Outlet staff/manager: only their outlet's orders
+    // Customer: only their own orders
     match /orders/{orderId} {
-      allow read: if isAdmin() || (isAuth() && resource.data.customerId == request.auth.uid);
+      allow read: if isAdmin()
+                  || (isOutletStaff() && resource.data.outletId == getUserOutlet())
+                  || (isAuth() && resource.data.customerId == request.auth.uid);
       allow create: if isAuth();
-      allow update, delete: if isAdmin() || (isAuth() && resource.data.customerId == request.auth.uid);
+      allow update, delete: if isAdmin()
+                            || (isOutletStaff() && resource.data.outletId == getUserOutlet())
+                            || (isAuth() && resource.data.customerId == request.auth.uid);
     }
 
     // ─── SETTINGS ────────────────────────────────────
-    // Public read (store hours, open/close status)
+    // Public read; admin write only
     match /settings/{settingId} {
       allow read: if true;
       allow write: if isAdmin();

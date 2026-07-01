@@ -16,17 +16,19 @@ import {
   serverTimestamp,
   deleteDoc,
 } from 'firebase/firestore';
-import { Order, MenuItem, UserProfile } from '@/types';
+import { Order, MenuItem, UserProfile, Outlet } from '@/types';
 import { StoreSettings, loadSettings, saveSettings as saveLocalSettings } from '@/lib/store';
 import { getStoredOrders, saveOrders, getStoredMenuItems, saveMenuItems } from '@/lib/seed-data';
 import { menuItems as defaultMenuItems } from '@/lib/data';
 import type { RewardConfig } from '@/lib/store';
+import { DEFAULT_OUTLETS, loadOutlets, saveOutlets } from '@/lib/outlets';
 
 const COLLECTIONS = {
   ORDERS: 'orders',
   MENU_ITEMS: 'menu-items',
   SETTINGS: 'settings',
   USERS: 'users',
+  OUTLETS: 'outlets',
 } as const;
 
 function isReady(): boolean {
@@ -47,6 +49,8 @@ function mapOrderDoc(doc: any): Order {
   const data = doc.data ? doc.data() : doc;
   return {
     id: doc.id,
+    outletId: data.outletId || '',
+    outletName: data.outletName || '',
     customerId: data.customerId || 'guest',
     customerName: data.customerName || '',
     customerPhone: data.customerPhone || '',
@@ -73,12 +77,100 @@ function mapMenuItemDoc(doc: any): MenuItem {
     name: data.name || '',
     description: data.description || '',
     price: data.price || 0,
+    pricing: data.pricing || undefined,
     image: data.image || '',
     category: data.category || '',
     rating: data.rating || 0,
     available: data.available ?? true,
+    availableOutlets: data.availableOutlets || undefined,
+    availability: data.availability || undefined,
     createdAt: typeof data.createdAt === 'string' ? data.createdAt : timestampToDate(data.createdAt),
   };
+}
+
+function mapOutletDoc(doc: any): Outlet {
+  const data = doc.data ? doc.data() : doc;
+  return {
+    id: doc.id,
+    name: data.name || '',
+    address: data.address || '',
+    phone: data.phone || '',
+    email: data.email || '',
+    openingHours: data.openingHours || '10:00',
+    closingHours: data.closingHours || '22:00',
+    preparationTime: data.preparationTime || 10,
+    maxOrdersPerSlot: data.maxOrdersPerSlot || 10,
+    pickupWindow: data.pickupWindow || 15,
+    isOpen: data.isOpen ?? true,
+    status: data.status || 'active',
+    latitude: data.latitude,
+    longitude: data.longitude,
+    bannerImage: data.bannerImage,
+    logo: data.logo,
+    createdAt: timestampToDate(data.createdAt),
+    updatedAt: timestampToDate(data.updatedAt),
+  };
+}
+
+// ─── OUTLETS ───
+
+export function subscribeOutlets(callback: (outlets: Outlet[]) => void): () => void {
+  if (!isReady()) {
+    callback(loadOutlets());
+    return () => {};
+  }
+
+  const q = query(collection(db!, COLLECTIONS.OUTLETS));
+  return onSnapshot(q, (snapshot) => {
+    const outlets = snapshot.docs.map((d) => mapOutletDoc(d));
+    saveOutlets(outlets);
+    callback(outlets);
+  });
+}
+
+export async function saveOutletToFirestore(outlet: Outlet): Promise<void> {
+  const local = loadOutlets();
+  const idx = local.findIndex((o) => o.id === outlet.id);
+  if (idx >= 0) {
+    local[idx] = outlet;
+  } else {
+    local.push(outlet);
+  }
+  saveOutlets(local);
+
+  if (isReady()) {
+    try {
+      const docRef = doc(db!, COLLECTIONS.OUTLETS, outlet.id);
+      await setDoc(docRef, { ...outlet, updatedAt: serverTimestamp() }, { merge: true });
+    } catch {}
+  }
+}
+
+export async function deleteOutletFromFirestore(outletId: string): Promise<void> {
+  const local = loadOutlets().filter((o) => o.id !== outletId);
+  saveOutlets(local);
+
+  if (isReady()) {
+    try {
+      await deleteDoc(doc(db!, COLLECTIONS.OUTLETS, outletId));
+    } catch {}
+  }
+}
+
+export async function seedOutlets(): Promise<void> {
+  const local = loadOutlets();
+  if (local.length > 0) return;
+
+  saveOutlets(DEFAULT_OUTLETS);
+
+  if (isReady()) {
+    for (const outlet of DEFAULT_OUTLETS) {
+      try {
+        const docRef = doc(db!, COLLECTIONS.OUTLETS, outlet.id);
+        await setDoc(docRef, outlet);
+      } catch {}
+    }
+  }
 }
 
 // ─── ORDERS ───
@@ -329,7 +421,7 @@ export async function getMenuItems(): Promise<MenuItem[]> {
   return items.map((i: any) => mapMenuItemDoc({ ...i, id: i.id }));
 }
 
-// ─── STORE SETTINGS ───
+// ─── STORE SETTINGS (Global) ───
 
 export function subscribeSettings(
   callback: (settings: StoreSettings) => void

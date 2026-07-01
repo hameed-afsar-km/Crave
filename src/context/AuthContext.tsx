@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
-import { UserProfile } from '@/types';
+import { UserProfile, UserRole } from '@/types';
 import { saveUserProfile, getUserProfile } from '@/lib/firestore-service';
 
 interface AuthContextType {
@@ -10,8 +10,17 @@ interface AuthContextType {
   signIn: (user: UserProfile) => void;
   signOut: () => void;
   isAdmin: boolean;
+  isMasterAdmin: boolean;
+  isOutletManager: boolean;
+  isOutletStaff: boolean;
+  isStaff: boolean;
+  userRole: UserRole | null;
+  assignedOutletId: string | null;
+  assignedOutletName: string;
   updateUser: (data: Partial<UserProfile>) => void;
 }
+
+export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'kmafsar2006@gmail.com';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -23,6 +32,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const payload = JSON.stringify({
       email: userData.email,
       role: userData.role || 'customer',
+      assignedOutletId: userData.assignedOutletId || '',
+      assignedOutletName: userData.assignedOutletName || '',
     });
     document.cookie = `crave-user=${encodeURIComponent(payload)};path=/;max-age=2592000;SameSite=Lax`;
   }, []);
@@ -80,11 +91,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, [setAuthCookie]);
 
-  const isAdmin = useMemo(() => user?.role === 'admin', [user]);
+  const userRole = useMemo(() => user?.role || null, [user]);
+
+  const isMasterAdmin = useMemo(() => {
+    if (user?.role === 'admin') return true;
+    if (user?.email === ADMIN_EMAIL) return true;
+    return false;
+  }, [user]);
+
+  const isOutletManager = useMemo(() => user?.role === 'outlet_manager', [user]);
+  const isOutletStaff = useMemo(() => user?.role === 'outlet_staff', [user]);
+  const isStaff = useMemo(() => isMasterAdmin || isOutletManager || isOutletStaff, [isMasterAdmin, isOutletManager, isOutletStaff]);
+
+  const isAdmin = useMemo(() => isMasterAdmin, [isMasterAdmin]);
+
+  const assignedOutletId = useMemo(() => user?.assignedOutletId || null, [user]);
+  const assignedOutletName = useMemo(() => user?.assignedOutletName || '', [user]);
 
   const value = useMemo(() => ({
-    user, loading, signIn, signOut, isAdmin, updateUser,
-  }), [user, loading, isAdmin, signIn, signOut, updateUser]);
+    user, loading, signIn, signOut, isAdmin, isMasterAdmin,
+    isOutletManager, isOutletStaff, isStaff,
+    userRole, assignedOutletId, assignedOutletName, updateUser,
+  }), [user, loading, signIn, signOut, isAdmin, isMasterAdmin,
+      isOutletManager, isOutletStaff, isStaff, userRole, assignedOutletId, assignedOutletName, updateUser]);
 
   return (
     <AuthContext.Provider value={value}>

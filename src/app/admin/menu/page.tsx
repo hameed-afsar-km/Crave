@@ -4,19 +4,25 @@ import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Plus, Edit2, Trash2, Search, Eye, EyeOff, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, Search, Eye, EyeOff, TrendingUp, TrendingDown, Store, MapPin } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useAdminOutlet } from '@/context/AdminOutletContext';
 import { getStoredOrders } from '@/lib/seed-data';
 import { MenuItem } from '@/types';
 import { subscribeMenuItems, addMenuItem as addFirestoreItem, updateMenuItem, deleteMenuItem as deleteFirestoreItem } from '@/lib/firestore-service';
 
 export default function AdminMenu() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isMasterAdmin } = useAuth();
+  const { selectedOutletId, outlets, setSelectedOutletId, isAllOutlets } = useAdminOutlet();
   const [items, setItems] = useState<MenuItem[]>([]);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-  const [form, setForm] = useState({ name: '', description: '', price: '', category: 'Burgers', image: '' });
+  const [form, setForm] = useState({
+    name: '', description: '', price: '', category: 'Burgers', image: '',
+    availableOutlets: [] as string[],
+    pricing: {} as Record<string, number>,
+  });
 
   useEffect(() => {
     const unsub = subscribeMenuItems((firestoreItems) => {
@@ -45,16 +51,46 @@ export default function AdminMenu() {
 
   const maxOrders = Math.max(...Object.values(itemOrderCounts), 1);
 
-  const filtered = items.filter(i =>
+  const outletFiltered = useMemo(() => {
+    if (isMasterAdmin && isAllOutlets) return items;
+    if (isMasterAdmin) return items.filter(i =>
+      i.availableOutlets ? i.availableOutlets.includes(selectedOutletId) : true
+    );
+    return items;
+  }, [items, selectedOutletId, isAllOutlets, isMasterAdmin]);
+
+  const filtered = outletFiltered.filter(i =>
     i.name.toLowerCase().includes(search.toLowerCase()) ||
     i.category.toLowerCase().includes(search.toLowerCase())
   );
 
+  const getItemPrice = (item: MenuItem): number => {
+    if (isMasterAdmin && !isAllOutlets && item.pricing?.[selectedOutletId] != null) {
+      return item.pricing[selectedOutletId];
+    }
+    if (!isMasterAdmin && item.pricing?.[selectedOutletId] != null) {
+      return item.pricing[selectedOutletId];
+    }
+    return item.price;
+  };
+
+  const isItemAvailableAtOutlet = (item: MenuItem, outletId: string): boolean => {
+    if (item.availableOutlets && !item.availableOutlets.includes(outletId)) return false;
+    return item.available !== false;
+  };
+
   const toggleAvailability = (id: string) => {
     const item = items.find(i => i.id === id);
     if (!item) return;
-    updateMenuItem(id, { available: !item.available });
-    setItems(prev => prev.map(i => i.id === id ? { ...i, available: !i.available } : i));
+    if (isMasterAdmin && !isAllOutlets) {
+      const current = item.availableOutlets || [];
+      const updated = current.includes(selectedOutletId)
+        ? current.filter(oid => oid !== selectedOutletId)
+        : [...current, selectedOutletId];
+      updateMenuItem(id, { availableOutlets: updated });
+    } else {
+      updateMenuItem(id, { available: !item.available });
+    }
   };
 
   const deleteItem = (id: string) => {
@@ -64,13 +100,26 @@ export default function AdminMenu() {
 
   const openEdit = (item: MenuItem) => {
     setEditingItem(item);
-    setForm({ name: item.name, description: item.description, price: String(item.price), category: item.category, image: item.image });
+    setForm({
+      name: item.name,
+      description: item.description,
+      price: String(item.price),
+      category: item.category,
+      image: item.image,
+      availableOutlets: item.availableOutlets || [],
+      pricing: item.pricing || {},
+    });
     setShowForm(true);
   };
 
   const openAdd = () => {
     setEditingItem(null);
-    setForm({ name: '', description: '', price: '', category: 'Burgers', image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80' });
+    setForm({
+      name: '', description: '', price: '', category: 'Burgers',
+      image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80',
+      availableOutlets: [],
+      pricing: {},
+    });
     setShowForm(true);
   };
 
@@ -83,6 +132,8 @@ export default function AdminMenu() {
         price: Number(form.price),
         category: form.category,
         image: form.image,
+        availableOutlets: form.availableOutlets,
+        pricing: form.pricing,
       });
     } else {
       await addFirestoreItem({
@@ -93,6 +144,8 @@ export default function AdminMenu() {
         image: form.image || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80',
         rating: 0,
         available: true,
+        availableOutlets: form.availableOutlets,
+        pricing: form.pricing,
       });
     }
     setShowForm(false);
@@ -131,16 +184,38 @@ export default function AdminMenu() {
               Add Item
             </motion.button>
           </div>
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search menu items..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500"
-            />
+
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+              <input type="text" placeholder="Search menu items..." value={search} onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" />
+            </div>
           </div>
+
+          {isMasterAdmin && outlets.length > 0 && (
+            <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-0.5">
+              <button onClick={() => setSelectedOutletId('all')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border ${
+                  isAllOutlets ? 'bg-white text-black border-white' : 'bg-zinc-800/50 text-zinc-400 border-zinc-700 hover:bg-zinc-700 hover:text-zinc-300'
+                }`}
+              >
+                <MapPin className="w-3 h-3" /> All Outlets
+              </button>
+              {outlets.map((outlet) => (
+                <button key={outlet.id} onClick={() => setSelectedOutletId(outlet.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border ${
+                    selectedOutletId === outlet.id ? 'bg-white text-black border-white' : 'bg-zinc-800/50 text-zinc-400 border-zinc-700 hover:bg-zinc-700 hover:text-zinc-300'
+                  }`}
+                >
+                  <MapPin className="w-3 h-3" /> {outlet.name}
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${selectedOutletId === outlet.id ? 'bg-black/20 text-black' : 'bg-zinc-700 text-zinc-500'}`}>
+                    {items.filter((i: MenuItem) => i.availableOutlets ? i.availableOutlets.includes(outlet.id) : true).length}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -154,18 +229,14 @@ export default function AdminMenu() {
                   <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Category</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Price</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Orders</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Rating</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Outlet</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Status</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((item, i) => (
-                  <motion.tr
-                    key={item.id}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.03 }}
+                  <motion.tr key={item.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
                     className="border-b border-zinc-800/60 hover:bg-zinc-800/30 transition-colors"
                   >
                     <td className="px-5 py-3">
@@ -178,7 +249,7 @@ export default function AdminMenu() {
                       </div>
                     </td>
                     <td className="px-5 py-3 text-xs font-medium text-zinc-300">{item.category}</td>
-                    <td className="px-5 py-3 font-medium text-sm text-white">₹{item.price}</td>
+                    <td className="px-5 py-3 font-medium text-sm text-white">₹{getItemPrice(item)}</td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
                         <div className="flex-1">
@@ -190,33 +261,45 @@ export default function AdminMenu() {
                             <div className="h-full rounded-full bg-zinc-500" style={{ width: `${Math.min(100, ((itemOrderCounts[item.name] || 0) / maxOrders) * 100)}%` }} />
                           </div>
                         </div>
-                        {itemOrderCounts[item.name] && itemOrderCounts[item.name] > 0 && (
-                          itemOrderCounts[item.name] >= (sortedByOrders.length > 0 ? itemOrderCounts[sortedByOrders[0].name] || 0 : 0) && itemOrderCounts[item.name] > 0
-                            ? <TrendingUp className="w-3 h-3 text-emerald-400 shrink-0" />
-                            : itemOrderCounts[item.name] <= (sortedByOrders.length > 1 ? itemOrderCounts[sortedByOrders[sortedByOrders.length - 1].name] || 0 : 0)
-                            ? <TrendingDown className="w-3 h-3 text-red-400 shrink-0" />
-                            : null
-                        )}
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-xs font-medium text-zinc-200">
-                      {item.rating > 0 ? (
-                        <span>{item.rating}</span>
+                    <td className="px-5 py-3">
+                      {isMasterAdmin && !isAllOutlets ? (
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium border ${
+                          isItemAvailableAtOutlet(item, selectedOutletId) ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'
+                        }`}>
+                          <Store className="w-2.5 h-2.5" />
+                          {isItemAvailableAtOutlet(item, selectedOutletId) ? 'Available' : 'Hidden'}
+                        </span>
+                      ) : isMasterAdmin ? (
+                        <div className="flex gap-1 flex-wrap">
+                          {outlets.map(o => (
+                            <span key={o.id} className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-medium border ${
+                              isItemAvailableAtOutlet(item, o.id) ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'
+                            }`}>
+                              {o.name.split(' ').pop()}
+                            </span>
+                          ))}
+                        </div>
                       ) : (
-                        <span className="text-zinc-600">—</span>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium border ${
+                          isItemAvailableAtOutlet(item, selectedOutletId) ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'
+                        }`}>
+                          {isItemAvailableAtOutlet(item, selectedOutletId) ? 'Available' : 'Hidden'}
+                        </span>
                       )}
                     </td>
                     <td className="px-5 py-3">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium ${
-                        item.available ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium border ${
+                        item.available !== false ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'
                       }`}>
-                        {item.available ? 'Available' : 'Unavailable'}
+                        {item.available !== false ? 'Active' : 'Disabled'}
                       </span>
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex gap-1.5">
-                        <button onClick={() => toggleAvailability(item.id)} className="p-1.5 text-zinc-500 border border-zinc-700 hover:border-zinc-600 hover:text-zinc-300 rounded-lg transition-all" title={item.available ? 'Disable' : 'Enable'}>
-                          {item.available ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        <button onClick={() => toggleAvailability(item.id)} className="p-1.5 text-zinc-500 border border-zinc-700 hover:border-zinc-600 hover:text-zinc-300 rounded-lg transition-all" title={isItemAvailableAtOutlet(item, selectedOutletId) ? 'Disable' : 'Enable'}>
+                          {isItemAvailableAtOutlet(item, selectedOutletId) ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                         </button>
                         <button onClick={() => openEdit(item)} className="p-1.5 text-zinc-400 border border-zinc-700 hover:border-zinc-600 hover:text-zinc-200 rounded-lg transition-all" title="Edit">
                           <Edit2 className="w-3.5 h-3.5" />
@@ -240,10 +323,8 @@ export default function AdminMenu() {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowForm(false)} />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="relative bg-[#12121A] border border-zinc-800/60 rounded-2xl p-6 w-full max-w-lg shadow-xl z-10"
+          <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="relative bg-[#12121A] border border-zinc-800/60 rounded-2xl p-6 w-full max-w-2xl shadow-xl z-10 max-h-[90vh] overflow-y-auto"
           >
             <h2 className="text-base font-bold text-white mb-5">
               {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
@@ -261,7 +342,7 @@ export default function AdminMenu() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-500 mb-1">Price (₹)</label>
+                  <label className="block text-xs font-medium text-zinc-500 mb-1">Base Price (₹)</label>
                   <input type="number" value={form.price} onChange={(e) => setForm({...form, price: e.target.value})}
                     className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" />
                 </div>
@@ -283,6 +364,46 @@ export default function AdminMenu() {
                 <input type="text" value={form.image} onChange={(e) => setForm({...form, image: e.target.value})}
                   className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" />
               </div>
+
+              {isMasterAdmin && outlets.length > 0 && (
+                <div className="border-t border-zinc-800/60 pt-4">
+                  <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Outlet Overrides</label>
+                  {outlets.map(outlet => (
+                    <div key={outlet.id} className="flex items-center gap-3 mb-3 p-3 rounded-lg bg-zinc-800/30 border border-zinc-800/60">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-zinc-300">{outlet.name}</p>
+                        <div className="flex items-center gap-3 mt-1.5">
+                          <label className="flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" checked={form.availableOutlets.includes(outlet.id)}
+                              onChange={(e) => setForm({
+                                ...form,
+                                availableOutlets: e.target.checked
+                                  ? [...form.availableOutlets, outlet.id]
+                                  : form.availableOutlets.filter(id => id !== outlet.id)
+                              })}
+                              className="w-3.5 h-3.5 rounded border-zinc-600 bg-zinc-800 text-white focus:ring-zinc-500" />
+                            <span className="text-xs text-zinc-500">Available</span>
+                          </label>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-zinc-500">₹</span>
+                            <input type="number" placeholder="Override price" value={form.pricing[outlet.id] ?? ''}
+                              onChange={(e) => {
+                                const updated = { ...form.pricing };
+                                if (e.target.value) {
+                                  updated[outlet.id] = Number(e.target.value);
+                                } else {
+                                  delete updated[outlet.id];
+                                }
+                                setForm({...form, pricing: updated});
+                              }}
+                              className="w-20 px-2 py-1 bg-zinc-800/50 border border-zinc-700 rounded text-xs text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="flex gap-3 mt-6">
               <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 border border-zinc-700 text-zinc-400 text-xs font-medium rounded-lg hover:bg-zinc-800 transition-all">

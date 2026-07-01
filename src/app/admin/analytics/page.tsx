@@ -5,9 +5,10 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
   BarChart3, TrendingUp, IndianRupee, ShoppingBag, Clock,
-  ArrowLeft, Users, Zap, Calendar
+  ArrowLeft, Users, Zap, Calendar, MapPin
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useAdminOutlet } from '@/context/AdminOutletContext';
 import { getStoredOrders } from '@/lib/seed-data';
 import { AnimatedCounter } from '@/components/admin/AnimatedCounter';
 import { BarChart } from '@/components/admin/BarChart';
@@ -20,11 +21,13 @@ import {
 type Period = 'weekly' | 'monthly';
 
 export default function AdminAnalytics() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isMasterAdmin } = useAuth();
+  const { selectedOutletId, outlets, setSelectedOutletId, isAllOutlets } = useAdminOutlet();
   const [period, setPeriod] = useState<Period>('weekly');
 
   const computeData = () => {
-    const orders = getStoredOrders() || [];
+    const allOrders = getStoredOrders() || [];
+    const orders = isAllOutlets ? allOrders : allOrders.filter((o: any) => o.outletId === selectedOutletId);
     const revenue = orders.reduce((s: number, o: any) => s + (o.amount || 0), 0);
     return { orders, revenue };
   };
@@ -33,7 +36,7 @@ export default function AdminAnalytics() {
 
   useEffect(() => {
     setData(computeData());
-  }, []);
+  }, [selectedOutletId, isAllOutlets]);
 
   const periodOrders = useMemo(() => filterOrdersByPeriod(data.orders, period), [data.orders, period]);
   const periodRevenue = useMemo(() => periodOrders.reduce((s: number, o: any) => s + (o.amount || 0), 0), [periodOrders]);
@@ -130,6 +133,27 @@ export default function AdminAnalytics() {
               </button>
             </div>
           </div>
+
+          {isMasterAdmin && outlets.length > 0 && (
+            <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-0.5">
+              <button onClick={() => setSelectedOutletId('all')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border ${
+                  isAllOutlets ? 'bg-white text-black border-white' : 'bg-zinc-800/50 text-zinc-400 border-zinc-700 hover:bg-zinc-700 hover:text-zinc-300'
+                }`}
+              >
+                <MapPin className="w-3 h-3" /> All Outlets
+              </button>
+              {outlets.map((outlet) => (
+                <button key={outlet.id} onClick={() => setSelectedOutletId(outlet.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border ${
+                    selectedOutletId === outlet.id ? 'bg-white text-black border-white' : 'bg-zinc-800/50 text-zinc-400 border-zinc-700 hover:bg-zinc-700 hover:text-zinc-300'
+                  }`}
+                >
+                  <MapPin className="w-3 h-3" /> {outlet.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

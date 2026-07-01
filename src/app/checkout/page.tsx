@@ -3,19 +3,20 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Clock, ShoppingBag, ArrowLeft, User, Mail, CheckCircle, ArrowRight, Store, Ban } from 'lucide-react';
+import { Clock, ShoppingBag, ArrowLeft, User, Mail, CheckCircle, ArrowRight, Store, Ban, MapPin, Phone, ChefHat } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { formatPrice, generateTimeSlots } from '@/lib/utils';
 import { loadSettings, getTimeUntilOpen } from '@/lib/store';
 import { loadRazorpayScript } from '@/lib/razorpay';
 import { createOrder } from '@/lib/firestore-service';
+import { loadOutlets, getOpenOutlets, getOutlet } from '@/lib/outlets';
 import StoreStatusBanner from '@/components/StoreStatusBanner';
 import Link from 'next/link';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, subtotal, clearCart } = useCart();
+  const { items, subtotal, clearCart, selectedOutletId, selectedOutletName, setSelectedOutlet } = useCart();
   const { user } = useAuth();
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
@@ -27,8 +28,21 @@ export default function CheckoutPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedOrderId, setConfirmedOrderId] = useState('');
   const [confirmedOrder, setConfirmedOrder] = useState<any>(null);
+  const [outlets, setOutlets] = useState(() => loadOutlets());
   const [storeStatus, setStoreStatus] = useState(() => loadSettings());
   const [timeUntilOpen, setTimeUntilOpen] = useState('');
+
+  useEffect(() => {
+    const allOutlets = loadOutlets();
+    const openOnes = allOutlets.filter((o) => o.isOpen && o.status === 'active');
+    setOutlets(openOnes);
+    if (openOnes.length === 1 && !selectedOutletId) {
+      setSelectedOutlet(openOnes[0].id, openOnes[0].name);
+    } else if (selectedOutletId) {
+      const stillOpen = openOnes.find((o) => o.id === selectedOutletId);
+      if (!stillOpen) setSelectedOutlet('', '');
+    }
+  }, []);
 
   useEffect(() => {
     const update = () => {
@@ -71,7 +85,11 @@ export default function CheckoutPage() {
       const res = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: total }),
+        body: JSON.stringify({
+          amount: total,
+          outletId: selectedOutletId,
+          outletName: selectedOutletName,
+        }),
       });
       const razorpayOrder = await res.json();
       if (!res.ok || !razorpayOrder.id) {
@@ -120,6 +138,8 @@ export default function CheckoutPage() {
 
             // 5. Create Firestore order
             const orderData = {
+              outletId: selectedOutletId || 'lic',
+              outletName: selectedOutletName || 'Crave LIC Metro',
               customerId: user?.uid || 'guest',
               customerName: name,
               customerPhone: phone,
@@ -209,7 +229,62 @@ export default function CheckoutPage() {
           {/* Form */}
           <div className="lg:col-span-3 space-y-5">
 
-            {/* Contact Card */}
+            {/* Outlet Selection Card */}
+            {outlets.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.03 }}
+                className="rounded-[24px] bg-[rgba(10,9,18,0.65)] backdrop-blur-lg border border-white/[0.06] p-6"
+              >
+                <div className="flex items-center gap-2.5 mb-5">
+                  <div className="w-8 h-8 rounded-lg bg-gold/10 border border-gold/18 flex items-center justify-center">
+                    <MapPin className="w-4 h-4 text-gold" />
+                  </div>
+                  <h2 className="text-base font-black text-white">Pickup Outlet</h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {outlets.map((outlet) => {
+                    const isSelected = selectedOutletId === outlet.id;
+                    return (
+                      <button
+                        key={outlet.id}
+                        onClick={() => setSelectedOutlet(outlet.id, outlet.name)}
+                        className={`p-4 rounded-2xl border transition-all duration-300 text-left ${
+                          isSelected
+                            ? 'border-gold/45 bg-gold/6 shadow-[0_0_15px_rgba(212,175,55,0.08)]'
+                            : 'border-white/6 bg-white/2 hover:border-white/12'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-black text-sm text-white truncate">{outlet.name}</p>
+                            <p className="text-xs text-zinc-500 mt-0.5 truncate">{outlet.address}</p>
+                          </div>
+                          {outlet.isOpen ? (
+                            <span className="shrink-0 px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full text-[9px] font-bold uppercase border border-emerald-500/20">
+                              Open
+                            </span>
+                          ) : (
+                            <span className="shrink-0 px-2 py-0.5 bg-red-500/10 text-red-400 rounded-full text-[9px] font-bold uppercase border border-red-500/20">
+                              Closed
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 mt-3 text-[11px] text-zinc-500">
+                          <span className="flex items-center gap-1">
+                            <ChefHat className="w-3 h-3" />
+                            ~{outlet.preparationTime} min
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+          {/* Contact Card */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -550,6 +625,12 @@ export default function CheckoutPage() {
                   <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Order ID</p>
                   <p className="text-sm font-black text-gold">{confirmedOrderId}</p>
                 </div>
+                {(confirmedOrder.outletName || selectedOutletName) && (
+                  <div className="text-center">
+                    <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Pickup At</p>
+                    <p className="text-xs font-bold text-zinc-300">{confirmedOrder.outletName || selectedOutletName}</p>
+                  </div>
+                )}
                 <div className="h-px bg-white/5" />
                 <div className="flex justify-between text-sm">
                   <span className="text-zinc-400 font-semibold">Items</span>

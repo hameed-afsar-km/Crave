@@ -6,9 +6,10 @@ import {
   IndianRupee, Clock, CheckCircle, CookingPot,
   TrendingUp, Zap, ArrowRight, Package, Users,
   Database, AlertTriangle, Store, Power, Ban, X,
-  Gift, Plus, Trash2
+  Gift, Plus, Trash2, MapPin
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useAdminOutlet } from '@/context/AdminOutletContext';
 import { seedSampleData, isSeeded } from '@/lib/seed-data';
 import { loadSettings, saveSettings } from '@/lib/store';
 import { subscribeOrders, updateOrderStatus, subscribeSettings, saveSettingsToFirestore, syncLocalToFirestore } from '@/lib/firestore-service';
@@ -41,7 +42,8 @@ const statusAction: Record<string, { label: string; next: string; color: string 
 
 
 export default function AdminDashboard() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isMasterAdmin, isOutletStaff } = useAuth();
+  const { selectedOutletId, outlets, setSelectedOutletId, isAllOutlets } = useAdminOutlet();
   const [settings, setSettings] = useState(loadSettings());
   const [seeded, setSeeded] = useState(false);
   const [orders, setOrders] = useState<any[]>([]);
@@ -133,19 +135,23 @@ export default function AdminDashboard() {
     updateOrderStatus(id, status as any);
   };
 
+  const filteredOrders = isAllOutlets
+    ? orders
+    : orders.filter((o: any) => o.outletId === selectedOutletId);
+
   const now = new Date();
-  const revenue = orders.reduce((s: number, o: any) => s + (o.amount || 0), 0);
-  const received = orders.filter(o => o.status === 'received');
-  const preparing = orders.filter(o => o.status === 'preparing');
-  const ready = orders.filter(o => o.status === 'ready');
-  const completed = orders.filter(o => o.status === 'completed');
+  const revenue = filteredOrders.reduce((s: number, o: any) => s + (o.amount || 0), 0);
+  const received = filteredOrders.filter(o => o.status === 'received');
+  const preparing = filteredOrders.filter(o => o.status === 'preparing');
+  const ready = filteredOrders.filter(o => o.status === 'ready');
+  const completed = filteredOrders.filter(o => o.status === 'completed');
   const pending = received.length + preparing.length + ready.length;
   const queue = received.length + preparing.length;
   const wait = received.length > 0 ? Math.round(received.length * settings.averagePrepTime / Math.max(1, Math.ceil(received.length / 2))) : 0;
-  const avgValue = orders.length ? Math.round(revenue / orders.length) : 0;
+  const avgValue = filteredOrders.length ? Math.round(revenue / filteredOrders.length) : 0;
 
   const itemCounts: Record<string, number> = {};
-  orders.forEach((o: any) => (o.items || []).forEach((it: any) => {
+  filteredOrders.forEach((o: any) => (o.items || []).forEach((it: any) => {
     const name = it.name || it.menuItemId;
     itemCounts[name] = (itemCounts[name] || 0) + (it.qty || 1);
   }));
@@ -154,14 +160,14 @@ export default function AdminDashboard() {
   const bestCount = sorted.length ? sorted[0][1] : 0;
 
   const hours: Record<string, number> = {};
-  orders.forEach((o: any) => {
+  filteredOrders.forEach((o: any) => {
     const h = o.pickupTime ? o.pickupTime.split(':')[0] : '12';
     hours[h] = (hours[h] || 0) + 1;
   });
   const peak = Object.entries(hours).sort(([, a], [, b]) => b - a);
   const peakHour = peak.length ? `${peak[0][0]}:00` : 'N/A';
 
-  const recent = [...orders].sort((a: any, b: any) => (b.createdAt || '').localeCompare(a.createdAt || '')).slice(0, 6);
+  const recent = [...filteredOrders].sort((a: any, b: any) => (b.createdAt || '').localeCompare(a.createdAt || '')).slice(0, 6);
 
   if (!isAdmin) {
     return (
@@ -215,6 +221,46 @@ export default function AdminDashboard() {
               </button>
             </div>
           </div>
+
+          {/* Outlet selector for Master Admin */}
+          {isMasterAdmin && outlets.length > 0 && (
+            <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-0.5">
+              <button
+                onClick={() => setSelectedOutletId('all')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border ${
+                  isAllOutlets ? 'bg-white text-black border-white' : 'bg-zinc-800/50 text-zinc-400 border-zinc-700 hover:bg-zinc-700 hover:text-zinc-300'
+                }`}
+              >
+                <MapPin className="w-3 h-3" />
+                All Outlets
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isAllOutlets ? 'bg-black/20 text-black' : 'bg-zinc-700 text-zinc-500'}`}>
+                  {orders.length}
+                </span>
+              </button>
+              {outlets.map((outlet) => (
+                <button
+                  key={outlet.id}
+                  onClick={() => setSelectedOutletId(outlet.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border ${
+                    selectedOutletId === outlet.id ? 'bg-white text-black border-white' : 'bg-zinc-800/50 text-zinc-400 border-zinc-700 hover:bg-zinc-700 hover:text-zinc-300'
+                  }`}
+                >
+                  {outlet.name}
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${selectedOutletId === outlet.id ? 'bg-black/20 text-black' : 'bg-zinc-700 text-zinc-500'}`}>
+                    {orders.filter((o: any) => o.outletId === outlet.id).length}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          {!isMasterAdmin && outlets.find(o => o.id === selectedOutletId) && (
+            <div className="mt-3">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800/50 border border-zinc-700 text-xs font-medium text-zinc-400">
+                <MapPin className="w-3 h-3" />
+                {outlets.find(o => o.id === selectedOutletId)?.name}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

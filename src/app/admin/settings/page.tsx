@@ -9,13 +9,15 @@ import {
   CookingPot, Users, Calendar
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useAdminOutlet } from '@/context/AdminOutletContext';
 import { loadSettings, saveSettings, StoreSettings } from '@/lib/store';
 import { generateTimeSlots } from '@/lib/utils';
 import { getStoredOrders } from '@/lib/seed-data';
 import { saveSettingsToFirestore, subscribeSettings } from '@/lib/firestore-service';
 
 export default function AdminSettings() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isMasterAdmin } = useAuth();
+  const { outlets } = useAdminOutlet();
   const [form, setForm] = useState<StoreSettings>(loadSettings());
   const [saved, setSaved] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -108,6 +110,28 @@ export default function AdminSettings() {
       </div>
 
       <div className="px-6 sm:px-8 py-8 max-w-4xl mx-auto space-y-5">
+        {/* Outlet Management — master admin only */}
+        {isMasterAdmin && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className="bg-[#12121A] rounded-xl border border-zinc-800/60 p-5"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Store className="w-4 h-4 text-zinc-500" />
+                <div>
+                  <h2 className="text-sm font-semibold text-white">Outlet Management</h2>
+                  <p className="text-xs text-zinc-500 mt-0.5">{outlets.length} outlets configured</p>
+                </div>
+              </div>
+              <Link href="/admin/outlets"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 text-xs font-medium transition-all"
+              >
+                Manage
+              </Link>
+            </div>
+          </motion.div>
+        )}
+
         {/* Store Status */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}

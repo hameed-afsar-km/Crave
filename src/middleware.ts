@@ -20,12 +20,43 @@ export function middleware(request: NextRequest) {
 
   try {
     const user = JSON.parse(decodeURIComponent(userCookie.value));
+    const userRole = user.role || 'customer';
+    const userEmail = user.email || '';
 
-    const isAdmin = user.role === 'admin' || user.email === ADMIN_EMAIL;
+    const isMasterAdmin = userRole === 'admin' || userEmail === ADMIN_EMAIL;
+    const isOutletManager = userRole === 'outlet_manager';
+    const isOutletStaff = userRole === 'outlet_staff';
+    const isAnyStaff = isMasterAdmin || isOutletManager || isOutletStaff;
 
-    if (!isAdmin) {
+    if (!isAnyStaff) {
       return NextResponse.redirect(new URL('/', request.url));
     }
+
+    // Route-specific access control
+    // Master admin: full /admin/* access
+    // Outlet manager: /admin/manager/* (dashboard, orders, kitchen, menu, analytics)
+    // Outlet staff: /admin/staff/* (orders, kitchen)
+
+    if (isMasterAdmin) {
+      return; // full access
+    }
+
+    if (isOutletManager && pathname.startsWith('/admin')) {
+      if (pathname === '/admin/settings' || pathname.startsWith('/admin/settings/')) {
+        return NextResponse.redirect(new URL('/admin/manager', request.url));
+      }
+      return;
+    }
+
+    if (isOutletStaff) {
+      if (pathname === '/admin' || pathname === '/admin/dashboard' ||
+          pathname.startsWith('/admin/menu') || pathname.startsWith('/admin/analytics') ||
+          pathname.startsWith('/admin/settings') || pathname.startsWith('/admin/outlets')) {
+        return NextResponse.redirect(new URL('/admin/staff', request.url));
+      }
+      return;
+    }
+
   } catch {
     return NextResponse.redirect(new URL('/auth', request.url));
   }

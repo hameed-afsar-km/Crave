@@ -11,6 +11,9 @@ interface CartContextType {
   clearCart: () => void;
   itemCount: number;
   subtotal: number;
+  selectedOutletId: string;
+  selectedOutletName: string;
+  setSelectedOutlet: (id: string, name: string) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -18,6 +21,8 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [selectedOutletId, setSelectedOutletId] = useState('');
+  const [selectedOutletName, setSelectedOutletName] = useState('');
 
   useEffect(() => {
     setMounted(true);
@@ -27,6 +32,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setItems(JSON.parse(saved));
       } catch { }
     }
+    const savedOutlet = localStorage.getItem('crave-cart-outlet');
+    if (savedOutlet) {
+      try {
+        const parsed = JSON.parse(savedOutlet);
+        setSelectedOutletId(parsed.id || '');
+        setSelectedOutletName(parsed.name || '');
+      } catch {}
+    }
   }, []);
 
   useEffect(() => {
@@ -34,6 +47,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('crave-cart', JSON.stringify(items));
     }
   }, [items, mounted]);
+
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem('crave-cart-outlet', JSON.stringify({ id: selectedOutletId, name: selectedOutletName }));
+    }
+  }, [selectedOutletId, selectedOutletName, mounted]);
+
+  const setSelectedOutlet = (id: string, name: string) => {
+    setSelectedOutletId(id);
+    setSelectedOutletName(name);
+  };
 
   const addItem = (item: CartItem) => {
     setItems(prev => {
@@ -67,14 +91,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const clearCart = () => setItems([]);
+  const clearCart = () => {
+    setItems([]);
+    setSelectedOutletId('');
+    setSelectedOutletName('');
+    localStorage.removeItem('crave-cart-outlet');
+  };
 
   const itemCount = useMemo(() => items.reduce((sum, i) => sum + i.quantity, 0), [items]);
   const subtotal = useMemo(() => items.reduce((sum, i) => sum + i.price * i.quantity, 0), [items]);
 
   const value = useMemo(() => ({
     items, addItem, removeItem, updateQuantity, clearCart, itemCount, subtotal,
-  }), [items, itemCount, subtotal]);
+    selectedOutletId, selectedOutletName, setSelectedOutlet,
+  }), [items, itemCount, subtotal, selectedOutletId, selectedOutletName]);
 
   return (
     <CartContext.Provider value={value}>
