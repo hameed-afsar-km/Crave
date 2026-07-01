@@ -5,7 +5,7 @@ import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { ShoppingCart, Menu, X, User, LogOut, LayoutDashboard, Package } from 'lucide-react';
+import { ShoppingCart, Menu, X, User, LogOut, LayoutDashboard, Package, Bug } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
@@ -184,6 +184,12 @@ export default function Navbar() {
                   </IconBtn>
                 )}
 
+                {user && (
+                  <IconBtn href="/report-bug" title="Report a Bug">
+                    <Bug className="w-[18px] h-[18px]" />
+                  </IconBtn>
+                )}
+
                 <Link
                   href="/cart"
                   title="Cart"
@@ -327,6 +333,14 @@ export default function Navbar() {
                       >
                         <User className="w-4 h-4" />
                         Profile
+                      </Link>
+                      <Link
+                        href="/report-bug"
+                        onClick={closeMobile}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/5 text-zinc-300 hover:text-white hover:bg-white/10 transition-all text-sm font-medium"
+                      >
+                        <Bug className="w-4 h-4" />
+                        Report a Bug
                       </Link>
                       <button
                         onClick={() => { signOut(); closeMobile(); }}

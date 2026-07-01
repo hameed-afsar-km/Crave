@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, ClipboardList, CookingPot, UtensilsCrossed,
   BarChart3, Settings, LogOut, ExternalLink, Menu, X,
-  ChevronLeft, Store, Activity
+  ChevronLeft, Store, Activity, Bug
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -25,6 +25,7 @@ export default function AdminNav() {
         { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
         { href: '/admin/outlets', label: 'Outlets', icon: Store },
         { href: '/admin/logs', label: 'Logs', icon: Activity },
+        { href: '/admin/bugs', label: 'Bugs', icon: Bug },
         { href: '/admin/settings', label: 'Settings', icon: Settings },
       ]
     : isOutletStaff
