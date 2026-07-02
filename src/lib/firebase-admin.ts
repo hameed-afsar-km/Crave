@@ -2,42 +2,49 @@ import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore as getAdminFirestore, Firestore } from 'firebase-admin/firestore';
 
-const FIREBASE_ADMIN_PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'crave-538c0';
-
+let adminInitialized = false;
 let adminDb: Firestore | null = null;
+let initError: string | null = null;
 
-function initAdmin() {
-  if (getApps().length) return;
+function getServiceAccountBase64(): string {
+  const val = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
+  if (!val) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT_BASE64 environment variable is required');
+  }
+  return val;
+}
 
-  // Try service account from env var first
-  const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
-  if (serviceAccountBase64) {
+function initAdmin(): void {
+  if (adminInitialized) return;
+  
+  if (getApps().length) {
+    const app = getApps()[0];
     try {
-      const serviceAccount = JSON.parse(
-        Buffer.from(serviceAccountBase64, 'base64').toString('utf-8')
-      );
-      initializeApp({ credential: cert(serviceAccount) });
       adminDb = getAdminFirestore();
+      adminInitialized = true;
       return;
     } catch {
-      // fall through
+      throw new Error('Failed to initialize Firestore');
     }
   }
 
-  // Fallback: initialize with project ID only
-  // Token verification works without credentials (fetches JWKS keys from Google)
-  // Firestore reads without credentials will fail — caller must handle fallback
+  const base64 = getServiceAccountBase64();
+
   try {
-    initializeApp({ projectId: FIREBASE_ADMIN_PROJECT_ID });
-  } catch {
-    // Admin SDK unavailable
+    const serviceAccount = JSON.parse(
+      Buffer.from(base64, 'base64').toString('utf-8')
+    );
+    initializeApp({ credential: cert(serviceAccount) });
+    adminDb = getAdminFirestore();
+    adminInitialized = true;
+  } catch (e: any) {
+    throw new Error(`Failed to initialize Firebase Admin: ${e?.message || 'Unknown error'}`);
   }
 }
 
-initAdmin();
-
 export function getAdminAuth() {
   try {
+    initAdmin();
     return getAuth();
   } catch {
     return null;
@@ -45,30 +52,22 @@ export function getAdminAuth() {
 }
 
 export function getAdminDb(): Firestore | null {
-  if (adminDb) return adminDb;
+  if (!initAdmin()) return null;
   try {
-    adminDb = getAdminFirestore();
-    return adminDb;
+    return adminDb || getAdminFirestore();
   } catch {
     return null;
   }
 }
 
+export function getAdminInitError(): string | null {
+  return initError;
+}
+
 export async function verifyFirebaseToken(token: string) {
   const adminAuth = getAdminAuth();
   if (!adminAuth) {
-    // Fallback: basic JWT decode (no signature verification)
-    try {
-      const parts = token.split('.');
-      if (parts.length !== 3) return null;
-      const payload = JSON.parse(
-        Buffer.from(parts[1], 'base64').toString('utf-8')
-      );
-      if (payload.exp && payload.exp * 1000 < Date.now()) return null;
-      return payload;
-    } catch {
-      return null;
-    }
+    return null;
   }
   try {
     const decoded = await adminAuth.verifyIdToken(token, true);
@@ -91,9 +90,32 @@ export async function requireAuth(request: Request): Promise<{ uid: string; emai
     return null;
   }
 
+  // Verify required fields are present in decoded token
+  if (!decoded.exp || !decoded.iat) {
+    return null;
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  if (decoded.exp < now) {
+    return null;
+  }
+
+  // Verify token is not revoked (admin only)
+  const adminAuth = getAdminAuth();
+  if (adminAuth && decoded.uid) {
+    try {
+      const userRecord = await adminAuth.getUser(decoded.uid);
+      if (userRecord?.disabled) {
+        return null;
+      }
+    } catch {
+      return null;
+    }
+  }
+
   return {
     uid: decoded.uid,
     email: decoded.email || '',
-    role: decoded.role || 'customer',
+    role: (decoded as any).role || 'customer',
   };
 }

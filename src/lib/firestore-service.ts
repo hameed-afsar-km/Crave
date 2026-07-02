@@ -24,6 +24,7 @@ import { getStoredOrders, saveOrders, getStoredMenuItems, saveMenuItems } from '
 import { menuItems as defaultMenuItems } from '@/lib/data';
 import type { RewardConfig } from '@/lib/store';
 import { DEFAULT_OUTLETS, loadOutlets, saveOutlets } from '@/lib/outlets';
+import { sanitizeUserProfile } from '@/lib/sanitize';
 
 const COLLECTIONS = {
   ORDERS: 'orders',
@@ -508,16 +509,17 @@ export function subscribeUser(
 }
 
 export async function saveUserProfile(uid: string, data: Partial<UserProfile>): Promise<void> {
+  const sanitized = sanitizeUserProfile(data);
   const existing = localStorage.getItem('crave-user');
   if (existing) {
     const parsed = JSON.parse(existing);
-    localStorage.setItem('crave-user', JSON.stringify({ ...parsed, ...data }));
+    localStorage.setItem('crave-user', JSON.stringify({ ...parsed, ...sanitized }));
   }
 
   if (isReady() && uid) {
     try {
       const docRef = doc(db!, COLLECTIONS.USERS, uid);
-      await setDoc(docRef, { ...data, uid, updatedAt: serverTimestamp() }, { merge: true });
+      await setDoc(docRef, { ...sanitized, uid, updatedAt: serverTimestamp() }, { merge: true });
     } catch {
       // silently fail
     }

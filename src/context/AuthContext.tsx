@@ -27,14 +27,13 @@ export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'kmafsar2006@g
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 function setAuthCookie(userData: UserProfile) {
+  // Only store essential non-sensitive data in cookie
+  // User roles, outlet assignments, and other permissions must come from Firebase token
   const payload = JSON.stringify({
     uid: userData.uid,
     email: userData.email,
-    role: userData.role || 'customer',
-    assignedOutletId: userData.assignedOutletId || '',
-    assignedOutletName: userData.assignedOutletName || '',
   });
-  document.cookie = `crave-user=${encodeURIComponent(payload)};path=/;max-age=2592000;SameSite=Lax;Secure`;
+  document.cookie = `crave-user=${encodeURIComponent(payload)};path=/;max-age=2592000;SameSite=Strict;Secure`;
 }
 
 function clearAuthCookie() {
