@@ -19,42 +19,50 @@ function isTokenExpired(payload: Record<string, any>): boolean {
   return payload.exp * 1000 < Date.now();
 }
 
+function clearAuthCookies(res: NextResponse) {
+  res.cookies.set('crave-token', '', { maxAge: 0, path: '/', httpOnly: true, sameSite: 'strict', secure: true });
+  res.cookies.set('crave-user', '', { maxAge: 0, path: '/', sameSite: 'strict', secure: true });
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (!pathname.startsWith('/admin')) {
+  if (!pathname.startsWith('/admin') && !pathname.startsWith('/checkout') && !pathname.startsWith('/orders') && !pathname.startsWith('/profile') && !pathname.startsWith('/rewards')) {
     return;
   }
 
   const tokenCookie = request.cookies.get('crave-token');
-  const userCookie = request.cookies.get('crave-user');
 
   if (!tokenCookie?.value) {
-    const loginUrl = new URL('/auth', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    const res = NextResponse.redirect(loginUrl);
-    res.cookies.delete('crave-token');
-    res.cookies.delete('crave-user');
-    return res;
+    if (pathname.startsWith('/admin')) {
+      const loginUrl = new URL('/auth', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      const res = NextResponse.redirect(loginUrl);
+      clearAuthCookies(res);
+      return res;
+    }
+    return;
   }
 
-  // Decode JWT and check expiry
+  // Decode JWT and check expiry — signature verification is done server-side by API routes
   const payload = decodeJwtPayload(tokenCookie.value);
   if (!payload || isTokenExpired(payload)) {
-    const loginUrl = new URL('/auth', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    const res = NextResponse.redirect(loginUrl);
-    res.cookies.delete('crave-token');
-    res.cookies.delete('crave-user');
+    if (pathname.startsWith('/admin')) {
+      const loginUrl = new URL('/auth', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      const res = NextResponse.redirect(loginUrl);
+      clearAuthCookies(res);
+      return res;
+    }
+    const res = NextResponse.next();
+    clearAuthCookies(res);
     return res;
   }
 
-  // Verify payload contains required fields (uid, exp, iat)
-  // Note: Signature verification is done server-side by API routes
-  // Cookie role is never trusted - only Firebase token
+  // Cookie role is never trusted — only Firebase token
   return;
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/admin/:path*', '/checkout', '/orders/:path*', '/profile', '/rewards'],
 };

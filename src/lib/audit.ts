@@ -14,7 +14,14 @@ export type AuditAction =
   | 'settings.updated'
   | 'settings.reset'
   | 'data.cleared'
-  | 'data.seeded';
+  | 'data.seeded'
+  | 'admin.login'
+  | 'admin.login.failed'
+  | 'admin.logout'
+  | 'admin.unauthorized_access'
+  | 'admin.token_expired'
+  | 'admin.role_mismatch'
+  | 'auth.suspicious';
 
 export interface AuditUser {
   email: string;
@@ -51,6 +58,13 @@ function maskPII(obj: Record<string, any>): Record<string, any> {
   return masked;
 }
 
+export interface AdminAuditInfo {
+  ip?: string;
+  userAgent?: string;
+  route?: string;
+  uid?: string;
+}
+
 export async function logAction(
   action: AuditAction,
   targetType: string,
@@ -58,13 +72,14 @@ export async function logAction(
   details: Record<string, any>,
   user?: AuditUser,
   outletId?: string,
-  outletName?: string
+  outletName?: string,
+  adminInfo?: AdminAuditInfo
 ): Promise<void> {
   if (!db) return;
   try {
     const now = new Date();
     const expireAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-    await addDoc(collection(db, 'auditLogs'), {
+    const logEntry: Record<string, any> = {
       action,
       targetType,
       targetId,
@@ -76,7 +91,12 @@ export async function logAction(
       outletName: outletName || '',
       createdAt: serverTimestamp(),
       expireAt: Timestamp.fromDate(expireAt),
-    });
+    };
+    if (adminInfo?.ip) logEntry.ip = adminInfo.ip;
+    if (adminInfo?.userAgent) logEntry.userAgent = adminInfo.userAgent;
+    if (adminInfo?.route) logEntry.route = adminInfo.route;
+    if (adminInfo?.uid) logEntry.uid = adminInfo.uid;
+    await addDoc(collection(db, 'auditLogs'), logEntry);
   } catch {
     // Silently fail — logging should never block the main operation
   }

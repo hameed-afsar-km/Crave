@@ -26,6 +26,17 @@ import type { RewardConfig } from '@/lib/store';
 import { DEFAULT_OUTLETS, loadOutlets, saveOutlets } from '@/lib/outlets';
 import { sanitizeUserProfile } from '@/lib/sanitize';
 
+const PROTECTED_USER_FIELDS = ['paymentStatus', 'paymentId', 'loyaltyPoints', 'amount', 'subtotal', 'tax', 'createdAt', 'completedAt', 'status', 'assignedOutletId', 'assignedOutletName', 'role'];
+const PROTECTED_ORDER_FIELDS = ['paymentStatus', 'paymentId', 'amount', 'subtotal', 'tax', 'createdAt', 'completedAt'];
+
+function stripProtectedFields(data: Record<string, any>, protectedFields: string[]): Record<string, any> {
+  const out = { ...data };
+  for (const field of protectedFields) {
+    delete out[field];
+  }
+  return out;
+}
+
 const COLLECTIONS = {
   ORDERS: 'orders',
   MENU_ITEMS: 'menu-items',
@@ -180,6 +191,7 @@ export async function seedOutlets(): Promise<void> {
 
 export async function createOrder(order: Record<string, any>): Promise<string> {
   const localId = generateLocalId();
+  const safeOrder = stripProtectedFields(order, PROTECTED_ORDER_FIELDS);
 
   if (isReady()) {
     try {
@@ -196,13 +208,13 @@ export async function createOrder(order: Record<string, any>): Promise<string> {
       }
 
       const docRef = await addDoc(collection(db!, COLLECTIONS.ORDERS), {
-        ...order,
+        ...safeOrder,
         createdAt: serverTimestamp(),
       });
-      const existing = getStoredOrders() || [];
-      const savedOrder = { ...order, id: docRef.id, createdAt: new Date().toISOString() };
-      existing.unshift(savedOrder);
-      saveOrders(existing);
+      const existingOrders = getStoredOrders() || [];
+      const savedOrder = { ...safeOrder, id: docRef.id, createdAt: new Date().toISOString() };
+      existingOrders.unshift(savedOrder);
+      saveOrders(existingOrders);
       localStorage.setItem('crave-last-order', JSON.stringify(savedOrder));
       return docRef.id;
     } catch {
@@ -210,10 +222,10 @@ export async function createOrder(order: Record<string, any>): Promise<string> {
     }
   }
 
-  const existing = getStoredOrders() || [];
-  const savedOrder = { ...order, id: localId, createdAt: new Date().toISOString() };
-  existing.unshift(savedOrder);
-  saveOrders(existing);
+  const existingOrders = getStoredOrders() || [];
+  const savedOrder = { ...safeOrder, id: localId, createdAt: new Date().toISOString() };
+  existingOrders.unshift(savedOrder);
+  saveOrders(existingOrders);
   localStorage.setItem('crave-last-order', JSON.stringify(savedOrder));
   return localId;
 }
@@ -509,7 +521,7 @@ export function subscribeUser(
 }
 
 export async function saveUserProfile(uid: string, data: Partial<UserProfile>): Promise<void> {
-  const sanitized = sanitizeUserProfile(data);
+  const sanitized = sanitizeUserProfile(stripProtectedFields(data, PROTECTED_USER_FIELDS));
   const existing = localStorage.getItem('crave-user');
   if (existing) {
     const parsed = JSON.parse(existing);

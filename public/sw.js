@@ -25,16 +25,36 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Reject caching requests with Authorization header (sensitive data)
+  if (request.headers.get('Authorization')) {
+    event.respondWith(networkOnly(request));
+    return;
+  }
+
   // Never cache API responses (may contain sensitive data)
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkOnly(request));
     return;
   }
 
-  // Never cache auth pages
+  // Never cache Firestore requests
+  if (url.hostname.includes('firestore') || url.hostname.includes('firebaseio')) {
+    event.respondWith(networkOnly(request));
+    return;
+  }
+
+  // Never cache auth, admin, payment, or profile pages
   if (url.pathname.startsWith('/auth') || url.pathname.startsWith('/admin') ||
       url.pathname.startsWith('/checkout') || url.pathname.startsWith('/profile') ||
-      url.pathname.startsWith('/orders') || url.pathname.startsWith('/rewards')) {
+      url.pathname.startsWith('/orders') || url.pathname.startsWith('/rewards') ||
+      url.pathname.startsWith('/order/')) {
+    event.respondWith(networkOnly(request));
+    return;
+  }
+
+  // Never cache Google API / Firebase Auth requests
+  if (url.hostname.includes('googleapis.com') || url.hostname.includes('gstatic.com') ||
+      url.hostname.includes('razorpay.com')) {
     event.respondWith(networkOnly(request));
     return;
   }

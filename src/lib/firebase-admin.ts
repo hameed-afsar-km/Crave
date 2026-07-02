@@ -14,17 +14,18 @@ function getServiceAccountBase64(): string {
   return val;
 }
 
-function initAdmin(): void {
-  if (adminInitialized) return;
-  
+function initAdmin(): boolean {
+  if (adminInitialized) return true;
+  if (initError) return false;
   if (getApps().length) {
-    const app = getApps()[0];
+    if (adminDb) return true;
     try {
       adminDb = getAdminFirestore();
       adminInitialized = true;
-      return;
+      return true;
     } catch {
-      throw new Error('Failed to initialize Firestore');
+      initError = 'Failed to initialize Firestore';
+      return false;
     }
   }
 
@@ -37,14 +38,16 @@ function initAdmin(): void {
     initializeApp({ credential: cert(serviceAccount) });
     adminDb = getAdminFirestore();
     adminInitialized = true;
+    return true;
   } catch (e: any) {
-    throw new Error(`Failed to initialize Firebase Admin: ${e?.message || 'Unknown error'}`);
+    initError = `Failed to initialize Firebase Admin: ${e?.message || 'Unknown error'}`;
+    return false;
   }
 }
 
 export function getAdminAuth() {
+  if (!initAdmin()) return null;
   try {
-    initAdmin();
     return getAuth();
   } catch {
     return null;
@@ -53,11 +56,7 @@ export function getAdminAuth() {
 
 export function getAdminDb(): Firestore | null {
   if (!initAdmin()) return null;
-  try {
-    return adminDb || getAdminFirestore();
-  } catch {
-    return null;
-  }
+  return adminDb;
 }
 
 export function getAdminInitError(): string | null {
@@ -71,6 +70,16 @@ export async function verifyFirebaseToken(token: string) {
   }
   try {
     const decoded = await adminAuth.verifyIdToken(token, true);
+    if (!decoded?.uid || !decoded?.exp || !decoded?.iat) {
+      return null;
+    }
+    const now = Math.floor(Date.now() / 1000);
+    if (decoded.exp < now) {
+      return null;
+    }
+    if (decoded.iat > now + 300) {
+      return null;
+    }
     return decoded;
   } catch {
     return null;
@@ -90,32 +99,9 @@ export async function requireAuth(request: Request): Promise<{ uid: string; emai
     return null;
   }
 
-  // Verify required fields are present in decoded token
-  if (!decoded.exp || !decoded.iat) {
-    return null;
-  }
-
-  const now = Math.floor(Date.now() / 1000);
-  if (decoded.exp < now) {
-    return null;
-  }
-
-  // Verify token is not revoked (admin only)
-  const adminAuth = getAdminAuth();
-  if (adminAuth && decoded.uid) {
-    try {
-      const userRecord = await adminAuth.getUser(decoded.uid);
-      if (userRecord?.disabled) {
-        return null;
-      }
-    } catch {
-      return null;
-    }
-  }
-
   return {
     uid: decoded.uid,
     email: decoded.email || '',
-    role: (decoded as any).role || 'customer',
+    role: decoded.role || 'customer',
   };
 }

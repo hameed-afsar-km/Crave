@@ -1,10 +1,13 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode, useRef } from 'react';
 import { UserProfile, UserRole } from '@/types';
 import { saveUserProfile, getUserProfile } from '@/lib/firestore-service';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, getIdToken } from 'firebase/auth';
+import { logAction } from '@/lib/audit';
+
+const SESSION_TIMEOUT_MS = 1800_000; // 30 minutes
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -37,23 +40,95 @@ function setAuthCookie(userData: UserProfile) {
 }
 
 function clearAuthCookie() {
-  document.cookie = 'crave-user=;path=/;max-age=0';
-  document.cookie = 'crave-token=;path=/;max-age=0';
+  const domains = ['', `;domain=${window.location.hostname}`];
+  const paths = ['/', '/auth', '/admin', '/checkout', '/orders', '/profile'];
+  for (const suffix of ['crave-user', 'crave-token', 'crave-session']) {
+    for (const domain of domains) {
+      for (const path of paths) {
+        document.cookie = `${suffix}=;path=${path}${domain};max-age=0;SameSite=Strict;Secure`;
+      }
+    }
+  }
 }
 
 async function setTokenCookie() {
   if (!auth) return;
   try {
-    const token = await getIdToken(auth.currentUser!, false);
-    document.cookie = `crave-token=${token};path=/;max-age=1800;SameSite=Lax;Secure`;
+    const token = await getIdToken(auth.currentUser!, true);
+    document.cookie = `crave-token=${token};path=/;max-age=1800;SameSite=Strict;Secure`;
   } catch {
-    // silently fail — token cookie is optional
+    clearAuthCookie();
   }
+}
+
+function clearAllStorage() {
+  localStorage.removeItem('crave-user');
+  localStorage.removeItem('crave-points');
+  localStorage.removeItem('crave-redeemed');
+  localStorage.removeItem('crave-admin-outlet');
+  localStorage.removeItem('crave-last-order');
+  localStorage.removeItem('crave-orders');
+  localStorage.removeItem('crave-menu-items');
+  localStorage.removeItem('crave-migrated');
+  localStorage.removeItem('crave-seeded');
+  localStorage.removeItem('crave-push-subscription');
+  localStorage.removeItem('crave-sw-registered');
+  sessionStorage.clear();
+  try {
+    if ('indexedDB' in window) {
+      indexedDB.databases().then((dbs) => {
+        dbs.forEach((db) => {
+          if (db.name) indexedDB.deleteDatabase(db.name);
+        });
+      });
+    }
+  } catch {}
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const sessionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastActivityRef = useRef<number>(0);
+
+  const performSignOut = useCallback(() => {
+    if (auth?.currentUser) {
+      logAction('admin.logout', 'auth', auth.currentUser.uid, {
+        reason: 'user_initiated',
+        email: user?.email || '',
+      });
+    }
+    setUser(null);
+    clearAllStorage();
+    clearAuthCookie();
+    if (auth?.currentUser) {
+      try {
+        const currentUser = auth.currentUser;
+        currentUser.getIdToken(true).catch(() => {});
+      } catch {}
+    }
+  }, [user?.email]);
+
+  const resetSessionTimer = useCallback(() => {
+    lastActivityRef.current = Date.now();
+    if (sessionTimerRef.current) {
+      clearTimeout(sessionTimerRef.current);
+    }
+    sessionTimerRef.current = setTimeout(() => {
+      performSignOut();
+    }, SESSION_TIMEOUT_MS);
+  }, [performSignOut]);
+
+  useEffect(() => {
+    const events = ['mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
+    const handler = () => resetSessionTimer();
+    events.forEach((e) => window.addEventListener(e, handler));
+    resetSessionTimer();
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, handler));
+      if (sessionTimerRef.current) clearTimeout(sessionTimerRef.current);
+    };
+  }, [resetSessionTimer]);
 
   // Listen to Firebase Auth state
   useEffect(() => {
@@ -90,15 +165,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setLoading(false);
       } else {
-        // No Firebase Auth session — fall back to localStorage
-        const saved = localStorage.getItem('crave-user');
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved) as UserProfile;
-            setUser(parsed);
-            setAuthCookie(parsed);
-          } catch { }
-        }
+        // No Firebase Auth session — clear cookies
+        clearAuthCookie();
         setLoading(false);
       }
     });
@@ -112,15 +180,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (userData.uid) {
       saveUserProfile(userData.uid, userData);
     }
-  }, []);
+    resetSessionTimer();
+  }, [resetSessionTimer]);
 
   const signOut = useCallback(() => {
-    setUser(null);
-    localStorage.removeItem('crave-user');
-    localStorage.removeItem('crave-points');
-    localStorage.removeItem('crave-redeemed');
-    clearAuthCookie();
-  }, []);
+    performSignOut();
+  }, [performSignOut]);
 
   const updateUser = useCallback((data: Partial<UserProfile>) => {
     setUser((prev) => {

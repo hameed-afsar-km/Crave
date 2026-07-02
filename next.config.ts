@@ -34,7 +34,7 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://*.firebaseio.com https://*.googleapis.com",
+              "script-src 'self' 'unsafe-eval' https://checkout.razorpay.com https://*.firebaseio.com https://*.googleapis.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https://images.unsplash.com https://firebasestorage.googleapis.com *.googleapis.com *.gstatic.com",
               "font-src 'self' https://fonts.gstatic.com",
@@ -42,7 +42,17 @@ const nextConfig: NextConfig = {
               "frame-src 'self' https://checkout.razorpay.com",
               "worker-src 'self' blob:",
               "manifest-src 'self'",
+              "report-uri /api/csp-violation",
+              "report-to csp-endpoint",
             ].join('; '),
+          },
+          {
+            key: 'Report-To',
+            value: JSON.stringify({
+              group: 'csp-endpoint',
+              max_age: 10886400,
+              endpoints: [{ url: '/api/csp-violation' }],
+            }),
           },
         ],
       },
