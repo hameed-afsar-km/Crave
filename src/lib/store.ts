@@ -79,8 +79,6 @@ export function getTimeUntilOpen(): string {
   const closeToday = new Date(now);
   closeToday.setHours(closeH, closeM, 0, 0);
 
-  const msInDay = 86400000;
-
   if (now < openToday) {
     const diff = openToday.getTime() - now.getTime();
     const h = Math.floor(diff / 3600000);

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
   ArrowLeft, Search, ChefHat, Package, CheckCircle, Clock,
-  X, Printer, Download, Phone, MapPin, ChevronRight, ShoppingBag,
+  X, Printer, Download, Phone, MapPin, ShoppingBag,
   Copy, MessageCircle, Ban, Trash2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -65,7 +65,7 @@ export default function AdminOrders() {
         outletName: o.outletName || '',
       }));
       setOrders(mapped);
-    }, [], outletFilter);
+    }, [], outletFilter, 100);
     return unsub;
   }, [selectedOutletId, isAllOutlets]);
 

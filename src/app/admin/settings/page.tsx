@@ -5,8 +5,8 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
   Settings as SettingsIcon, ArrowLeft, Store, Clock, Bell, Shield,
-  Save, IndianRupee, AlertTriangle, X, Trash2,
-  CookingPot, Users, Calendar
+  Save, AlertTriangle, X, Trash2,
+  Calendar
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAdminOutlet } from '@/context/AdminOutletContext';

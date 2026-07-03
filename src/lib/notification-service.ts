@@ -1,4 +1,3 @@
-const STORAGE_KEY_SUB = 'crave-push-subscription';
 const REGISTRATION_KEY = 'crave-sw-registered';
 
 export function isPushSupported(): boolean {

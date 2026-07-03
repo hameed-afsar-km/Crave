@@ -105,7 +105,6 @@ export default function SecurityHealthPage() {
       const envChecks: { key: string; present: boolean }[] = [
         { key: 'NEXT_PUBLIC_FIREBASE_API_KEY', present: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY },
         { key: 'NEXT_PUBLIC_FIREBASE_PROJECT_ID', present: !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID },
-        { key: 'NEXT_PUBLIC_ADMIN_EMAIL', present: !!process.env.NEXT_PUBLIC_ADMIN_EMAIL },
         { key: 'NEXT_PUBLIC_RAZORPAY_KEY_ID', present: !!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID },
       ];
       const missing = envChecks.filter(e => !e.present).map(e => e.key);

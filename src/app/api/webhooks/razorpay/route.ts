@@ -11,8 +11,7 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
 });
 
-let processedEvents = new Set<string>();
-const MAX_PROCESSED_EVENTS = 1000;
+const WEBHOOK_TTL_DAYS = 30;
 
 function verifySignature(body: string, signature: string, secret: string): boolean {
   try {
@@ -26,20 +25,45 @@ function verifySignature(body: string, signature: string, secret: string): boole
   }
 }
 
-function isEventProcessed(eventId: string): boolean {
-  return processedEvents.has(eventId);
+async function markEventProcessed(adminDb: Firestore, eventId: string) {
+  try {
+    const expireAt = new Date();
+    expireAt.setDate(expireAt.getDate() + WEBHOOK_TTL_DAYS);
+    await adminDb.collection('webhookEvents').doc(eventId).set({
+      eventId,
+      processedAt: new Date().toISOString(),
+      expireAt: expireAt.toISOString(),
+    });
+  } catch {
+    // Firestore write failure — best-effort, webhook will retry on duplicate
+  }
 }
 
-function markEventProcessed(eventId: string) {
-  processedEvents.add(eventId);
-  if (processedEvents.size > MAX_PROCESSED_EVENTS) {
-    const first = processedEvents.values().next().value;
-    if (first) processedEvents.delete(first);
+async function ensureEventNotProcessed(adminDb: Firestore, eventId: string): Promise<boolean> {
+  try {
+    await adminDb.runTransaction(async (transaction) => {
+      const ref = adminDb.collection('webhookEvents').doc(eventId);
+      const snap = await transaction.get(ref);
+      if (snap.exists) {
+        throw new Error('DUPLICATE_EVENT');
+      }
+      const expireAt = new Date();
+      expireAt.setDate(expireAt.getDate() + WEBHOOK_TTL_DAYS);
+      transaction.set(ref, {
+        eventId,
+        processedAt: new Date().toISOString(),
+        expireAt: expireAt.toISOString(),
+      });
+    });
+    return true;
+  } catch (err: any) {
+    if (err?.message === 'DUPLICATE_EVENT') return false;
+    return false;
   }
 }
 
 async function handlePaymentCaptured(adminDb: Firestore, payment: any, eventId: string) {
-  if (isEventProcessed(eventId)) return;
+  if (!(await ensureEventNotProcessed(adminDb, eventId))) return;
 
   const paymentId = payment.id;
 
@@ -58,7 +82,7 @@ async function handlePaymentCaptured(adminDb: Firestore, payment: any, eventId: 
         });
       }
     }
-    markEventProcessed(eventId);
+    markEventProcessed(adminDb, eventId);
     return;
   }
 
@@ -132,7 +156,7 @@ async function handlePaymentCaptured(adminDb: Firestore, payment: any, eventId: 
     throw err;
   }
 
-  markEventProcessed(eventId);
+  markEventProcessed(adminDb, eventId);
 }
 
 async function handlePaymentFailed(adminDb: Firestore, payment: any) {

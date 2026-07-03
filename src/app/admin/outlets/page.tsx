@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
@@ -83,7 +83,7 @@ export default function OutletManagement() {
       setMessage('Outlet saved successfully');
       setTimeout(() => setMessage(''), 3000);
       logAction(editingOutlet ? 'outlet.updated' : 'outlet.created', 'outlet', id, { name: form.name }, { email: user?.email || '', role: user?.role || '', name: user?.name || '' });
-    } catch (err) {
+    } catch {
       setMessage('Failed to save outlet');
     }
     setSaving(false);
@@ -96,7 +96,7 @@ export default function OutletManagement() {
       setMessage('Outlet deleted');
       setTimeout(() => setMessage(''), 3000);
       logAction('outlet.deleted', 'outlet', id, {}, { email: user?.email || '', role: user?.role || '', name: user?.name || '' });
-    } catch (err) {
+    } catch {
       setMessage('Failed to delete outlet');
     }
   };
@@ -114,8 +114,6 @@ export default function OutletManagement() {
     o.name.toLowerCase().includes(search.toLowerCase()) ||
     o.address?.toLowerCase().includes(search.toLowerCase())
   );
-
-  const isSearchActive = search.trim().length > 0;
 
   if (!isMasterAdmin) {
     return (

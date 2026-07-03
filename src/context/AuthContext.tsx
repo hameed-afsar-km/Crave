@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useEffect, useMemo, useCallback, R
 import { UserProfile, UserRole } from '@/types';
 import { saveUserProfile, getUserProfile } from '@/lib/firestore-service';
 import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, getIdToken } from 'firebase/auth';
+import { onAuthStateChanged, getIdToken, getIdTokenResult } from 'firebase/auth';
 
 const SESSION_TIMEOUT_MS = 1800_000; // 30 minutes
 
@@ -32,8 +32,6 @@ interface AuthContextType {
   canViewLogs: boolean;
   canManageBugs: boolean;
 }
-
-export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'kmafsar2006@gmail.com';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -135,14 +133,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Firebase Auth has a real session — use it
         try {
+          // Use custom claims for fast initial render while Firestore loads
+          const tokenResult = await getIdTokenResult(firebaseUser, true);
+          let claimRole = tokenResult.claims.role as string | undefined;
+          if (claimRole && !['customer', 'outlet_staff', 'outlet_manager', 'admin'].includes(claimRole)) {
+            claimRole = undefined;
+          }
+
+          // Firestore is authoritative — always read profile
           const profile = await getUserProfile(firebaseUser.uid);
           if (profile) {
             setUser(profile);
             setAuthCookie(profile);
+          } else if (claimRole) {
+            // No Firestore profile yet — use claim role as estimate
+            const minimal: UserProfile = {
+              uid: firebaseUser.uid,
+              name: firebaseUser.displayName || '',
+              email: firebaseUser.email || '',
+              phone: firebaseUser.phoneNumber || '',
+              role: claimRole as any,
+            };
+            setUser(minimal);
+            setAuthCookie(minimal);
+            saveUserProfile(firebaseUser.uid, minimal);
           } else {
-            // User exists in Firebase Auth but not in Firestore — create minimal profile
             const minimal: UserProfile = {
               uid: firebaseUser.uid,
               name: firebaseUser.displayName || '',
@@ -156,11 +172,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
           await setTokenCookie();
         } catch {
-          // Firebase available but Firestore read failed — fall through
+          // Token/claims unavailable — fall through, loading stays true until timeout
         }
         setLoading(false);
       } else {
-        // No Firebase Auth session — clear cookies
         clearAuthCookie();
         setLoading(false);
       }
@@ -195,11 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const userRole = useMemo(() => user?.role || null, [user]);
 
-  const isMasterAdmin = useMemo(() => {
-    if (user?.role === 'admin') return true;
-    if (user?.email === ADMIN_EMAIL) return true;
-    return false;
-  }, [user]);
+  const isMasterAdmin = useMemo(() => user?.role === 'admin', [user]);
 
   const isOutletManager = useMemo(() => user?.role === 'outlet_manager', [user]);
   const isOutletStaff = useMemo(() => user?.role === 'outlet_staff', [user]);

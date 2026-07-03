@@ -1,7 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
-
 export function FoodCardSkeleton() {
   return (
     <div className="bg-[rgba(10,9,18,0.4)] rounded-[24px] overflow-hidden border border-white/[0.05] shadow-xl">

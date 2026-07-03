@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/navigation';
-import { Clock, ShoppingBag, ArrowLeft, User, Mail, CheckCircle, ArrowRight, Store, Ban, MapPin, Phone, ChefHat } from 'lucide-react';
+import { Clock, ShoppingBag, ArrowLeft, User, CheckCircle, ArrowRight, Store, Ban, MapPin, ChefHat } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { formatPrice, generateTimeSlots } from '@/lib/utils';
@@ -11,12 +10,11 @@ import { loadSettings, getTimeUntilOpen } from '@/lib/store';
 import { loadRazorpayScript } from '@/lib/razorpay';
 import { updateLoyaltyPoints } from '@/lib/firestore-service';
 import { sanitizeString, sanitizePhone, sanitizeEmail } from '@/lib/sanitize';
-import { loadOutlets, getOpenOutlets, getOutlet } from '@/lib/outlets';
+import { loadOutlets } from '@/lib/outlets';
 import StoreStatusBanner from '@/components/StoreStatusBanner';
 import Link from 'next/link';
 
 export default function CheckoutPage() {
-  const router = useRouter();
   const { items, subtotal, clearCart, selectedOutletId, selectedOutletName, setSelectedOutlet } = useCart();
   const { user } = useAuth();
   const [name, setName] = useState(user?.name || '');

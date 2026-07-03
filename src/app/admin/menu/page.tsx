@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Plus, Edit2, Trash2, Search, Eye, EyeOff, TrendingUp, TrendingDown, Store, MapPin } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, Search, Eye, EyeOff, Store, MapPin } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAdminOutlet } from '@/context/AdminOutletContext';
 import { MenuItem } from '@/types';
@@ -59,10 +59,6 @@ export default function AdminMenu() {
     });
     return unsub;
   }, []);
-
-  const sortedByOrders = useMemo(() => {
-    return [...items].sort((a, b) => (itemOrderCounts[b.name] || 0) - (itemOrderCounts[a.name] || 0));
-  }, [items, itemOrderCounts]);
 
   const maxOrders = Math.max(...Object.values(itemOrderCounts), 1);
 

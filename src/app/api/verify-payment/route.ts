@@ -46,6 +46,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ verified: false, error: 'Missing payment fields' }, { status: 400 });
     }
 
+    if (typeof razorpay_order_id !== 'string' || !/^order_[a-zA-Z0-9]+$/.test(razorpay_order_id)) {
+      return NextResponse.json({ verified: false, error: 'Invalid order ID format' }, { status: 400 });
+    }
+    if (typeof razorpay_payment_id !== 'string' || !/^pay_[a-zA-Z0-9]+$/.test(razorpay_payment_id)) {
+      return NextResponse.json({ verified: false, error: 'Invalid payment ID format' }, { status: 400 });
+    }
+    if (typeof razorpay_signature !== 'string' || !/^[a-f0-9]{64}$/.test(razorpay_signature)) {
+      return NextResponse.json({ verified: false, error: 'Invalid signature format' }, { status: 400 });
+    }
+
     if (expectedAmount !== undefined && (typeof expectedAmount !== 'number' || expectedAmount <= 0 || expectedAmount > MAX_AMOUNT)) {
       return NextResponse.json({ verified: false, error: 'Invalid amount' }, { status: 400 });
     }

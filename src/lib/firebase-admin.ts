@@ -86,6 +86,34 @@ export async function verifyFirebaseToken(token: string) {
   }
 }
 
+export async function syncUserRoleToClaims(uid: string): Promise<boolean> {
+  const adminAuth = getAdminAuth();
+  const adminDb = getAdminDb();
+  if (!adminAuth || !adminDb) return false;
+
+  try {
+    const userDoc = await adminDb.collection('users').doc(uid).get();
+    const role = userDoc.data()?.role || 'customer';
+    await adminAuth.setCustomUserClaims(uid, { role });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function setUserRole(uid: string, role: string): Promise<boolean> {
+  const adminDb = getAdminDb();
+  if (!adminDb) return false;
+
+  try {
+    await adminDb.collection('users').doc(uid).update({ role });
+    await syncUserRoleToClaims(uid);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function requireAuth(request: Request): Promise<{ uid: string; email: string; role: string } | null> {
   const authHeader = request.headers.get('authorization');
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;

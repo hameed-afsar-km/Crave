@@ -8,9 +8,6 @@ import { useAuth } from '@/context/AuthContext';
 import { auth } from '@/lib/firebase';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import Link from 'next/link';
-import { logAction } from '@/lib/audit';
-
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@crave.com';
 
 export default function AuthPage() {
   const router = useRouter();
@@ -33,21 +30,15 @@ export default function AuthPage() {
         return;
       }
 
-      const isAdmin = firebaseUser.email === ADMIN_EMAIL;
-
       signIn({
         uid: firebaseUser.uid,
         name: firebaseUser.displayName || 'Google User',
         email: firebaseUser.email,
         phone: firebaseUser.phoneNumber || '',
-        role: isAdmin ? 'admin' : 'customer',
+        role: 'customer',
       });
 
-      if (isAdmin) {
-        logAction('admin.login', 'auth', firebaseUser.uid, { provider: 'google' }, { email: firebaseUser.email, role: 'admin', name: firebaseUser.displayName || '' });
-      }
-
-      router.push(isAdmin ? '/admin/dashboard' : '/');
+      router.push('/');
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);

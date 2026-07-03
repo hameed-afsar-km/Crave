@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { requireStaff } from '@/lib/firebase-admin';
 import { rateLimit } from '@/lib/rate-limiter';
 import { getStorage } from 'firebase-admin/storage';
-import { getApps } from 'firebase-admin/app';
 import crypto from 'crypto';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];

@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Package, ArrowLeft, Clock, ChefHat, CheckCircle, MapPin, Flame, Receipt, X } from 'lucide-react';
+import { Package, ArrowLeft, Clock, ChefHat, CheckCircle, MapPin, Flame, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { formatPrice } from '@/lib/utils';
 import Link from 'next/link';
-import { subscribeCustomerOrders } from '@/lib/firestore-service';
+import { subscribeCustomerOrders, fetchCustomerOrdersPage } from '@/lib/firestore-service';
 
 const statusIcons: Record<string, React.ReactNode> = {
   received: <Clock className="w-3.5 h-3.5" />,
@@ -29,6 +28,9 @@ export default function OrdersPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = useState<any[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const lastDocRef = useRef<any>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -38,11 +40,25 @@ export default function OrdersPage() {
 
   useEffect(() => {
     if (!user?.uid) return;
+    lastDocRef.current = null;
+    setHasMore(true);
     const unsub = subscribeCustomerOrders(user.uid, (firestoreOrders) => {
       setOrders(firestoreOrders);
     });
     return unsub;
   }, [user?.uid]);
+
+  const loadMore = useCallback(async () => {
+    if (!user?.uid || loadingMore) return;
+    setLoadingMore(true);
+    const result = await fetchCustomerOrdersPage(user.uid, 10, lastDocRef.current);
+    if (result.orders.length > 0) {
+      setOrders(prev => [...prev, ...result.orders]);
+    }
+    lastDocRef.current = result.lastDoc;
+    setHasMore(result.hasMore);
+    setLoadingMore(false);
+  }, [user?.uid, loadingMore]);
 
   if (loading || !user) return null;
 
@@ -130,6 +146,17 @@ export default function OrdersPage() {
                   </motion.div>
                 );
               })}
+              {hasMore && (
+                <div className="text-center pt-2">
+                  <button
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    className="px-6 py-2.5 bg-white/5 border border-white/8 text-zinc-400 rounded-xl font-bold text-xs hover:bg-gold/5 hover:text-gold hover:border-gold/20 transition-all disabled:opacity-40"
+                  >
+                    {loadingMore ? 'Loading...' : 'Load More'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </motion.div>

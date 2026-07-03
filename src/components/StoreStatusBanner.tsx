@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Store, Clock, AlertTriangle } from 'lucide-react';
+import { Store, AlertTriangle } from 'lucide-react';
 import { loadSettings, getTimeUntilOpen } from '@/lib/store';
 
 export default function StoreStatusBanner() {

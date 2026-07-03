@@ -87,7 +87,7 @@ export default function WhyOnline() {
           viewport={{ once: true, margin: '-60px' }}
           className="grid grid-cols-1 md:grid-cols-3 gap-6"
         >
-          {cards.map((card, i) => (
+          {cards.map((card) => (
             <motion.div
               key={card.title}
               variants={cardVariants}

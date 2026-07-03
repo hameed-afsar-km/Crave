@@ -16,6 +16,8 @@ import {
   serverTimestamp,
   deleteDoc,
   runTransaction,
+  limit,
+  startAfter,
 } from 'firebase/firestore';
 import { Order, MenuItem, UserProfile, Outlet } from '@/types';
 import { logAction, AuditUser } from './audit';
@@ -212,7 +214,8 @@ export async function createOrder(order: Record<string, any>): Promise<string> {
 export function subscribeOrders(
   callback: (orders: Order[]) => void,
   constraints: QueryConstraint[] = [],
-  outletId?: string
+  outletId?: string,
+  maxResults?: number
 ): () => void {
   if (!isReady()) {
     callback([]);
@@ -222,6 +225,9 @@ export function subscribeOrders(
   const qConstraints: QueryConstraint[] = [orderBy('createdAt', 'desc')];
   if (outletId) {
     qConstraints.push(where('outletId', '==', outletId));
+  }
+  if (maxResults) {
+    qConstraints.push(limit(maxResults));
   }
   qConstraints.push(...constraints);
 
@@ -233,6 +239,99 @@ export function subscribeOrders(
   });
 
   return unsubscribe;
+}
+
+let paginationCursors: Record<string, any> = {};
+
+export function subscribeOrdersPaginated(
+  callback: (orders: Order[]) => void,
+  pageSize: number = 20,
+  outletId?: string,
+  statusFilter?: string
+): { unsubscribe: () => void; loadMore: () => Promise<boolean> } {
+  const key = `${outletId || 'all'}_${statusFilter || 'all'}`;
+  paginationCursors[key] = null;
+
+  const buildQuery = () => {
+    const qConstraints: QueryConstraint[] = [orderBy('createdAt', 'desc'), limit(pageSize)];
+    if (outletId) {
+      qConstraints.push(where('outletId', '==', outletId));
+    }
+    if (statusFilter && statusFilter !== 'all') {
+      qConstraints.push(where('status', '==', statusFilter));
+    }
+    return qConstraints;
+  };
+
+  const q = query(collection(db!, COLLECTIONS.ORDERS), ...buildQuery());
+
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const orders = snapshot.docs.map((d) => mapOrderDoc(d)).filter((o) => !o.deleted);
+    if (snapshot.docs.length > 0) {
+      paginationCursors[key] = snapshot.docs[snapshot.docs.length - 1];
+    }
+    callback(orders);
+  });
+
+  const loadMore = async (): Promise<boolean> => {
+    const cursor = paginationCursors[key];
+    if (!cursor) return false;
+
+    try {
+      const qConstraints: QueryConstraint[] = [orderBy('createdAt', 'desc'), startAfter(cursor), limit(pageSize)];
+      if (outletId) {
+        qConstraints.push(where('outletId', '==', outletId));
+      }
+      if (statusFilter && statusFilter !== 'all') {
+        qConstraints.push(where('status', '==', statusFilter));
+      }
+
+      const snapshot = await getDocs(query(collection(db!, COLLECTIONS.ORDERS), ...qConstraints));
+      const orders = snapshot.docs.map((d) => mapOrderDoc(d)).filter((o) => !o.deleted);
+
+      if (snapshot.docs.length > 0) {
+        paginationCursors[key] = snapshot.docs[snapshot.docs.length - 1];
+      }
+      if (orders.length > 0) {
+        callback(orders);
+      }
+      return snapshot.docs.length >= pageSize;
+    } catch {
+      return false;
+    }
+  };
+
+  return { unsubscribe, loadMore };
+}
+
+export async function fetchOrdersPage(
+  pageSize: number = 20,
+  lastDoc?: any,
+  outletId?: string,
+  statusFilter?: string
+): Promise<{ orders: Order[]; lastDoc: any; hasMore: boolean }> {
+  if (!isReady()) return { orders: [], lastDoc: null, hasMore: false };
+
+  try {
+    const qConstraints: QueryConstraint[] = [orderBy('createdAt', 'desc'), limit(pageSize)];
+    if (outletId) {
+      qConstraints.push(where('outletId', '==', outletId));
+    }
+    if (statusFilter && statusFilter !== 'all') {
+      qConstraints.push(where('status', '==', statusFilter));
+    }
+    if (lastDoc) {
+      qConstraints.push(startAfter(lastDoc));
+    }
+
+    const snapshot = await getDocs(query(collection(db!, COLLECTIONS.ORDERS), ...qConstraints));
+    const orders = snapshot.docs.map((d) => mapOrderDoc(d)).filter((o) => !o.deleted);
+    const newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+
+    return { orders, lastDoc: newLastDoc, hasMore: snapshot.docs.length >= pageSize };
+  } catch {
+    return { orders: [], lastDoc: null, hasMore: false };
+  }
 }
 
 export function subscribeOrder(
@@ -254,6 +353,33 @@ export function subscribeOrder(
   });
 
   return unsubscribe;
+}
+
+export async function fetchCustomerOrdersPage(
+  customerId: string,
+  pageSize: number = 10,
+  lastDoc?: any
+): Promise<{ orders: Order[]; lastDoc: any; hasMore: boolean }> {
+  if (!isReady() || !customerId) return { orders: [], lastDoc: null, hasMore: false };
+
+  try {
+    const qConstraints: QueryConstraint[] = [
+      where('customerId', '==', customerId),
+      orderBy('createdAt', 'desc'),
+      limit(pageSize),
+    ];
+    if (lastDoc) {
+      qConstraints.push(startAfter(lastDoc));
+    }
+
+    const snapshot = await getDocs(query(collection(db!, COLLECTIONS.ORDERS), ...qConstraints));
+    const orders = snapshot.docs.map((d) => mapOrderDoc(d));
+    const newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+
+    return { orders, lastDoc: newLastDoc, hasMore: snapshot.docs.length >= pageSize };
+  } catch {
+    return { orders: [], lastDoc: null, hasMore: false };
+  }
 }
 
 export async function updateOrderStatus(

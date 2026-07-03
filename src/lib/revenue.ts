@@ -47,7 +47,6 @@ const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const fallbackRevenue = [8200, 10500, 9800, 11200, 11800, 14250, 12450];
 const fallbackOrders = [38, 42, 40, 48, 52, 68, 55];
-const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function getOrderDay(raw: string): number | null {
   const d = parseOrderDate(raw);
