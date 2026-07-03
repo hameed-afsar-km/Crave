@@ -62,15 +62,7 @@ async function setTokenCookie() {
 }
 
 function clearAllStorage() {
-  localStorage.removeItem('crave-user');
-  localStorage.removeItem('crave-points');
-  localStorage.removeItem('crave-redeemed');
   localStorage.removeItem('crave-admin-outlet');
-  localStorage.removeItem('crave-last-order');
-  localStorage.removeItem('crave-orders');
-  localStorage.removeItem('crave-menu-items');
-  localStorage.removeItem('crave-migrated');
-  localStorage.removeItem('crave-seeded');
   localStorage.removeItem('crave-push-subscription');
   localStorage.removeItem('crave-sw-registered');
   sessionStorage.clear();
@@ -143,7 +135,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const profile = await getUserProfile(firebaseUser.uid);
           if (profile) {
             setUser(profile);
-            localStorage.setItem('crave-user', JSON.stringify(profile));
             setAuthCookie(profile);
           } else {
             // User exists in Firebase Auth but not in Firestore — create minimal profile
@@ -155,7 +146,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               role: 'customer',
             };
             setUser(minimal);
-            localStorage.setItem('crave-user', JSON.stringify(minimal));
             setAuthCookie(minimal);
             saveUserProfile(firebaseUser.uid, minimal);
           }
@@ -175,7 +165,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback((userData: UserProfile) => {
     setUser(userData);
-    localStorage.setItem('crave-user', JSON.stringify(userData));
     setAuthCookie(userData);
     if (userData.uid) {
       saveUserProfile(userData.uid, userData);
@@ -191,7 +180,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser((prev) => {
       if (!prev) return prev;
       const updated = { ...prev, ...data };
-      localStorage.setItem('crave-user', JSON.stringify(updated));
       setAuthCookie(updated);
       if (updated.uid) {
         saveUserProfile(updated.uid, updated);

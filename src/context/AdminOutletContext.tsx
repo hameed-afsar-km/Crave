@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, useMemo, ReactNode, useCallback } from 'react';
 import { Outlet } from '@/types';
 import { useAuth } from './AuthContext';
-import { loadOutlets, saveOutlets } from '@/lib/outlets';
+import { saveOutlets } from '@/lib/outlets';
 import { subscribeOutlets } from '@/lib/firestore-service';
 
 interface AdminOutletContextType {
@@ -20,7 +20,7 @@ const AdminOutletContext = createContext<AdminOutletContextType | undefined>(und
 
 export function AdminOutletProvider({ children }: { children: ReactNode }) {
   const { isMasterAdmin, assignedOutletId } = useAuth();
-  const [outlets, setOutlets] = useState<Outlet[]>(() => loadOutlets());
+  const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [selectedOutletId, setSelectedOutletIdState] = useState<string>('all');
 
   useEffect(() => {

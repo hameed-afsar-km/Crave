@@ -23,8 +23,6 @@ export interface StoreSettings {
   rewards: RewardConfig[];
 }
 
-const STORAGE_KEY = 'crave-store-settings';
-
 const defaults: StoreSettings = {
   storeName: 'Crave Express',
   storeOpen: true,
@@ -48,21 +46,18 @@ const defaults: StoreSettings = {
   ],
 };
 
+let cachedSettings: StoreSettings = { ...defaults };
+
 export function loadSettings(): StoreSettings {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? { ...defaults, ...JSON.parse(raw) } : { ...defaults };
-  } catch {
-    return { ...defaults };
-  }
+  return { ...cachedSettings };
 }
 
 export function saveSettings(settings: StoreSettings) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  cachedSettings = { ...settings };
 }
 
 export function getStoreStatus() {
-  const settings = loadSettings();
+  const settings = cachedSettings;
   return {
     isOpen: settings.storeOpen,
     acceptingOrders: settings.acceptingOrders,
@@ -71,7 +66,7 @@ export function getStoreStatus() {
 }
 
 export function getTimeUntilOpen(): string {
-  const settings = loadSettings();
+  const settings = cachedSettings;
   if (settings.storeOpen && settings.acceptingOrders) return '';
 
   const now = new Date();

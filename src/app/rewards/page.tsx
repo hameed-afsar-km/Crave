@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Gift, Star, ArrowLeft, ShoppingBag, CheckCircle, Zap, Coffee, Sandwich, Pizza } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { loadSettings, RewardConfig, saveSettings } from '@/lib/store';
+import { loadSettings, RewardConfig } from '@/lib/store';
 import Link from 'next/link';
 import { getLoyaltyPoints, redeemReward } from '@/lib/firestore-service';
 
@@ -33,11 +33,7 @@ export default function RewardsPage() {
   useEffect(() => {
     if (user?.uid) {
       getLoyaltyPoints(user.uid).then((p) => setPoints(p));
-    } else {
-      setPoints(parseInt(localStorage.getItem('crave-points') || '0', 10));
     }
-    const saved = JSON.parse(localStorage.getItem('crave-redeemed') || '[]');
-    setRedeemed(saved);
   }, [user?.uid]);
 
   const storeSettings = loadSettings();
@@ -60,7 +56,6 @@ export default function RewardsPage() {
 
     const newRedeemed = [...redeemed, reward.id];
     setRedeemed(newRedeemed);
-    localStorage.setItem('crave-redeemed', JSON.stringify(newRedeemed));
 
     setMessage({ type: 'success', text: `${reward.name} redeemed! Show this at the counter.` });
     setTimeout(() => setMessage(null), 4000);

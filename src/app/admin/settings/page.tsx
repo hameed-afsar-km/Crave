@@ -12,8 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useAdminOutlet } from '@/context/AdminOutletContext';
 import { loadSettings, saveSettings, StoreSettings } from '@/lib/store';
 import { generateTimeSlots } from '@/lib/utils';
-import { getStoredOrders } from '@/lib/seed-data';
-import { saveSettingsToFirestore, subscribeSettings } from '@/lib/firestore-service';
+import { saveSettingsToFirestore, subscribeSettings, subscribeOrders } from '@/lib/firestore-service';
 import { logAction } from '@/lib/audit';
 
 export default function AdminSettings() {
@@ -68,10 +67,6 @@ export default function AdminSettings() {
   };
 
   const handleClearData = () => {
-    localStorage.removeItem('crave-orders');
-    localStorage.removeItem('crave-last-order');
-    localStorage.removeItem('crave-menu-items');
-    localStorage.removeItem('crave-seeded');
     setShowClearDataConfirm(false);
     logAction('data.cleared', 'data', 'all', {}, { email: user?.email || '', role: user?.role || '', name: user?.name || '' });
   };
@@ -81,8 +76,10 @@ export default function AdminSettings() {
   const maxSlotsToShow = 8;
 
   useEffect(() => {
-    const stored = getStoredOrders();
-    if (stored) setOrders(stored);
+    const unsub = subscribeOrders((firestoreOrders) => {
+      setOrders(firestoreOrders);
+    });
+    return unsub;
   }, []);
 
   if (!isAdmin) {

@@ -20,14 +20,14 @@ import {
 import { Order, MenuItem, UserProfile, Outlet } from '@/types';
 import { logAction, AuditUser } from './audit';
 import { StoreSettings, loadSettings, saveSettings as saveLocalSettings } from '@/lib/store';
-import { getStoredOrders, saveOrders, getStoredMenuItems, saveMenuItems } from '@/lib/seed-data';
+import { getStoredOrders, getStoredMenuItems } from '@/lib/seed-data';
 import { menuItems as defaultMenuItems } from '@/lib/data';
 import type { RewardConfig } from '@/lib/store';
-import { DEFAULT_OUTLETS, loadOutlets, saveOutlets } from '@/lib/outlets';
+import { DEFAULT_OUTLETS, saveOutlets, setCachedOutlets } from '@/lib/outlets';
 import { sanitizeUserProfile } from '@/lib/sanitize';
 
-const PROTECTED_USER_FIELDS = ['paymentStatus', 'paymentId', 'loyaltyPoints', 'amount', 'subtotal', 'tax', 'createdAt', 'completedAt', 'status', 'assignedOutletId', 'assignedOutletName', 'role'];
 const PROTECTED_ORDER_FIELDS = ['paymentStatus', 'paymentId', 'amount', 'subtotal', 'tax', 'createdAt', 'completedAt'];
+const PROTECTED_USER_FIELDS = ['paymentStatus', 'paymentId', 'loyaltyPoints', 'amount', 'subtotal', 'tax', 'createdAt', 'completedAt', 'status', 'assignedOutletId', 'assignedOutletName', 'role'];
 
 function stripProtectedFields(data: Record<string, any>, protectedFields: string[]): Record<string, any> {
   const out = { ...data };
@@ -47,10 +47,6 @@ const COLLECTIONS = {
 
 function isReady(): boolean {
   return !!db;
-}
-
-function generateLocalId(): string {
-  return `CRV-${Date.now().toString(36).toUpperCase().slice(-4)}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
 }
 
 function timestampToDate(ts: Timestamp | null | undefined): string {
@@ -130,59 +126,53 @@ function mapOutletDoc(doc: any): Outlet {
 
 export function subscribeOutlets(callback: (outlets: Outlet[]) => void): () => void {
   if (!isReady()) {
-    callback(loadOutlets());
+    callback(DEFAULT_OUTLETS);
     return () => {};
   }
 
   const q = query(collection(db!, COLLECTIONS.OUTLETS));
   return onSnapshot(q, (snapshot) => {
     const outlets = snapshot.docs.map((d) => mapOutletDoc(d));
+    setCachedOutlets(outlets);
     saveOutlets(outlets);
     callback(outlets);
   });
 }
 
 export async function saveOutletToFirestore(outlet: Outlet): Promise<void> {
-  const local = loadOutlets();
-  const idx = local.findIndex((o) => o.id === outlet.id);
-  if (idx >= 0) {
-    local[idx] = outlet;
-  } else {
-    local.push(outlet);
-  }
-  saveOutlets(local);
-
   if (isReady()) {
     try {
       const docRef = doc(db!, COLLECTIONS.OUTLETS, outlet.id);
       await setDoc(docRef, { ...outlet, updatedAt: serverTimestamp() }, { merge: true });
-    } catch {}
+      return;
+    } catch {
+      throw new Error('Failed to save outlet to Firestore');
+    }
   }
+  throw new Error('Firestore not available');
 }
 
 export async function deleteOutletFromFirestore(outletId: string): Promise<void> {
-  const local = loadOutlets().filter((o) => o.id !== outletId);
-  saveOutlets(local);
-
   if (isReady()) {
     try {
       await deleteDoc(doc(db!, COLLECTIONS.OUTLETS, outletId));
-    } catch {}
+      return;
+    } catch {
+      throw new Error('Failed to delete outlet from Firestore');
+    }
   }
+  throw new Error('Firestore not available');
 }
 
 export async function seedOutlets(): Promise<void> {
-  const local = loadOutlets();
-  if (local.length > 0) return;
+  if (!isReady()) throw new Error('Firestore not available');
 
-  saveOutlets(DEFAULT_OUTLETS);
-
-  if (isReady()) {
-    for (const outlet of DEFAULT_OUTLETS) {
-      try {
-        const docRef = doc(db!, COLLECTIONS.OUTLETS, outlet.id);
-        await setDoc(docRef, outlet);
-      } catch {}
+  for (const outlet of DEFAULT_OUTLETS) {
+    try {
+      const docRef = doc(db!, COLLECTIONS.OUTLETS, outlet.id);
+      await setDoc(docRef, outlet);
+    } catch {
+      throw new Error('Failed to seed outlets to Firestore');
     }
   }
 }
@@ -190,44 +180,33 @@ export async function seedOutlets(): Promise<void> {
 // ─── ORDERS ───
 
 export async function createOrder(order: Record<string, any>): Promise<string> {
-  const localId = generateLocalId();
-  const safeOrder = stripProtectedFields(order, PROTECTED_ORDER_FIELDS);
-
-  if (isReady()) {
-    try {
-      // Idempotency: check for existing order with same paymentId
-      if (order.paymentId) {
-        const existingQuery = query(
-          collection(db!, COLLECTIONS.ORDERS),
-          where('paymentId', '==', order.paymentId)
-        );
-        const existingSnapshot = await getDocs(existingQuery);
-        if (!existingSnapshot.empty) {
-          return existingSnapshot.docs[0].id;
-        }
-      }
-
-      const docRef = await addDoc(collection(db!, COLLECTIONS.ORDERS), {
-        ...safeOrder,
-        createdAt: serverTimestamp(),
-      });
-      const existingOrders = getStoredOrders() || [];
-      const savedOrder = { ...safeOrder, id: docRef.id, createdAt: new Date().toISOString() };
-      existingOrders.unshift(savedOrder);
-      saveOrders(existingOrders);
-      localStorage.setItem('crave-last-order', JSON.stringify(savedOrder));
-      return docRef.id;
-    } catch {
-      // fall through to localStorage
-    }
+  if (!isReady()) {
+    throw new Error('Unable to connect to server. Please check your connection and try again.');
   }
 
-  const existingOrders = getStoredOrders() || [];
-  const savedOrder = { ...safeOrder, id: localId, createdAt: new Date().toISOString() };
-  existingOrders.unshift(savedOrder);
-  saveOrders(existingOrders);
-  localStorage.setItem('crave-last-order', JSON.stringify(savedOrder));
-  return localId;
+  const safeOrder = stripProtectedFields(order, PROTECTED_ORDER_FIELDS);
+
+  try {
+    if (order.paymentId) {
+      const existingQuery = query(
+        collection(db!, COLLECTIONS.ORDERS),
+        where('paymentId', '==', order.paymentId)
+      );
+      const existingSnapshot = await getDocs(existingQuery);
+      if (!existingSnapshot.empty) {
+        return existingSnapshot.docs[0].id;
+      }
+    }
+
+    const docRef = await addDoc(collection(db!, COLLECTIONS.ORDERS), {
+      ...safeOrder,
+      createdAt: serverTimestamp(),
+    });
+    localStorage.setItem('crave-last-order', JSON.stringify({ id: docRef.id, status: 'received' }));
+    return docRef.id;
+  } catch {
+    throw new Error('Failed to create order. Please try again.');
+  }
 }
 
 export function subscribeOrders(
@@ -236,8 +215,7 @@ export function subscribeOrders(
   outletId?: string
 ): () => void {
   if (!isReady()) {
-    const orders = getStoredOrders() || [];
-    callback(orders.map((o: any) => mapOrderDoc({ ...o, id: o.id })));
+    callback([]);
     return () => {};
   }
 
@@ -262,9 +240,7 @@ export function subscribeOrder(
   callback: (order: Order | null) => void
 ): () => void {
   if (!isReady()) {
-    const orders = getStoredOrders() || [];
-    const found = orders.find((o: any) => o.id === orderId) || JSON.parse(localStorage.getItem('crave-last-order') || 'null');
-    callback(found ? mapOrderDoc({ ...found, id: found.id }) : null);
+    callback(null);
     return () => {};
   }
 
@@ -286,70 +262,52 @@ export async function updateOrderStatus(
   extraData?: Record<string, any>,
   loggedBy?: AuditUser
 ): Promise<void> {
-  if (isReady()) {
-    try {
-      const docRef = doc(db!, COLLECTIONS.ORDERS, orderId);
-      await updateDoc(docRef, { status, ...extraData });
-    } catch {
-      // fall through to localStorage
-    }
+  if (!isReady()) {
+    throw new Error('Unable to connect to server. Please check your connection and try again.');
   }
 
-  const orders = getStoredOrders() || [];
-  const updated = orders.map((o: any) =>
-    o.id === orderId ? { ...o, status, ...extraData } : o
-  );
-  saveOrders(updated);
-
-  const lastOrder = JSON.parse(localStorage.getItem('crave-last-order') || 'null');
-  if (lastOrder && lastOrder.id === orderId) {
-    localStorage.setItem('crave-last-order', JSON.stringify({ ...lastOrder, status, ...extraData }));
+  try {
+    const docRef = doc(db!, COLLECTIONS.ORDERS, orderId);
+    await updateDoc(docRef, { status, ...extraData });
+  } catch {
+    throw new Error('Failed to update order status. Please try again.');
   }
 
-  const order = updated.find((o: any) => o.id === orderId);
   logAction(
     status === 'cancelled' ? 'order.cancelled' : 'order.status_changed',
     'order',
     orderId,
-    { previousStatus: order?.['status'], newStatus: status, ...extraData },
-    loggedBy,
-    order?.outletId,
-    order?.outletName
+    { newStatus: status, ...extraData },
+    loggedBy
   );
 }
 
 export async function deleteOrder(orderId: string): Promise<void> {
-  if (isReady()) {
-    try {
-      await deleteDoc(doc(db!, COLLECTIONS.ORDERS, orderId));
-    } catch {
-      // fall through
-    }
+  if (!isReady()) {
+    throw new Error('Unable to connect to server. Please check your connection and try again.');
   }
 
-  const orders = getStoredOrders() || [];
-  saveOrders(orders.filter((o: any) => o.id !== orderId));
+  try {
+    await deleteDoc(doc(db!, COLLECTIONS.ORDERS, orderId));
+  } catch {
+    throw new Error('Failed to delete order. Please try again.');
+  }
 }
 
 export async function getOrdersByCustomer(customerId: string): Promise<Order[]> {
-  if (isReady()) {
-    try {
-      const q = query(
-        collection(db!, COLLECTIONS.ORDERS),
-        where('customerId', '==', customerId),
-        orderBy('createdAt', 'desc')
-      );
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map((d) => mapOrderDoc(d));
-    } catch {
-      // fall through
-    }
-  }
+  if (!isReady()) return [];
 
-  const orders = getStoredOrders() || [];
-  return orders
-    .filter((o: any) => o.customerId === customerId)
-    .map((o: any) => mapOrderDoc({ ...o, id: o.id }));
+  try {
+    const q = query(
+      collection(db!, COLLECTIONS.ORDERS),
+      where('customerId', '==', customerId),
+      orderBy('createdAt', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((d) => mapOrderDoc(d));
+  } catch {
+    return [];
+  }
 }
 
 export function subscribeCustomerOrders(
@@ -357,11 +315,7 @@ export function subscribeCustomerOrders(
   callback: (orders: Order[]) => void
 ): () => void {
   if (!isReady()) {
-    const orders = getStoredOrders() || [];
-    callback(orders
-      .filter((o: any) => o.customerId === customerId)
-      .map((o: any) => mapOrderDoc({ ...o, id: o.id }))
-    );
+    callback([]);
     return () => {};
   }
 
@@ -383,8 +337,7 @@ export function subscribeMenuItems(
   callback: (items: MenuItem[]) => void
 ): () => void {
   if (!isReady()) {
-    const items = getStoredMenuItems() || [];
-    callback(items.map((i: any) => mapMenuItemDoc({ ...i, id: i.id })));
+    callback([]);
     return () => {};
   }
 
@@ -400,67 +353,55 @@ export function subscribeMenuItems(
 }
 
 export async function addMenuItem(item: Omit<MenuItem, 'id'>): Promise<string> {
-  const localId = `item-${Date.now()}`;
-
-  if (isReady()) {
-    try {
-      const docRef = await addDoc(collection(db!, COLLECTIONS.MENU_ITEMS), {
-        ...item,
-        createdAt: serverTimestamp(),
-      });
-      const items = getStoredMenuItems() || [];
-      items.push({ ...item, id: docRef.id, createdAt: new Date().toISOString() });
-      saveMenuItems(items);
-      return docRef.id;
-    } catch {
-      // fall through
-    }
+  if (!isReady()) {
+    throw new Error('Unable to connect to server. Please check your connection and try again.');
   }
 
-  const items = getStoredMenuItems() || [];
-  items.push({ ...item, id: localId, createdAt: new Date().toISOString() });
-  saveMenuItems(items);
-  return localId;
+  try {
+    const docRef = await addDoc(collection(db!, COLLECTIONS.MENU_ITEMS), {
+      ...item,
+      createdAt: serverTimestamp(),
+    });
+    return docRef.id;
+  } catch {
+    throw new Error('Failed to add menu item. Please try again.');
+  }
 }
 
 export async function updateMenuItem(id: string, data: Partial<MenuItem>): Promise<void> {
-  if (isReady()) {
-    try {
-      const docRef = doc(db!, COLLECTIONS.MENU_ITEMS, id);
-      await updateDoc(docRef, data);
-    } catch {
-      // fall through
-    }
+  if (!isReady()) {
+    throw new Error('Unable to connect to server. Please check your connection and try again.');
   }
 
-  const items = getStoredMenuItems() || [];
-  saveMenuItems(items.map((i: any) => (i.id === id ? { ...i, ...data } : i)));
+  try {
+    const docRef = doc(db!, COLLECTIONS.MENU_ITEMS, id);
+    await updateDoc(docRef, data);
+  } catch {
+    throw new Error('Failed to update menu item. Please try again.');
+  }
 }
 
 export async function deleteMenuItem(id: string): Promise<void> {
-  if (isReady()) {
-    try {
-      await deleteDoc(doc(db!, COLLECTIONS.MENU_ITEMS, id));
-    } catch {
-      // fall through
-    }
+  if (!isReady()) {
+    throw new Error('Unable to connect to server. Please check your connection and try again.');
   }
 
-  const items = getStoredMenuItems() || [];
-  saveMenuItems(items.filter((i: any) => i.id !== id));
+  try {
+    await deleteDoc(doc(db!, COLLECTIONS.MENU_ITEMS, id));
+  } catch {
+    throw new Error('Failed to delete menu item. Please try again.');
+  }
 }
 
 export async function getMenuItems(): Promise<MenuItem[]> {
-  if (isReady()) {
-    try {
-      const snapshot = await getDocs(collection(db!, COLLECTIONS.MENU_ITEMS));
-      return snapshot.docs.map((d) => mapMenuItemDoc(d));
-    } catch {
-      // fall through
-    }
+  if (!isReady()) return [];
+
+  try {
+    const snapshot = await getDocs(collection(db!, COLLECTIONS.MENU_ITEMS));
+    return snapshot.docs.map((d) => mapMenuItemDoc(d));
+  } catch {
+    return [];
   }
-  const items = getStoredMenuItems() || [];
-  return items.map((i: any) => mapMenuItemDoc({ ...i, id: i.id }));
 }
 
 // ─── STORE SETTINGS (Global) ───
@@ -478,6 +419,7 @@ export function subscribeSettings(
     if (snapshot.exists()) {
       const firestoreData = snapshot.data() as Partial<StoreSettings>;
       const merged = { ...loadSettings(), ...firestoreData, storeOpen: firestoreData.storeOpen ?? loadSettings().storeOpen };
+      saveLocalSettings(merged as StoreSettings);
       callback(merged as StoreSettings);
     } else {
       callback(loadSettings());
@@ -488,13 +430,15 @@ export function subscribeSettings(
 export async function saveSettingsToFirestore(settings: StoreSettings): Promise<void> {
   saveLocalSettings(settings);
 
-  if (isReady()) {
-    try {
-      const docRef = doc(db!, COLLECTIONS.SETTINGS, 'store');
-      await setDoc(docRef, settings as any, { merge: true });
-    } catch {
-      // silently fail
-    }
+  if (!isReady()) {
+    throw new Error('Unable to connect to server. Please check your connection and try again.');
+  }
+
+  try {
+    const docRef = doc(db!, COLLECTIONS.SETTINGS, 'store');
+    await setDoc(docRef, settings as any, { merge: true });
+  } catch {
+    throw new Error('Failed to save settings to server. Please try again.');
   }
 }
 
@@ -505,8 +449,7 @@ export function subscribeUser(
   callback: (user: UserProfile | null) => void
 ): () => void {
   if (!isReady() || !uid) {
-    const saved = localStorage.getItem('crave-user');
-    callback(saved ? JSON.parse(saved) : null);
+    callback(null);
     return () => {};
   }
 
@@ -522,37 +465,32 @@ export function subscribeUser(
 
 export async function saveUserProfile(uid: string, data: Partial<UserProfile>): Promise<void> {
   const sanitized = sanitizeUserProfile(stripProtectedFields(data, PROTECTED_USER_FIELDS));
-  const existing = localStorage.getItem('crave-user');
-  if (existing) {
-    const parsed = JSON.parse(existing);
-    localStorage.setItem('crave-user', JSON.stringify({ ...parsed, ...sanitized }));
+
+  if (!isReady() || !uid) {
+    throw new Error('Unable to connect to server. Please check your connection and try again.');
   }
 
-  if (isReady() && uid) {
-    try {
-      const docRef = doc(db!, COLLECTIONS.USERS, uid);
-      await setDoc(docRef, { ...sanitized, uid, updatedAt: serverTimestamp() }, { merge: true });
-    } catch {
-      // silently fail
-    }
+  try {
+    const docRef = doc(db!, COLLECTIONS.USERS, uid);
+    await setDoc(docRef, { ...sanitized, uid, updatedAt: serverTimestamp() }, { merge: true });
+  } catch {
+    throw new Error('Failed to save profile. Please try again.');
   }
 }
 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
-  if (isReady() && uid) {
-    try {
-      const docRef = doc(db!, COLLECTIONS.USERS, uid);
-      const snapshot = await getDoc(docRef);
-      if (snapshot.exists()) {
-        return { id: snapshot.id, ...snapshot.data() } as unknown as UserProfile;
-      }
-    } catch {
-      // fall through
-    }
-  }
+  if (!isReady() || !uid) return null;
 
-  const saved = localStorage.getItem('crave-user');
-  return saved ? JSON.parse(saved) : null;
+  try {
+    const docRef = doc(db!, COLLECTIONS.USERS, uid);
+    const snapshot = await getDoc(docRef);
+    if (snapshot.exists()) {
+      return { id: snapshot.id, ...snapshot.data() } as unknown as UserProfile;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 // ─── LOYALTY / POINTS ───
@@ -561,23 +499,22 @@ export async function updateLoyaltyPoints(
   uid: string,
   points: number
 ): Promise<void> {
-  const current = parseInt(localStorage.getItem('crave-points') || '0', 10);
-  localStorage.setItem('crave-points', String(current + points));
+  if (!isReady() || !uid) {
+    throw new Error('Unable to connect to server. Please check your connection and try again.');
+  }
 
-  if (isReady() && uid) {
-    try {
-      const docRef = doc(db!, COLLECTIONS.USERS, uid);
-      await runTransaction(db!, async (transaction) => {
-        const snapshot = await transaction.get(docRef);
-        const existing = snapshot.data()?.loyaltyPoints || 0;
-        transaction.update(docRef, {
-          loyaltyPoints: existing + points,
-          updatedAt: serverTimestamp(),
-        });
+  try {
+    const docRef = doc(db!, COLLECTIONS.USERS, uid);
+    await runTransaction(db!, async (transaction) => {
+      const snapshot = await transaction.get(docRef);
+      const existing = snapshot.data()?.loyaltyPoints || 0;
+      transaction.update(docRef, {
+        loyaltyPoints: existing + points,
+        updatedAt: serverTimestamp(),
       });
-    } catch {
-      // silently fail
-    }
+    });
+  } catch {
+    throw new Error('Failed to update loyalty points. Please try again.');
   }
 }
 
@@ -585,70 +522,54 @@ export async function redeemReward(
   uid: string,
   reward: RewardConfig
 ): Promise<{ success: boolean; newPoints: number }> {
-  const stored = parseInt(localStorage.getItem('crave-points') || '0', 10);
+  if (!isReady() || !uid) {
+    throw new Error('Unable to connect to server. Please check your connection and try again.');
+  }
 
-  if (isReady() && uid) {
-    try {
-      const docRef = doc(db!, COLLECTIONS.USERS, uid);
-      const result = await runTransaction(db!, async (transaction) => {
-        const snapshot = await transaction.get(docRef);
-        const currentPoints = snapshot.data()?.loyaltyPoints || 0;
-        if (currentPoints < reward.cost) {
-          return { success: false, newPoints: currentPoints };
-        }
-        const newPoints = currentPoints - reward.cost;
-        transaction.update(docRef, {
-          loyaltyPoints: newPoints,
-          updatedAt: serverTimestamp(),
-        });
-        return { success: true, newPoints };
+  try {
+    const docRef = doc(db!, COLLECTIONS.USERS, uid);
+    const result = await runTransaction(db!, async (transaction) => {
+      const snapshot = await transaction.get(docRef);
+      const currentPoints = snapshot.data()?.loyaltyPoints || 0;
+      if (currentPoints < reward.cost) {
+        return { success: false, newPoints: currentPoints };
+      }
+      const newPoints = currentPoints - reward.cost;
+      transaction.update(docRef, {
+        loyaltyPoints: newPoints,
+        updatedAt: serverTimestamp(),
       });
+      return { success: true, newPoints };
+    });
 
-      if (result.success) {
-        localStorage.setItem('crave-points', String(result.newPoints));
-      }
-      return result;
-    } catch {
-      const newPoints = stored - reward.cost;
-      if (stored >= reward.cost) {
-        localStorage.setItem('crave-points', String(newPoints));
-        return { success: true, newPoints };
-      }
-      return { success: false, newPoints: stored };
-    }
+    return result;
+  } catch {
+    throw new Error('Failed to redeem reward. Please try again.');
   }
-
-  // Fallback: local-only
-  const newPoints = stored - reward.cost;
-  if (stored >= reward.cost) {
-    localStorage.setItem('crave-points', String(newPoints));
-    return { success: true, newPoints };
-  }
-  return { success: false, newPoints: stored };
 }
 
 export async function getLoyaltyPoints(uid: string): Promise<number> {
-  if (isReady() && uid) {
-    try {
-      const docRef = doc(db!, COLLECTIONS.USERS, uid);
-      const snapshot = await getDoc(docRef);
-      if (snapshot.exists()) {
-        return snapshot.data()?.loyaltyPoints || 0;
-      }
-    } catch {
-      // fall through
+  if (!isReady() || !uid) return 0;
+
+  try {
+    const docRef = doc(db!, COLLECTIONS.USERS, uid);
+    const snapshot = await getDoc(docRef);
+    if (snapshot.exists()) {
+      return snapshot.data()?.loyaltyPoints || 0;
     }
+    return 0;
+  } catch {
+    return 0;
   }
-  return parseInt(localStorage.getItem('crave-points') || '0', 10);
 }
 
 // ─── SYNC UTILITY ───
 
 export async function syncLocalToFirestore(): Promise<{ orders: number; menuItems: number }> {
+  if (!isReady()) throw new Error('Firestore not available');
+
   let ordersSynced = 0;
   let menuItemsSynced = 0;
-
-  if (!isReady()) throw new Error('Firestore not available');
 
   const localOrders = getStoredOrders() || [];
   for (const order of localOrders) {
@@ -693,8 +614,6 @@ export async function syncLocalToFirestore(): Promise<{ orders: number; menuItem
   } catch {
     // skip settings
   }
-
-  localStorage.setItem('crave-migrated', 'true');
 
   return { orders: ordersSynced, menuItems: menuItemsSynced };
 }

@@ -130,7 +130,6 @@ export default function AdminDashboard() {
   };
 
   const handleClearData = () => {
-    ['crave-orders', 'crave-last-order', 'crave-menu-items', 'crave-seeded'].forEach(k => localStorage.removeItem(k));
     setSeeded(false); setOrders([]); setConfirmClear(false);
     import('@/lib/audit').then(({ logAction }) =>
       logAction('data.cleared', 'data', 'all', {}, { email: user?.email || '', role: user?.role || '', name: user?.name || '' })

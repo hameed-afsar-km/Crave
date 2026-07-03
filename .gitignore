@@ -39,6 +39,7 @@ yarn-error.log*
 # project documentation
 project.md
 security-audit.md
+report.md
 
 # typescript
 *.tsbuildinfo

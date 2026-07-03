@@ -71,13 +71,13 @@ export default function QueueWidget() {
     return () => { unsubOrders(); unsubSettings(); };
   }, []);
 
-  // Subscribe to the user's active order
+  // Subscribe to the user's active order using last order ID from convenience storage
   useEffect(() => {
     const raw = localStorage.getItem('crave-last-order');
     if (raw) {
       try {
         const order = JSON.parse(raw);
-        if (order.id && order.status && !['completed', 'cancelled'].includes(order.status)) {
+        if (order.id) {
           const unsub = subscribeOrder(order.id, (updatedOrder) => {
             if (updatedOrder) {
               const mapped: OrderData = {
@@ -93,7 +93,7 @@ export default function QueueWidget() {
                 createdAt: typeof updatedOrder.createdAt === 'string' ? updatedOrder.createdAt : new Date().toISOString(),
               };
               setActiveOrder(mapped);
-              // Calculate actual queue position
+              // Calculate actual queue position from Firestore data
               const queueOrders = allOrdersRef.current
                 .filter(o => o.status === 'received' || o.status === 'preparing')
                 .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));

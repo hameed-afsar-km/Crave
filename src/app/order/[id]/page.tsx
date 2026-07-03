@@ -73,11 +73,6 @@ export default function OrderTrackingPage() {
     const unsub = subscribeOrder(orderId, (order) => {
       if (order) {
         setOrderInfo(order);
-      } else {
-        const saved = localStorage.getItem('crave-last-order');
-        if (saved) {
-          try { setOrderInfo(JSON.parse(saved)); } catch {}
-        }
       }
     });
     return unsub;

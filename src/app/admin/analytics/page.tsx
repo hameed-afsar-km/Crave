@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAdminOutlet } from '@/context/AdminOutletContext';
-import { getStoredOrders } from '@/lib/seed-data';
+import { subscribeOrders } from '@/lib/firestore-service';
 import { AnimatedCounter } from '@/components/admin/AnimatedCounter';
 import { BarChart } from '@/components/admin/BarChart';
 import {
@@ -25,17 +25,15 @@ export default function AdminAnalytics() {
   const { selectedOutletId, outlets, setSelectedOutletId, isAllOutlets } = useAdminOutlet();
   const [period, setPeriod] = useState<Period>('weekly');
 
-  const computeData = () => {
-    const allOrders = getStoredOrders() || [];
-    const orders = isAllOutlets ? allOrders : allOrders.filter((o: any) => o.outletId === selectedOutletId);
-    const revenue = orders.reduce((s: number, o: any) => s + (o.amount || 0), 0);
-    return { orders, revenue };
-  };
-
-  const [data, setData] = useState(computeData);
+  const [data, setData] = useState<{ orders: any[]; revenue: number }>({ orders: [], revenue: 0 });
 
   useEffect(() => {
-    setData(computeData());
+    const unsub = subscribeOrders((firestoreOrders) => {
+      const orders = isAllOutlets ? firestoreOrders : firestoreOrders.filter((o: any) => o.outletId === selectedOutletId);
+      const revenue = orders.reduce((s: number, o: any) => s + (o.amount || 0), 0);
+      setData({ orders, revenue });
+    });
+    return unsub;
   }, [selectedOutletId, isAllOutlets]);
 
   const periodOrders = useMemo(() => filterOrdersByPeriod(data.orders, period), [data.orders, period]);

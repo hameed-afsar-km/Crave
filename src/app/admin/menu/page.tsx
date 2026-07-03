@@ -7,9 +7,8 @@ import Image from 'next/image';
 import { ArrowLeft, Plus, Edit2, Trash2, Search, Eye, EyeOff, TrendingUp, TrendingDown, Store, MapPin } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAdminOutlet } from '@/context/AdminOutletContext';
-import { getStoredOrders } from '@/lib/seed-data';
 import { MenuItem } from '@/types';
-import { subscribeMenuItems, addMenuItem as addFirestoreItem, updateMenuItem, deleteMenuItem as deleteFirestoreItem } from '@/lib/firestore-service';
+import { subscribeMenuItems, subscribeOrders, addMenuItem as addFirestoreItem, updateMenuItem, deleteMenuItem as deleteFirestoreItem } from '@/lib/firestore-service';
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { logAction } from '@/lib/audit';
@@ -45,18 +44,20 @@ export default function AdminMenu() {
     };
   }, [previewUrl]);
 
-  const itemOrderCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    const orders = getStoredOrders();
-    if (orders) {
-      orders.forEach((o: any) => {
+  const [itemOrderCounts, setItemOrderCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const unsub = subscribeOrders((firestoreOrders) => {
+      const counts: Record<string, number> = {};
+      firestoreOrders.forEach((o: any) => {
         (o.items || []).forEach((item: any) => {
           const name = item.name || '';
           counts[name] = (counts[name] || 0) + (item.qty || 1);
         });
       });
-    }
-    return counts;
+      setItemOrderCounts(counts);
+    });
+    return unsub;
   }, []);
 
   const sortedByOrders = useMemo(() => {

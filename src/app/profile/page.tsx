@@ -24,9 +24,6 @@ export default function ProfilePage() {
       });
       return unsub;
     }
-    const stored = JSON.parse(localStorage.getItem('crave-orders') || '[]');
-    setPastOrders(stored);
-    setLoyaltyPoints(parseInt(localStorage.getItem('crave-points') || '0', 10));
   }, [user?.uid]);
 
   useEffect(() => {

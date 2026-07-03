@@ -37,22 +37,21 @@ export const DEFAULT_OUTLETS: Outlet[] = [
   },
 ];
 
-const STORAGE_KEY = 'crave-outlets';
 const SETTING_KEY = 'crave-selected-outlet';
 
+let cachedOutlets: Outlet[] = [];
+
+export function setCachedOutlets(outlets: Outlet[]) {
+  cachedOutlets = outlets;
+}
+
 export function loadOutlets(): Outlet[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {}
+  if (cachedOutlets.length > 0) return cachedOutlets;
   return DEFAULT_OUTLETS;
 }
 
 export function saveOutlets(outlets: Outlet[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(outlets));
+  cachedOutlets = outlets;
 }
 
 export function getOutlet(outletId: string): Outlet | undefined {
