@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Clock, ChefHat, Package, MapPin, ArrowLeft, Flame, Receipt, X, Printer, ImageIcon, FileText } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
+import { escapeHtml } from '@/lib/sanitize';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 import Link from 'next/link';
@@ -93,11 +94,12 @@ export default function OrderTrackingPage() {
   const printReceipt = () => {
     const w = window.open('', '_blank');
     if (!w) return;
+    const e = escapeHtml;
     const itemRows = order.items.map((item: any) =>
-      `<tr><td>${item.name || item.menuItemId}</td><td>${item.qty || item.quantity}</td><td>₹${(item.price || 0) * (item.qty || item.quantity || 0)}</td></tr>`
+      `<tr><td>${e(item.name || item.menuItemId)}</td><td>${item.qty || item.quantity}</td><td>₹${(item.price || 0) * (item.qty || item.quantity || 0)}</td></tr>`
     ).join('');
     w.document.write(`
-      <html><head><title>Receipt ${order.id}</title>
+      <html><head><title>Receipt ${e(order.id)}</title>
       <style>
         @page { width: 80mm; margin: 0; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -124,11 +126,11 @@ export default function OrderTrackingPage() {
         <p class="sub">LIC Metro, Chennai</p>
         <p class="sub">${new Date().toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</p>
         <hr class="divider" />
-        <span class="badge">${order.id}</span>
+        <span class="badge">${e(order.id)}</span>
         <hr class="divider" />
-        <p class="info"><strong>Customer</strong> ${order.customerName || order.customer}</p>
-        <p class="info"><strong>Phone</strong> ${order.customerPhone || order.phone}</p>
-        <p class="info"><strong>Pickup</strong> ${order.pickupTime}</p>
+        <p class="info"><strong>Customer</strong> ${e(order.customerName || order.customer)}</p>
+        <p class="info"><strong>Phone</strong> ${e(order.customerPhone || order.phone)}</p>
+        <p class="info"><strong>Pickup</strong> ${e(order.pickupTime)}</p>
         <hr class="divider" />
         <table>
           <tr><th>Item</th><th>Qty</th><th>Amount</th></tr>

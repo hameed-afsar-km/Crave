@@ -11,6 +11,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { useAdminOutlet } from '@/context/AdminOutletContext';
 import { subscribeOrders, updateOrderStatus, deleteOrder as deleteOrderFromFirestore } from '@/lib/firestore-service';
+import { escapeHtml } from '@/lib/sanitize';
 
 interface OrderItem { name: string; qty: number; }
 interface Order {
@@ -31,7 +32,7 @@ const statusConfig: Record<string, { label: string; pill: string; dot: string }>
 const statusFlow = ['received', 'preparing', 'ready', 'completed'] as const;
 
 export default function AdminOrders() {
-  const { isAdmin, isMasterAdmin, user } = useAuth();
+  const { canManageOrders, isMasterAdmin, user } = useAuth();
   const { selectedOutletId, outlets, setSelectedOutletId, isAllOutlets } = useAdminOutlet();
   const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState('');
@@ -84,7 +85,7 @@ export default function AdminOrders() {
   };
 
   const deleteOrder = async (orderId: string) => {
-    await deleteOrderFromFirestore(orderId);
+    await deleteOrderFromFirestore(orderId, { deletedBy: user?.uid || 'unknown', deletedReason: 'Manually deleted by admin', cancelledBy: { email: user?.email || '', role: user?.role || '', name: user?.name || '' } });
     if (selectedOrder?.id === orderId) setSelectedOrder(null);
     setConfirmAction(null);
     setConfirmOrderId('');
@@ -137,9 +138,10 @@ export default function AdminOrders() {
 
   const printOrder = (order: Order) => {
     const w = window.open('', '_blank'); if (!w) return;
+    const e = escapeHtml;
     const itemTotal = order.items.reduce((s, it) => s + it.qty, 0);
     w.document.write(`
-      <html><head><title>Receipt ${order.id}</title>
+      <html><head><title>Receipt ${e(order.id)}</title>
       <style>
         @page { width: 80mm; margin: 0; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -163,20 +165,20 @@ export default function AdminOrders() {
         @media print { body { width: auto; padding: 0; } }
       </style></head>
       <body>
-        <h1>CRAVE</h1><p class="sub">${order.outletName || 'LIC Metro, Chennai'}</p>
+        <h1>CRAVE</h1><p class="sub">${e(order.outletName || 'LIC Metro, Chennai')}</p>
         <p class="sub">${new Date().toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })} ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>
-        <hr class="divider" /><span class="badge">${order.id}</span><hr class="divider" />
-        <p class="info"><strong>Customer</strong> ${order.customer}</p><p class="info"><strong>Phone</strong> ${order.phone}</p><p class="info"><strong>Pickup</strong> ${order.pickupTime}</p>
+        <hr class="divider" /><span class="badge">${e(order.id)}</span><hr class="divider" />
+        <p class="info"><strong>Customer</strong> ${e(order.customer)}</p><p class="info"><strong>Phone</strong> ${e(order.phone)}</p><p class="info"><strong>Pickup</strong> ${e(order.pickupTime)}</p>
         <hr class="divider" />
-        <table><tr><th>Item</th><th>Qty</th><th>Amount</th></tr>${order.items.map(i => { const price = Math.round(order.amount / itemTotal * i.qty); return `<tr><td>${i.name}</td><td>${i.qty}</td><td>₹${price}</td></tr>`; }).join('')}<tr class="total-row"><td colspan="2">TOTAL</td><td>₹${order.amount}</td></tr></table>
-        <hr class="divider-solid" /><p class="info"><strong>Status</strong> ${order.status.toUpperCase()}</p>${order.notes ? `<p class="notes">📝 ${order.notes}</p>` : ''}
+        <table><tr><th>Item</th><th>Qty</th><th>Amount</th></tr>${order.items.map(i => { const price = Math.round(order.amount / itemTotal * i.qty); return `<tr><td>${e(i.name)}</td><td>${i.qty}</td><td>₹${price}</td></tr>`; }).join('')}<tr class="total-row"><td colspan="2">TOTAL</td><td>₹${order.amount}</td></tr></table>
+        <hr class="divider-solid" /><p class="info"><strong>Status</strong> ${e(order.status.toUpperCase())}</p>${order.notes ? `<p class="notes">📝 ${e(order.notes)}</p>` : ''}
         <p class="cut-line">- - - - - - - -</p><div class="footer">Thank you!<br/><b>Visit again</b></div>
         <script>window.onload = function() { window.print(); window.close(); }<\/script>
       </body></html>
     `); w.document.close();
   };
 
-  if (!isAdmin) return <div className="min-h-screen flex items-center justify-center"><p className="text-zinc-500 font-medium">Access Denied</p></div>;
+  if (!canManageOrders) return <div className="min-h-screen flex items-center justify-center"><p className="text-zinc-500 font-medium">Access Denied</p></div>;
 
   const filterTabs = ['all', 'received', 'preparing', 'ready', 'completed', 'cancelled'];
   const counts = { all: outletFiltered.length } as Record<string, number>;

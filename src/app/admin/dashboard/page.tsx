@@ -42,7 +42,7 @@ const statusAction: Record<string, { label: string; next: string; color: string 
 
 
 export default function AdminDashboard() {
-  const { isAdmin, isMasterAdmin, isOutletStaff, user } = useAuth();
+  const { canAccessDashboard, isMasterAdmin, user } = useAuth();
   const { selectedOutletId, outlets, setSelectedOutletId, isAllOutlets } = useAdminOutlet();
   const [settings, setSettings] = useState(loadSettings());
   const [seeded, setSeeded] = useState(false);
@@ -174,7 +174,7 @@ export default function AdminDashboard() {
 
   const recent = [...filteredOrders].sort((a: any, b: any) => (b.createdAt || '').localeCompare(a.createdAt || '')).slice(0, 6);
 
-  if (!isAdmin) {
+  if (!canAccessDashboard) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

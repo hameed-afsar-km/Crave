@@ -17,7 +17,7 @@ interface SecurityCheck {
 }
 
 export default function SecurityHealthPage() {
-  const { isAdmin, user } = useAuth();
+  const { isMasterAdmin, user } = useAuth();
   const [checks, setChecks] = useState<SecurityCheck[]>([
     { label: 'Firebase Admin SDK', status: 'unknown', description: 'Server-side Firebase Admin initialization', detail: 'Checking...' },
     { label: 'Firestore Security Rules', status: 'unknown', description: 'Firestore access control rules', detail: 'Checking...' },
@@ -131,7 +131,7 @@ export default function SecurityHealthPage() {
     runChecks();
   }, [user?.uid, checks]);
 
-  if (!isAdmin) {
+  if (!isMasterAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-zinc-500 font-medium">Access Denied</p>

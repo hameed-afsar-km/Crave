@@ -34,7 +34,7 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const { itemCount } = useCart();
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut, isStaff } = useAuth();
 
   const handleScroll = useCallback(() => {
     setScrolled(window.scrollY > 60);
@@ -172,7 +172,7 @@ export default function Navbar() {
 
               {/* Icons */}
               <div className="flex items-center gap-0.5">
-                {isAdmin && (
+                {isStaff && (
                   <IconBtn href="/admin/dashboard" title="Dashboard">
                     <LayoutDashboard className="w-[18px] h-[18px]" />
                   </IconBtn>
@@ -308,7 +308,7 @@ export default function Navbar() {
 
                   {user ? (
                     <>
-                      {isAdmin && (
+                      {isStaff && (
                         <Link
                           href="/admin/dashboard"
                           onClick={closeMobile}

@@ -41,6 +41,11 @@ export function sanitizeAddress(input: string): string {
   return stripHTML(input).trim().slice(0, 500);
 }
 
+export function escapeHtml(input: string): string {
+  if (typeof input !== 'string') return '';
+  return input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 export function sanitizeUserProfile(data: Record<string, any>): Record<string, any> {
   const out: Record<string, any> = {};
   for (const [key, value] of Object.entries(data)) {

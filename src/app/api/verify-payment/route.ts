@@ -1,15 +1,28 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import Razorpay from 'razorpay';
-import { requireAuth } from '@/lib/firebase-admin';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { requireAuth, getAdminDb } from '@/lib/firebase-admin';
 import { rateLimit } from '@/lib/rate-limiter';
 
 const razorpay = new Razorpay({
   key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
 });
+
+const MAX_AMOUNT = 100000;
+
+function validateOrderData(body: any): string | null {
+  if (body.items && (!Array.isArray(body.items) || body.items.length === 0)) {
+    return 'Invalid items';
+  }
+  if (body.items && body.items.some((i: any) => !i.menuItemId || !i.name)) {
+    return 'Invalid item structure';
+  }
+  if (body.outletId && typeof body.outletId !== 'string') {
+    return 'Invalid outlet';
+  }
+  return null;
+}
 
 export async function POST(req: Request) {
   try {
@@ -33,15 +46,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ verified: false, error: 'Missing payment fields' }, { status: 400 });
     }
 
-    if (expectedAmount !== undefined && (typeof expectedAmount !== 'number' || expectedAmount <= 0 || expectedAmount > 100000)) {
+    if (expectedAmount !== undefined && (typeof expectedAmount !== 'number' || expectedAmount <= 0 || expectedAmount > MAX_AMOUNT)) {
       return NextResponse.json({ verified: false, error: 'Invalid amount' }, { status: 400 });
     }
 
-    if (expectedCurrency && typeof expectedCurrency !== 'string') {
-      return NextResponse.json({ verified: false, error: 'Invalid currency' }, { status: 400 });
+    const validationError = validateOrderData(body);
+    if (validationError) {
+      return NextResponse.json({ verified: false, error: validationError }, { status: 400 });
     }
 
-    // 1. Verify HMAC signature
     const secret = process.env.RAZORPAY_KEY_SECRET!;
     const hmac = crypto.createHmac('sha256', secret);
     hmac.update(`${razorpay_order_id}|${razorpay_payment_id}`);
@@ -51,7 +64,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ verified: false, error: 'Invalid signature' }, { status: 400 });
     }
 
-    // 2. Fetch payment details from Razorpay
     let paymentDetails: any;
     try {
       paymentDetails = await razorpay.payments.fetch(razorpay_payment_id);
@@ -63,12 +75,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ verified: false, error: 'Payment mismatch' }, { status: 400 });
     }
 
-    // 3. Verify the payment belongs to the expected order
     if (paymentDetails.order_id !== razorpay_order_id) {
       return NextResponse.json({ verified: false, error: 'Order mismatch' }, { status: 400 });
     }
 
-    // 4. Verify payment is captured (not just authorized)
     if (paymentDetails.status !== 'captured') {
       return NextResponse.json({
         verified: false,
@@ -76,39 +86,99 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
-    // 5. Verify currency
     const paymentCurrency = paymentDetails.currency || 'INR';
     if (expectedCurrency && paymentCurrency !== expectedCurrency) {
       return NextResponse.json({ verified: false, error: 'Currency mismatch' }, { status: 400 });
     }
 
-    // 6. Verify amount matches expected (server-calculated) amount
-    const paymentAmount = (paymentDetails.amount || 0) / 100; // Razorpay amounts are in paise
+    const paymentAmount = (paymentDetails.amount || 0) / 100;
     if (expectedAmount && Math.abs(paymentAmount - expectedAmount) > 0.01) {
       return NextResponse.json({ verified: false, error: 'Amount mismatch' }, { status: 400 });
     }
 
-    // 7. Check for duplicate payment (idempotency)
-    if (db) {
-      try {
-        const existingOrders = await getDocs(
-          query(collection(db, 'orders'), where('paymentId', '==', razorpay_payment_id))
-        );
-        if (!existingOrders.empty) {
-          // Payment already used — return existing order
-          const existing = existingOrders.docs[0];
-          return NextResponse.json({
-            verified: true,
-            duplicate: true,
-            existingOrderId: existing.id,
-          });
-        }
-      } catch {
-        // Firestore unavailable — skip dedup check
-      }
+    const adminDb = getAdminDb();
+    if (!adminDb) {
+      return NextResponse.json({ verified: false, error: 'Service unavailable' }, { status: 500 });
     }
 
-    return NextResponse.json({ verified: true, amount: paymentAmount, currency: paymentCurrency });
+    let orderId: string | null = null;
+    let duplicate = false;
+
+    try {
+      const result = await adminDb.runTransaction(async (transaction) => {
+        const lockRef = adminDb.collection('paymentLocks').doc(razorpay_payment_id);
+        const lockDoc = await transaction.get(lockRef);
+
+        if (lockDoc.exists) {
+          const data = lockDoc.data();
+          if (data?.orderId) {
+            return { orderId: data.orderId, duplicate: true };
+          }
+          return { orderId: null, duplicate: false };
+        }
+
+        const now = new Date().toISOString();
+
+        transaction.set(lockRef, {
+          paymentId: razorpay_payment_id,
+          status: 'completed',
+          orderId: null,
+          createdAt: now,
+        });
+
+        const orderRef = adminDb.collection('orders').doc();
+        transaction.set(orderRef, {
+          paymentId: razorpay_payment_id,
+          razorpayOrderId: razorpay_order_id,
+          outletId: body.outletId || 'lic',
+          outletName: body.outletName || '',
+          customerId: auth.uid,
+          customerName: body.customerName || '',
+          customerPhone: body.customerPhone || '',
+          customerEmail: body.customerEmail || '',
+          items: (body.items || []).map((i: any) => ({
+            menuItemId: i.menuItemId || '',
+            name: i.name || '',
+            quantity: i.quantity || 0,
+            unitPrice: i.unitPrice || 0,
+            subtotal: i.subtotal || 0,
+          })),
+          amount: expectedAmount || paymentAmount,
+          paymentStatus: 'paid',
+          status: 'received',
+          pickupTime: body.pickupTime || '',
+          estimatedWaitTime: 18,
+          pointsEarned: body.pointsEarned || 0,
+          createdAt: now,
+        });
+
+        transaction.update(lockRef, { orderId: orderRef.id });
+
+        return { orderId: orderRef.id, duplicate: false };
+      });
+
+      orderId = result.orderId;
+      duplicate = result.duplicate;
+    } catch {
+      return NextResponse.json({ verified: false, error: 'Failed to confirm order' }, { status: 500 });
+    }
+
+    if (duplicate) {
+      return NextResponse.json({
+        verified: true,
+        duplicate: true,
+        existingOrderId: orderId,
+        amount: paymentAmount,
+        currency: paymentCurrency,
+      });
+    }
+
+    return NextResponse.json({
+      verified: true,
+      orderId,
+      amount: paymentAmount,
+      currency: paymentCurrency,
+    });
   } catch (err: any) {
     console.error('verify-payment error:', err);
     return NextResponse.json({ verified: false, error: 'Verification failed' }, { status: 500 });

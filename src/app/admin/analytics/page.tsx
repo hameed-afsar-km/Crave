@@ -21,7 +21,7 @@ import {
 type Period = 'weekly' | 'monthly';
 
 export default function AdminAnalytics() {
-  const { isAdmin, isMasterAdmin } = useAuth();
+  const { canManageAnalytics, isMasterAdmin } = useAuth();
   const { selectedOutletId, outlets, setSelectedOutletId, isAllOutlets } = useAdminOutlet();
   const [period, setPeriod] = useState<Period>('weekly');
 
@@ -82,7 +82,7 @@ export default function AdminAnalytics() {
     };
   }, [period, data.orders, periodRevenue, periodOrders]);
 
-  if (!isAdmin) {
+  if (!canManageAnalytics) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-zinc-500 font-medium">Access Denied</p>

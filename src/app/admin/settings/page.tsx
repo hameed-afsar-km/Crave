@@ -16,7 +16,7 @@ import { saveSettingsToFirestore, subscribeSettings, subscribeOrders } from '@/l
 import { logAction } from '@/lib/audit';
 
 export default function AdminSettings() {
-  const { isAdmin, isMasterAdmin, user } = useAuth();
+  const { canManageSettings, isMasterAdmin, user } = useAuth();
   const { outlets } = useAdminOutlet();
   const [form, setForm] = useState<StoreSettings>(loadSettings());
   const [saved, setSaved] = useState(false);
@@ -82,7 +82,7 @@ export default function AdminSettings() {
     return unsub;
   }, []);
 
-  if (!isAdmin) {
+  if (!canManageSettings) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-zinc-500 font-medium">Access Denied</p>

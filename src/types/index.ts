@@ -66,6 +66,10 @@ export interface Order {
   cancelReason?: string;
   notes?: string;
   createdAt: string;
+  deleted?: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
+  deletedReason?: string;
 }
 
 export interface UserProfile {

@@ -38,14 +38,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Service unavailable' }, { status: 500 });
     }
 
-    const { db } = await import('@/lib/firebase');
-    const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+    const now = new Date().toISOString();
 
-    if (!db) {
-      return NextResponse.json({ error: 'Service unavailable' }, { status: 500 });
-    }
-
-    await addDoc(collection(db, 'bugReports'), {
+    await adminDb.collection('bugReports').add({
       description: description.trim().slice(0, 5000),
       severity: severity || 'minor',
       pageUrl: typeof pageUrl === 'string' ? pageUrl.slice(0, 500) : '',
@@ -54,7 +49,7 @@ export async function POST(req: Request) {
       userName: '',
       status: 'open',
       adminNotes: '',
-      createdAt: serverTimestamp(),
+      createdAt: now,
     });
 
     return NextResponse.json({ success: true });

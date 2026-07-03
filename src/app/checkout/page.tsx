@@ -9,7 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { formatPrice, generateTimeSlots } from '@/lib/utils';
 import { loadSettings, getTimeUntilOpen } from '@/lib/store';
 import { loadRazorpayScript } from '@/lib/razorpay';
-import { createOrder, updateLoyaltyPoints } from '@/lib/firestore-service';
+import { updateLoyaltyPoints } from '@/lib/firestore-service';
 import { sanitizeString, sanitizePhone, sanitizeEmail } from '@/lib/sanitize';
 import { loadOutlets, getOpenOutlets, getOutlet } from '@/lib/outlets';
 import StoreStatusBanner from '@/components/StoreStatusBanner';
@@ -128,7 +128,7 @@ export default function CheckoutPage() {
         },
         theme: { color: '#D4AF37' },
         handler: async function (response: any) {
-          // 4. Verify payment server-side
+          // 4. Verify payment & create order server-side
           try {
             const verifyRes = await fetch('/api/verify-payment', {
               method: 'POST',
@@ -139,6 +139,20 @@ export default function CheckoutPage() {
                 razorpay_signature: response.razorpay_signature,
                 expectedAmount: serverTotal,
                 expectedCurrency: 'INR',
+                outletId: selectedOutletId || 'lic',
+                outletName: selectedOutletName || 'Crave LIC Metro',
+                customerName: sanitizeString(name, 100),
+                customerPhone: sanitizePhone(phone),
+                customerEmail: sanitizeEmail(email || ''),
+                items: serverItems.map((i: any) => ({
+                  menuItemId: i.menuItemId || '',
+                  name: i.name,
+                  quantity: i.quantity,
+                  unitPrice: i.price,
+                  subtotal: i.price * i.quantity,
+                })),
+                pickupTime: selectedTime,
+                pointsEarned,
               }),
             });
             const verifyData = await verifyRes.json();
@@ -149,41 +163,20 @@ export default function CheckoutPage() {
               return;
             }
 
-            // Handle duplicate payment — payment already used for a previous order
-            if (verifyData.duplicate && verifyData.existingOrderId) {
-              const orderData = {
-                outletId: selectedOutletId || 'lic',
-                outletName: selectedOutletName || 'Crave LIC Metro',
-                customerId: user?.uid || 'guest',
-                customerName: sanitizeString(name, 100),
-                customerPhone: sanitizePhone(phone),
-                customerEmail: sanitizeEmail(email || ''),
-                items: items.map((i: any) => ({
-                  menuItemId: i.menuItemId || '',
-                  name: i.name,
-                  quantity: i.quantity,
-                  unitPrice: i.price,
-                  subtotal: i.price * i.quantity,
-                })),
-                amount: razorpayOrder.total || total,
-                paymentStatus: 'paid' as const,
-                paymentId: response.razorpay_payment_id,
-                pickupTime: selectedTime,
-                status: 'received' as const,
-                estimatedWaitTime: 18,
-                pointsEarned: Math.floor((razorpayOrder.total || total) / (settings.earnRate || 10)),
-              };
-              const order: any = { ...orderData, id: verifyData.existingOrderId, createdAt: new Date().toISOString() };
-              clearCart();
-              setConfirmedOrder(order);
-              setConfirmedOrderId(verifyData.existingOrderId);
-              setShowConfirmation(true);
+            const orderId = verifyData.existingOrderId || verifyData.orderId;
+
+            if (!orderId) {
+              setPaymentError('Order creation failed. Please contact support.');
               setProcessing(false);
               return;
             }
 
-            // 5. Create Firestore order
-            const orderData = {
+            // Award loyalty points
+            if (user?.uid && pointsEarned > 0) {
+              await updateLoyaltyPoints(user.uid, pointsEarned);
+            }
+
+            const order: any = {
               outletId: selectedOutletId || 'lic',
               outletName: selectedOutletName || 'Crave LIC Metro',
               customerId: user?.uid || 'guest',
@@ -205,16 +198,9 @@ export default function CheckoutPage() {
               status: 'received' as const,
               estimatedWaitTime: 18,
               pointsEarned,
+              id: orderId,
+              createdAt: new Date().toISOString(),
             };
-
-            const orderId = await createOrder(orderData);
-
-            // Award loyalty points atomically
-            if (user?.uid && pointsEarned > 0) {
-              await updateLoyaltyPoints(user.uid, pointsEarned);
-            }
-
-            const order: any = { ...orderData, id: orderId, createdAt: new Date().toISOString() };
 
             clearCart();
             setConfirmedOrder(order);

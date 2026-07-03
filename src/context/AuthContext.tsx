@@ -5,7 +5,6 @@ import { UserProfile, UserRole } from '@/types';
 import { saveUserProfile, getUserProfile } from '@/lib/firestore-service';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, getIdToken } from 'firebase/auth';
-import { logAction } from '@/lib/audit';
 
 const SESSION_TIMEOUT_MS = 1800_000; // 30 minutes
 
@@ -23,6 +22,15 @@ interface AuthContextType {
   assignedOutletId: string | null;
   assignedOutletName: string;
   updateUser: (data: Partial<UserProfile>) => void;
+  canAccessDashboard: boolean;
+  canManageOrders: boolean;
+  canManageKitchen: boolean;
+  canManageMenu: boolean;
+  canManageSettings: boolean;
+  canManageOutlets: boolean;
+  canManageAnalytics: boolean;
+  canViewLogs: boolean;
+  canManageBugs: boolean;
 }
 
 export const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'kmafsar2006@gmail.com';
@@ -40,12 +48,14 @@ function setAuthCookie(userData: UserProfile) {
 }
 
 function clearAuthCookie() {
-  const domains = ['', `;domain=${window.location.hostname}`];
+  const host = window.location.hostname;
+  const domainAttrs = host ? ['', `domain=${host}`] : [''];
   const paths = ['/', '/auth', '/admin', '/checkout', '/orders', '/profile'];
   for (const suffix of ['crave-user', 'crave-token', 'crave-session']) {
-    for (const domain of domains) {
+    for (const domainAttr of domainAttrs) {
       for (const path of paths) {
-        document.cookie = `${suffix}=;path=${path}${domain};max-age=0;SameSite=Strict;Secure`;
+        const domainPart = domainAttr ? `;${domainAttr}` : '';
+        document.cookie = `${suffix}=;path=${path}${domainPart};max-age=0;SameSite=Strict;Secure`;
       }
     }
   }
@@ -200,12 +210,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const assignedOutletId = useMemo(() => user?.assignedOutletId || null, [user]);
   const assignedOutletName = useMemo(() => user?.assignedOutletName || '', [user]);
 
+  const canAccessDashboard = useMemo(() => isStaff, [isStaff]);
+  const canManageOrders = useMemo(() => isStaff, [isStaff]);
+  const canManageKitchen = useMemo(() => isStaff, [isStaff]);
+  const canManageMenu = useMemo(() => isStaff, [isStaff]);
+  const canManageSettings = useMemo(() => isMasterAdmin, [isMasterAdmin]);
+  const canManageOutlets = useMemo(() => isMasterAdmin, [isMasterAdmin]);
+  const canManageAnalytics = useMemo(() => isMasterAdmin || isOutletManager, [isMasterAdmin, isOutletManager]);
+  const canViewLogs = useMemo(() => isMasterAdmin, [isMasterAdmin]);
+  const canManageBugs = useMemo(() => isMasterAdmin, [isMasterAdmin]);
+
   const value = useMemo(() => ({
     user, loading, signIn, signOut, isAdmin, isMasterAdmin,
     isOutletManager, isOutletStaff, isStaff,
     userRole, assignedOutletId, assignedOutletName, updateUser,
+    canAccessDashboard, canManageOrders, canManageKitchen, canManageMenu,
+    canManageSettings, canManageOutlets, canManageAnalytics, canViewLogs, canManageBugs,
   }), [user, loading, signIn, signOut, isAdmin, isMasterAdmin,
-      isOutletManager, isOutletStaff, isStaff, userRole, assignedOutletId, assignedOutletName, updateUser]);
+      isOutletManager, isOutletStaff, isStaff, userRole, assignedOutletId, assignedOutletName, updateUser,
+      canAccessDashboard, canManageOrders, canManageKitchen, canManageMenu,
+      canManageSettings, canManageOutlets, canManageAnalytics, canViewLogs, canManageBugs]);
 
   return (
     <AuthContext.Provider value={value}>

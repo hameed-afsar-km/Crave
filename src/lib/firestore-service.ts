@@ -228,7 +228,7 @@ export function subscribeOrders(
   const q = query(collection(db!, COLLECTIONS.ORDERS), ...qConstraints);
 
   const unsubscribe = onSnapshot(q, (snapshot) => {
-    const orders = snapshot.docs.map((d) => mapOrderDoc(d));
+    const orders = snapshot.docs.map((d) => mapOrderDoc(d)).filter((o) => !o.deleted);
     callback(orders);
   });
 
@@ -282,13 +282,21 @@ export async function updateOrderStatus(
   );
 }
 
-export async function deleteOrder(orderId: string): Promise<void> {
+export async function deleteOrder(orderId: string, options?: { deletedBy?: string; deletedReason?: string; cancelledBy?: AuditUser }): Promise<void> {
   if (!isReady()) {
     throw new Error('Unable to connect to server. Please check your connection and try again.');
   }
 
   try {
-    await deleteDoc(doc(db!, COLLECTIONS.ORDERS, orderId));
+    await updateDoc(doc(db!, COLLECTIONS.ORDERS, orderId), {
+      deleted: true,
+      deletedAt: serverTimestamp(),
+      deletedBy: options?.deletedBy || null,
+      deletedReason: options?.deletedReason || 'Manually deleted',
+      status: 'cancelled',
+    });
+
+    logAction('order.cancelled', 'order', orderId, { reason: options?.deletedReason || 'Manually deleted', softDelete: true }, options?.cancelledBy);
   } catch {
     throw new Error('Failed to delete order. Please try again.');
   }

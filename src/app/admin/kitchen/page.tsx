@@ -56,7 +56,7 @@ function getPriority(order: Order, nowMinutes: number): 'late' | 'urgent' | 'upc
 const filterTabs = ['all', 'received', 'preparing', 'ready'] as const;
 
 export default function KitchenPage() {
-  const { isAdmin, isMasterAdmin, user } = useAuth();
+  const { canManageKitchen, isMasterAdmin, user } = useAuth();
   const { selectedOutletId, outlets, setSelectedOutletId, isAllOutlets } = useAdminOutlet();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<string>('all');
@@ -114,7 +114,7 @@ export default function KitchenPage() {
     ready: outletFiltered.filter(o => o.status === 'ready').length,
   }), [outletFiltered]);
 
-  if (!isAdmin) {
+  if (!canManageKitchen) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-zinc-500 font-medium">Access Denied</p>

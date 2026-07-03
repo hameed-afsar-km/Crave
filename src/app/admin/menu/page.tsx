@@ -15,7 +15,7 @@ import { logAction } from '@/lib/audit';
 import { validateImageMagicBytes } from '@/lib/validate-image';
 
 export default function AdminMenu() {
-  const { isAdmin, isMasterAdmin, isOutletStaff, user } = useAuth();
+  const { canManageMenu, isMasterAdmin, isOutletStaff, user } = useAuth();
   const { selectedOutletId, outlets, setSelectedOutletId, isAllOutlets } = useAdminOutlet();
   const [items, setItems] = useState<MenuItem[]>([]);
   const [search, setSearch] = useState('');
@@ -194,7 +194,7 @@ export default function AdminMenu() {
     }
   };
 
-  if (!isAdmin && !isOutletStaff) {
+  if (!canManageMenu) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-zinc-500 font-medium">Access Denied</p>
