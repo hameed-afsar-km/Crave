@@ -1,6 +1,18 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+/**
+ * Edge Runtime limitations prevent full Firebase Admin SDK usage here.
+ * This middleware handles ONLY:
+ *   - Redirecting unauthenticated users away from /admin to /auth
+ *   - Clearing expired auth cookies
+ *
+ * It does NOT authorize. Authorization is enforced at three levels:
+ *   1. Firebase Admin SDK verifyIdToken() in every API route (requireAuth)
+ *   2. Firestore Security Rules on every document read/write
+ *   3. Client-side permission guards on every admin page
+ */
+
 function decodeJwtPayload(token: string): Record<string, any> | null {
   try {
     const parts = token.split('.');
@@ -44,7 +56,7 @@ export function middleware(request: NextRequest) {
     return;
   }
 
-  // Decode JWT and check expiry — signature verification is done server-side by API routes
+  // Base64-decode only — signature verification is done server-side by API routes
   const payload = decodeJwtPayload(tokenCookie.value);
   if (!payload || isTokenExpired(payload)) {
     if (pathname.startsWith('/admin')) {
@@ -59,7 +71,6 @@ export function middleware(request: NextRequest) {
     return res;
   }
 
-  // Cookie role is never trusted — only Firebase token
   return;
 }
 

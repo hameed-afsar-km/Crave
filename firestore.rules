@@ -80,7 +80,16 @@ service cloud.firestore {
       );
       allow create: if isAuth();
       allow update: if isAuth() && (
-        (isStaffOrAbove() && (isAdmin() || canAccessOutlet(resource.data.outletId)))
+        (isStaffOrAbove() && (isAdmin() || canAccessOutlet(resource.data.outletId))
+          // Staff can only change operational fields — never server-owned fields
+          && (isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'customerId', 'customerName', 'customerPhone', 'customerEmail',
+            'amount', 'currency',
+            'items',
+            'paymentId', 'razorpayOrderId', 'paymentStatus',
+            'outletId',
+            'createdAt', 'pointsEarned'
+          ]) == false))
         ||
         // Customers may only cancel their own non-finalized order
         (
@@ -109,13 +118,17 @@ service cloud.firestore {
     }
 
     // ─── USERS ───────────────────────────────────────
-    // Self-service read/write for own profile
-    // Staff+ can read others; admin can write any
+    // Self-service read for own profile, staff can read others
+    // Self-update limited to profile fields only
+    // Admin can write any field on any user
 
     match /users/{userId} {
       allow read: if isAuth() && (isOwner(userId) || isStaffOrAbove());
-      allow create: if isAuth() && isOwner(userId);
-      allow update: if isAuth() && (isOwner(userId) || isAdmin());
+      allow create: if isAuth() && isOwner(userId) && request.resource.data.role == 'customer';
+      allow update: if isAuth() && (
+        isAdmin() ||
+        (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasAll(['name', 'phone', 'email', 'photoURL', 'address']))
+      );
       allow delete: if isAdmin();
     }
 
@@ -124,7 +137,7 @@ service cloud.firestore {
 
     match /auditLogs/{logId} {
       allow read: if isAdmin();
-      allow create: if isAuth();
+      allow create: if isStaffOrAbove();
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
@@ -134,7 +147,7 @@ service cloud.firestore {
 
     match /bugReports/{reportId} {
       allow read: if isAdmin() || (isAuth() && resource.data.userId == request.auth.uid);
-      allow create: if isAuth();
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
@@ -144,7 +157,7 @@ service cloud.firestore {
 
     match /pushSubscriptions/{subId} {
       allow read: if isAdmin() || (isAuth() && resource.data.userId == request.auth.uid);
-      allow create: if isAuth();
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
       allow delete: if isAuth() && resource.data.userId == request.auth.uid;
     }
 

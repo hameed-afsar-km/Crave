@@ -127,7 +127,9 @@ async function handlePaymentCaptured(adminDb: Firestore, payment: any, eventId: 
 
       transaction.update(lockRef, { orderId: orderRef.id });
     });
-  } catch {
+  } catch (err) {
+    console.error('Webhook handlePaymentCaptured transaction failed:', err);
+    throw err;
   }
 
   markEventProcessed(eventId);
