@@ -105,3 +105,26 @@ export async function requireAuth(request: Request): Promise<{ uid: string; emai
     role: decoded.role || 'customer',
   };
 }
+
+export async function requireStaff(request: Request): Promise<{ uid: string; email: string; role: string } | null> {
+  const auth = await requireAuth(request);
+  if (!auth) return null;
+
+  // Verify role from Firestore (not from token claims)
+  const adminDb = getAdminDb();
+  if (!adminDb) return null;
+
+  try {
+    const userDoc = await adminDb.collection('users').doc(auth.uid).get();
+    const userData = userDoc.data();
+    const role = userData?.role || 'customer';
+
+    if (role !== 'admin' && role !== 'outlet_manager' && role !== 'outlet_staff') {
+      return null;
+    }
+
+    return { ...auth, role };
+  } catch {
+    return null;
+  }
+}

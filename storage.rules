@@ -2,14 +2,21 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Menu item images — authenticated staff+ can upload
+    function isStaffOrAbove() {
+      return request.auth != null && (
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in
+        ['admin', 'outlet_manager', 'outlet_staff']
+      );
+    }
+
+    // Menu item images — staff+ can upload
     match /menu-items/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null
+      allow write: if isStaffOrAbove()
         && request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/jpeg|image/png|image/webp|image/avif')
         && fileName.matches('.*\\.(jpg|jpeg|png|webp|avif)$');
-      allow delete: if request.auth != null;
+      allow delete: if isStaffOrAbove();
     }
 
     // Deny all other uploads

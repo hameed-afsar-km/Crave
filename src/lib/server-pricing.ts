@@ -1,5 +1,4 @@
 import { getAdminDb } from '@/lib/firebase-admin';
-import { menuItems as staticMenuItems } from '@/lib/data';
 
 interface CartItemRequest {
   menuItemId: string;
@@ -26,23 +25,19 @@ const TAX_RATE = 0.18;
 
 async function fetchMenuItems(): Promise<Record<string, any>> {
   const adminDb = getAdminDb();
-  if (adminDb) {
-    try {
-      const snapshot = await adminDb.collection('menu-items').get();
-      const items: Record<string, any> = {};
-      snapshot.forEach((doc) => {
-        items[doc.id] = { id: doc.id, ...doc.data() };
-      });
-      if (Object.keys(items).length > 0) return items;
-    } catch {
-      // fall through to static data
-    }
+  if (!adminDb) {
+    throw new Error('Pricing unavailable: database not connected');
   }
-  // Fallback: static menu data
+
+  const snapshot = await adminDb.collection('menu-items').get();
+  if (snapshot.empty) {
+    throw new Error('Pricing unavailable: no menu items found');
+  }
+
   const items: Record<string, any> = {};
-  for (const item of staticMenuItems) {
-    items[item.id] = item;
-  }
+  snapshot.forEach((doc) => {
+    items[doc.id] = { id: doc.id, ...doc.data() };
+  });
   return items;
 }
 
@@ -52,7 +47,13 @@ export async function calculateOrderTotal(
 ): Promise<PricingResult> {
   const errors: string[] = [];
   const verified: VerifiedItem[] = [];
-  const menuItemMap = await fetchMenuItems();
+
+  let menuItemMap: Record<string, any>;
+  try {
+    menuItemMap = await fetchMenuItems();
+  } catch (e: any) {
+    return { items: [], subtotal: 0, tax: 0, total: 0, errors: [e.message || 'Pricing unavailable'] };
+  }
 
   for (const cartItem of cartItems) {
     const menuItem = menuItemMap[cartItem.menuItemId];

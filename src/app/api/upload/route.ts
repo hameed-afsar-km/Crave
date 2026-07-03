@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/firebase-admin';
+import { requireStaff } from '@/lib/firebase-admin';
 import { rateLimit } from '@/lib/rate-limiter';
 import { getStorage } from 'firebase-admin/storage';
 import { getApps } from 'firebase-admin/app';
@@ -99,9 +99,9 @@ function getImageDimensions(buffer: ArrayBuffer, mimeType: string): { width: num
 
 export async function POST(req: Request) {
   try {
-    const auth = await requireAuth(req);
+    const auth = await requireStaff(req);
     if (!auth) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Forbidden: staff role required' }, { status: 403 });
     }
 
     const rl = rateLimit(`upload:${auth.uid}`);

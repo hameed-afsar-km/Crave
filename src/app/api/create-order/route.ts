@@ -77,6 +77,12 @@ export async function POST(req: Request) {
         serverTotal: String(pricing.total),
         serverSubtotal: String(pricing.subtotal),
         itemCount: String(pricing.items.length),
+        customerName: String(body.customerName || '').slice(0, 100),
+        customerPhone: String(body.customerPhone || '').slice(0, 20),
+        pickupTime: String(body.pickupTime || '').slice(0, 10),
+        items: JSON.stringify(pricing.items.map((i: any) => ({
+          id: i.menuItemId, n: i.name, q: i.quantity, p: i.price
+        }))).slice(0, 500),
       },
     });
 

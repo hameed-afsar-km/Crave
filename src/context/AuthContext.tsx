@@ -83,23 +83,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const sessionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastActivityRef = useRef<number>(0);
 
-  const performSignOut = useCallback(() => {
-    if (auth?.currentUser) {
-      logAction('admin.logout', 'auth', auth.currentUser.uid, {
-        reason: 'user_initiated',
-        email: user?.email || '',
-      });
+  const performSignOut = useCallback(async () => {
+    try {
+      if (auth) {
+        await auth.signOut();
+      }
+    } catch {
+      // Continue cleanup even if signOut fails
     }
     setUser(null);
     clearAllStorage();
     clearAuthCookie();
-    if (auth?.currentUser) {
-      try {
-        const currentUser = auth.currentUser;
-        currentUser.getIdToken(true).catch(() => {});
-      } catch {}
-    }
-  }, [user?.email]);
+  }, []);
 
   const resetSessionTimer = useCallback(() => {
     lastActivityRef.current = Date.now();

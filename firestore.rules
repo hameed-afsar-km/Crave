@@ -69,7 +69,7 @@ service cloud.firestore {
     }
 
     // ─── ORDERS ──────────────────────────────────────
-    // Customers: read/write own orders
+    // Customers: read own orders; update only to cancel
     // Staff/Manager: orders for assigned outlet
     // Admin: everything
 
@@ -80,8 +80,22 @@ service cloud.firestore {
       );
       allow create: if isAuth();
       allow update: if isAuth() && (
-        (resource.data.customerId == request.auth.uid) ||
         (isStaffOrAbove() && (isAdmin() || canAccessOutlet(resource.data.outletId)))
+        ||
+        // Customers may only cancel their own non-finalized order
+        (
+          resource.data.customerId == request.auth.uid
+          && resource.data.status in ['received', 'preparing']
+          && request.resource.data.status == 'cancelled'
+          && request.resource.data.paymentStatus == resource.data.paymentStatus
+          && request.resource.data.amount == resource.data.amount
+          && request.resource.data.items == resource.data.items
+          && request.resource.data.pickupTime == resource.data.pickupTime
+          && request.resource.data.customerId == resource.data.customerId
+          && request.resource.data.outletId == resource.data.outletId
+          && request.resource.data.paymentId == resource.data.paymentId
+          && request.resource.data.createdAt == resource.data.createdAt
+        )
       );
       allow delete: if isAdmin();
     }
