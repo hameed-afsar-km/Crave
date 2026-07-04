@@ -33,7 +33,7 @@ export default function MenuPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#06060A] pt-28 pb-20 relative overflow-hidden">
+    <div className="min-h-screen bg-[#06060A] pt-32 md:pt-40 pb-20 relative overflow-hidden">
       {/* Ambient blobs */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(212,175,55,0.05)_0%,transparent_60%)] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[radial-gradient(circle,rgba(212,175,55,0.04)_0%,transparent_60%)] pointer-events-none" />

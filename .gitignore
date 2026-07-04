@@ -44,3 +44,6 @@ report.md
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# firestore
+firestore.rules

@@ -29,7 +29,7 @@ import { DEFAULT_OUTLETS, saveOutlets, setCachedOutlets } from '@/lib/outlets';
 import { sanitizeUserProfile } from '@/lib/sanitize';
 
 const PROTECTED_ORDER_FIELDS = ['paymentStatus', 'paymentId', 'amount', 'subtotal', 'tax', 'createdAt', 'completedAt'];
-const PROTECTED_USER_FIELDS = ['paymentStatus', 'paymentId', 'loyaltyPoints', 'amount', 'subtotal', 'tax', 'createdAt', 'completedAt', 'status', 'assignedOutletId', 'assignedOutletName', 'role'];
+const PROTECTED_USER_FIELDS = ['paymentStatus', 'paymentId', 'loyaltyPoints', 'amount', 'subtotal', 'tax', 'createdAt', 'completedAt', 'status', 'assignedOutletId', 'assignedOutletName'];
 
 function stripProtectedFields(data: Record<string, any>, protectedFields: string[]): Record<string, any> {
   const out = { ...data };
@@ -133,12 +133,19 @@ export function subscribeOutlets(callback: (outlets: Outlet[]) => void): () => v
   }
 
   const q = query(collection(db!, COLLECTIONS.OUTLETS));
-  return onSnapshot(q, (snapshot) => {
-    const outlets = snapshot.docs.map((d) => mapOutletDoc(d));
-    setCachedOutlets(outlets);
-    saveOutlets(outlets);
-    callback(outlets);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const outlets = snapshot.docs.map((d) => mapOutletDoc(d));
+      setCachedOutlets(outlets);
+      saveOutlets(outlets);
+      callback(outlets);
+    },
+    (error) => {
+      console.warn('[subscribeOutlets] Listener error:', error);
+      callback(DEFAULT_OUTLETS);
+    }
+  );
 }
 
 export async function saveOutletToFirestore(outlet: Outlet): Promise<void> {
@@ -233,10 +240,17 @@ export function subscribeOrders(
 
   const q = query(collection(db!, COLLECTIONS.ORDERS), ...qConstraints);
 
-  const unsubscribe = onSnapshot(q, (snapshot) => {
-    const orders = snapshot.docs.map((d) => mapOrderDoc(d)).filter((o) => !o.deleted);
-    callback(orders);
-  });
+  const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+      const orders = snapshot.docs.map((d) => mapOrderDoc(d)).filter((o) => !o.deleted);
+      callback(orders);
+    },
+    (error) => {
+      console.warn('[subscribeOrders] Listener error (likely permissions):', error);
+      callback([]);
+    }
+  );
 
   return unsubscribe;
 }
@@ -265,13 +279,20 @@ export function subscribeOrdersPaginated(
 
   const q = query(collection(db!, COLLECTIONS.ORDERS), ...buildQuery());
 
-  const unsubscribe = onSnapshot(q, (snapshot) => {
-    const orders = snapshot.docs.map((d) => mapOrderDoc(d)).filter((o) => !o.deleted);
-    if (snapshot.docs.length > 0) {
-      paginationCursors[key] = snapshot.docs[snapshot.docs.length - 1];
+  const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+      const orders = snapshot.docs.map((d) => mapOrderDoc(d)).filter((o) => !o.deleted);
+      if (snapshot.docs.length > 0) {
+        paginationCursors[key] = snapshot.docs[snapshot.docs.length - 1];
+      }
+      callback(orders);
+    },
+    (error) => {
+      console.warn('[subscribeOrdersPaginated] Listener error:', error);
+      callback([]);
     }
-    callback(orders);
-  });
+  );
 
   const loadMore = async (): Promise<boolean> => {
     const cursor = paginationCursors[key];
@@ -344,13 +365,20 @@ export function subscribeOrder(
   }
 
   const docRef = doc(db!, COLLECTIONS.ORDERS, orderId);
-  const unsubscribe = onSnapshot(docRef, (snapshot) => {
-    if (snapshot.exists()) {
-      callback(mapOrderDoc(snapshot));
-    } else {
+  const unsubscribe = onSnapshot(
+    docRef,
+    (snapshot) => {
+      if (snapshot.exists()) {
+        callback(mapOrderDoc(snapshot));
+      } else {
+        callback(null);
+      }
+    },
+    (error) => {
+      console.warn('[subscribeOrder] Listener error:', error);
       callback(null);
     }
-  });
+  );
 
   return unsubscribe;
 }
@@ -459,10 +487,17 @@ export function subscribeCustomerOrders(
     orderBy('createdAt', 'desc')
   );
 
-  return onSnapshot(q, (snapshot) => {
-    const orders = snapshot.docs.map((d) => mapOrderDoc(d));
-    callback(orders);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const orders = snapshot.docs.map((d) => mapOrderDoc(d));
+      callback(orders);
+    },
+    (error) => {
+      console.warn('[subscribeCustomerOrders] Listener error:', error);
+      callback([]);
+    }
+  );
 }
 
 // ─── MENU ITEMS ───
@@ -480,10 +515,17 @@ export function subscribeMenuItems(
     orderBy('createdAt', 'asc')
   );
 
-  return onSnapshot(q, (snapshot) => {
-    const items = snapshot.docs.map((d) => mapMenuItemDoc(d));
-    callback(items);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const items = snapshot.docs.map((d) => mapMenuItemDoc(d));
+      callback(items);
+    },
+    (error) => {
+      console.warn('[subscribeMenuItems] Listener error:', error);
+      callback([]);
+    }
+  );
 }
 
 export async function addMenuItem(item: Omit<MenuItem, 'id'>): Promise<string> {
@@ -549,16 +591,23 @@ export function subscribeSettings(
   }
 
   const docRef = doc(db!, COLLECTIONS.SETTINGS, 'store');
-  return onSnapshot(docRef, (snapshot) => {
-    if (snapshot.exists()) {
-      const firestoreData = snapshot.data() as Partial<StoreSettings>;
-      const merged = { ...loadSettings(), ...firestoreData, storeOpen: firestoreData.storeOpen ?? loadSettings().storeOpen };
-      saveLocalSettings(merged as StoreSettings);
-      callback(merged as StoreSettings);
-    } else {
+  return onSnapshot(
+    docRef,
+    (snapshot) => {
+      if (snapshot.exists()) {
+        const firestoreData = snapshot.data() as Partial<StoreSettings>;
+        const merged = { ...loadSettings(), ...firestoreData, storeOpen: firestoreData.storeOpen ?? loadSettings().storeOpen };
+        saveLocalSettings(merged as StoreSettings);
+        callback(merged as StoreSettings);
+      } else {
+        callback(loadSettings());
+      }
+    },
+    (error) => {
+      console.warn('[subscribeSettings] Listener error:', error);
       callback(loadSettings());
     }
-  });
+  );
 }
 
 export async function saveSettingsToFirestore(settings: StoreSettings): Promise<void> {
@@ -588,13 +637,20 @@ export function subscribeUser(
   }
 
   const docRef = doc(db!, COLLECTIONS.USERS, uid);
-  return onSnapshot(docRef, (snapshot) => {
-    if (snapshot.exists()) {
-      callback({ id: snapshot.id, ...snapshot.data() } as unknown as UserProfile);
-    } else {
+  return onSnapshot(
+    docRef,
+    (snapshot) => {
+      if (snapshot.exists()) {
+        callback({ id: snapshot.id, ...snapshot.data() } as unknown as UserProfile);
+      } else {
+        callback(null);
+      }
+    },
+    (error) => {
+      console.warn('[subscribeUser] Listener error:', error);
       callback(null);
     }
-  });
+  );
 }
 
 export async function saveUserProfile(uid: string, data: Partial<UserProfile>): Promise<void> {

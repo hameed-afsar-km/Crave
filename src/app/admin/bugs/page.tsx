@@ -55,26 +55,33 @@ export default function AdminBugs() {
   useEffect(() => {
     if (!db) { setLoading(false); return; }
     const q = query(collection(db, 'bugReports'), orderBy('createdAt', 'desc'));
-    const unsub = onSnapshot(q, (snapshot) => {
-      const entries = snapshot.docs.map((d) => {
-        const data = d.data();
-        return {
-          id: d.id,
-          description: data.description || '',
-          severity: data.severity || 'minor',
-          pageUrl: data.pageUrl || '',
-          userEmail: data.userEmail || '',
-          userName: data.userName || '',
-          status: data.status || 'open',
-          adminNotes: data.adminNotes || '',
-          createdAt: data.createdAt instanceof Timestamp
-            ? data.createdAt.toDate().toISOString()
-            : data.createdAt || '',
-        } as BugReport;
-      });
-      setReports(entries);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      q,
+      (snapshot) => {
+        const entries = snapshot.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            description: data.description || '',
+            severity: data.severity || 'minor',
+            pageUrl: data.pageUrl || '',
+            userEmail: data.userEmail || '',
+            userName: data.userName || '',
+            status: data.status || 'open',
+            adminNotes: data.adminNotes || '',
+            createdAt: data.createdAt instanceof Timestamp
+              ? data.createdAt.toDate().toISOString()
+              : data.createdAt || '',
+          } as BugReport;
+        });
+        setReports(entries);
+        setLoading(false);
+      },
+      (error) => {
+        console.warn('[bugs] onSnapshot error:', error);
+        setLoading(false);
+      }
+    );
     return unsub;
   }, []);
 

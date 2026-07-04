@@ -63,7 +63,7 @@ export default function OrdersPage() {
   if (loading || !user) return null;
 
   return (
-    <div className="min-h-screen bg-[#06060A] pt-28 pb-20 relative overflow-hidden">
+    <div className="min-h-screen bg-[#06060A] pt-32 md:pt-40 pb-20 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-[radial-gradient(circle,rgba(212,175,55,0.04)_0%,transparent_65%)] pointer-events-none" />
 
       <div className="max-w-3xl mx-auto px-5 sm:px-8 relative z-10">

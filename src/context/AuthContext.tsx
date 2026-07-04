@@ -144,6 +144,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Firestore is authoritative — always read profile
           const profile = await getUserProfile(firebaseUser.uid);
           if (profile) {
+            if (!profile.role) {
+              profile.role = (claimRole as UserProfile['role']) || 'customer';
+              saveUserProfile(firebaseUser.uid, profile);
+            }
             setUser(profile);
             setAuthCookie(profile);
           } else if (claimRole) {

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { X, ChevronRight } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 import { subscribeOrder, subscribeOrders, subscribeSettings } from '@/lib/firestore-service';
 
 interface OrderData {
@@ -48,14 +49,24 @@ export default function QueueWidget() {
   const [orderDismissed, setOrderDismissed] = useState(false);
   const allOrdersRef = useRef<any[]>([]);
   const prepTimeRef = useRef(10);
+  const { isStaff, user } = useAuth();
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 2800);
     return () => clearTimeout(t);
   }, []);
 
-  // Subscribe to all orders + settings for real queue calculation
+  // Subscribe to settings for prep time (public read)
   useEffect(() => {
+    const unsubSettings = subscribeSettings((settings) => {
+      prepTimeRef.current = settings.averagePrepTime;
+    });
+    return () => unsubSettings();
+  }, []);
+
+  // Subscribe to all orders for queue calculation (staff only)
+  useEffect(() => {
+    if (!isStaff) return;
     const unsubOrders = subscribeOrders((allOrders) => {
       allOrdersRef.current = allOrders;
       const active = allOrders.filter(
@@ -65,14 +76,12 @@ export default function QueueWidget() {
       const parallel = Math.max(1, Math.ceil(active.length / 2));
       setWait(Math.round((active.length * prepTimeRef.current) / parallel));
     });
-    const unsubSettings = subscribeSettings((settings) => {
-      prepTimeRef.current = settings.averagePrepTime;
-    });
-    return () => { unsubOrders(); unsubSettings(); };
-  }, []);
+    return () => unsubOrders();
+  }, [isStaff]);
 
   // Subscribe to the user's active order using last order ID from convenience storage
   useEffect(() => {
+    if (!user) return;
     const raw = localStorage.getItem('crave-last-order');
     if (raw) {
       try {
@@ -115,7 +124,7 @@ export default function QueueWidget() {
       } catch { /* ignore */ }
     }
     setActiveOrder(null);
-  }, []);
+  }, [user]);
 
   const hasActiveOrder = activeOrder && !orderDismissed;
 

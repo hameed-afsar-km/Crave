@@ -34,7 +34,7 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' https://checkout.razorpay.com https://*.firebaseio.com https://*.googleapis.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://*.firebaseio.com https://*.googleapis.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https://images.unsplash.com https://firebasestorage.googleapis.com *.googleapis.com *.gstatic.com",
               "font-src 'self' https://fonts.gstatic.com",
@@ -46,6 +46,9 @@ const nextConfig: NextConfig = {
               "report-to csp-endpoint",
             ].join('; '),
           },
+          { key: 'Link', value: '<https://firebasestorage.googleapis.com>; rel=preconnect' },
+          { key: 'Link', value: '<https://checkout.razorpay.com>; rel=preconnect' },
+          { key: 'Link', value: '<https://images.unsplash.com>; rel=dns-prefetch' },
           {
             key: 'Report-To',
             value: JSON.stringify({

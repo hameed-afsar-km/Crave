@@ -9,6 +9,7 @@ import { escapeHtml } from '@/lib/sanitize';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 import { subscribeOrder } from '@/lib/firestore-service';
 
 const statusSteps = ['received', 'preparing', 'ready', 'completed'];
@@ -38,6 +39,7 @@ const statusConfig: Record<string, { icon: React.ReactNode; label: string; sub: 
 
 export default function OrderTrackingPage() {
   const params = useParams();
+  const { user } = useAuth();
   const [orderInfo, setOrderInfo] = useState<any>(null);
   const [showReceipt, setShowReceipt] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
@@ -69,7 +71,7 @@ export default function OrderTrackingPage() {
   };
 
   useEffect(() => {
-    if (!params.id) return;
+    if (!params.id || !user) return;
     const orderId = params.id as string;
     const unsub = subscribeOrder(orderId, (order) => {
       if (order) {
@@ -77,7 +79,7 @@ export default function OrderTrackingPage() {
       }
     });
     return unsub;
-  }, [params.id]);
+  }, [params.id, user]);
 
   const order = orderInfo || {
     id: params.id,
@@ -146,7 +148,7 @@ export default function OrderTrackingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#06060A] pt-28 pb-20 relative overflow-hidden">
+    <div className="min-h-screen bg-[#06060A] pt-32 md:pt-40 pb-20 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-[radial-gradient(circle,rgba(212,175,55,0.05)_0%,transparent_65%)] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[350px] h-[350px] bg-[radial-gradient(circle,rgba(212,175,55,0.03)_0%,transparent_65%)] pointer-events-none" />
 

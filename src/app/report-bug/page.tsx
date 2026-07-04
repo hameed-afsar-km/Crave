@@ -89,8 +89,8 @@ export default function ReportBug() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F]">
-      <div className="max-w-lg mx-auto px-4 py-8">
+    <div className="min-h-screen bg-[#0A0A0F] pt-32 md:pt-40">
+      <div className="max-w-lg mx-auto px-4 pb-8">
         <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 transition-all mb-6">
           <ArrowLeft className="w-4 h-4" /> Back
         </Link>

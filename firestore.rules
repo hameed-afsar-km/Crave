@@ -127,7 +127,10 @@ service cloud.firestore {
       allow create: if isAuth() && isOwner(userId) && request.resource.data.role == 'customer';
       allow update: if isAuth() && (
         isAdmin() ||
-        (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasAll(['name', 'phone', 'email', 'photoURL', 'address']))
+        (isOwner(userId) && 
+          request.resource.data.diff(resource.data).affectedKeys().hasAll(['name', 'phone', 'email', 'photoURL', 'address', 'uid', 'updatedAt', 'role']) &&
+          (request.resource.data.role == 'customer' || request.resource.data.role == resource.data.role)
+        )
       );
       allow delete: if isAdmin();
     }

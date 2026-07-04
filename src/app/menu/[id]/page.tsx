@@ -60,7 +60,7 @@ export default function FoodDetailPage() {
   }, 0);
 
   return (
-    <div className="min-h-screen bg-[#06060A] pt-28 pb-20 relative overflow-hidden">
+    <div className="min-h-screen bg-[#06060A] pt-32 md:pt-40 pb-20 relative overflow-hidden">
       {/* Dynamic ambient lights */}
       <div className="absolute top-[20%] right-[-10%] w-[400px] h-[400px] bg-[radial-gradient(circle,rgba(212,175,55,0.06)_0%,transparent_70%)] pointer-events-none" />
       <div className="absolute bottom-[20%] left-[-10%] w-[400px] h-[400px] bg-[radial-gradient(circle,rgba(184,150,15,0.04)_0%,transparent_70%)] pointer-events-none" />

@@ -24,7 +24,7 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-[#06060A] pt-28 pb-16 flex items-center justify-center relative overflow-hidden">
+      <div className="min-h-screen bg-[#06060A] pt-32 md:pt-40 pb-16 flex items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_40%,rgba(212,175,55,0.04)_0%,transparent_65%)] pointer-events-none" />
         <motion.div
           initial={{ opacity: 0, y: 28 }}
@@ -55,7 +55,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#06060A] pt-28 pb-20 relative overflow-hidden">
+    <div className="min-h-screen bg-[#06060A] pt-32 md:pt-40 pb-20 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-[radial-gradient(circle,rgba(212,175,55,0.04)_0%,transparent_65%)] pointer-events-none" />
 
       <div className="max-w-6xl mx-auto px-5 sm:px-8 relative z-10">

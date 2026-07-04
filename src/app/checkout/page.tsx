@@ -228,7 +228,7 @@ export default function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-[#06060A] pt-28 flex items-center justify-center">
+      <div className="min-h-screen bg-[#06060A] pt-32 md:pt-40 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-bold text-white mb-3">Your cart is empty</h2>
           <Link href="/menu" className="text-gold font-bold hover:underline">Browse Menu</Link>
@@ -240,7 +240,7 @@ export default function CheckoutPage() {
   const inputClass = "w-full px-4 py-3.5 input-dark rounded-xl text-sm font-medium transition-all duration-300";
 
   return (
-    <div className="min-h-screen bg-[#06060A] pt-28 pb-20 relative overflow-hidden">
+    <div className="min-h-screen bg-[#06060A] pt-32 md:pt-40 pb-20 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(212,175,55,0.04)_0%,transparent_65%)] pointer-events-none" />
 
       <div className="max-w-4xl mx-auto px-5 sm:px-8 relative z-10">

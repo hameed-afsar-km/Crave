@@ -79,29 +79,36 @@ export default function AdminLogs() {
       orderBy('createdAt', 'desc'),
       limit(500)
     );
-    const unsub = onSnapshot(q, (snapshot) => {
-      const entries = snapshot.docs.map((d) => {
-        const data = d.data();
-        return {
-          id: d.id,
-          action: data.action || '',
-          targetType: data.targetType || '',
-          targetId: data.targetId || '',
-          details: data.details || {},
-          userEmail: data.userEmail || '',
-          userRole: data.userRole || '',
-          userName: data.userName || '',
-          outletId: data.outletId || '',
-          outletName: data.outletName || '',
-          createdAt: data.createdAt instanceof Timestamp
-            ? data.createdAt.toDate().toISOString()
-            : data.createdAt || '',
-          expireAt: data.expireAt,
-        } as LogEntry;
-      });
-      setLogs(entries);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      q,
+      (snapshot) => {
+        const entries = snapshot.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            action: data.action || '',
+            targetType: data.targetType || '',
+            targetId: data.targetId || '',
+            details: data.details || {},
+            userEmail: data.userEmail || '',
+            userRole: data.userRole || '',
+            userName: data.userName || '',
+            outletId: data.outletId || '',
+            outletName: data.outletName || '',
+            createdAt: data.createdAt instanceof Timestamp
+              ? data.createdAt.toDate().toISOString()
+              : data.createdAt || '',
+            expireAt: data.expireAt,
+          } as LogEntry;
+        });
+        setLogs(entries);
+        setLoading(false);
+      },
+      (error) => {
+        console.warn('[logs] onSnapshot error:', error);
+        setLoading(false);
+      }
+    );
     return unsub;
   }, []);
 

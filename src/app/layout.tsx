@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 
@@ -133,17 +132,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} antialiased dark`}
     >
       <body className="min-h-screen flex flex-col">
-        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-gold focus:text-black focus:font-bold focus:rounded-lg focus:outline-none">
-          Skip to main content
-        </a>
-        <link rel="preconnect" href="https://firebasestorage.googleapis.com" />
-        <link rel="preconnect" href="https://checkout.razorpay.com" />
-        <link rel="dns-prefetch" href="https://images.unsplash.com" />
-        <link rel="dns-prefetch" href="https://firebase.googleapis.com" />
-        <Script
+        <script
           id="schema-jsonld"
           type="application/ld+json"
-          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               '@context': 'https://schema.org',
@@ -239,7 +230,7 @@ export default function RootLayout({
               ],
             }),
           }}
-        />
+        ></script>
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>

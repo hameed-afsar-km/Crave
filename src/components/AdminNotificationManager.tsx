@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useSoundAlert } from '@/hooks/useSoundAlert';
+import { useAuth } from '@/context/AuthContext';
 import { subscribeOrders } from '@/lib/firestore-service';
 import {
   isPushSupported,
@@ -15,6 +16,7 @@ import {
 import { loadSettings } from '@/lib/store';
 
 export default function AdminNotificationManager() {
+  const { isStaff } = useAuth();
   const { notify: playSound } = useSoundAlert();
   const lastOrderCountRef = useRef(0);
   const initializedRef = useRef(false);
@@ -44,6 +46,7 @@ export default function AdminNotificationManager() {
   }, []);
 
   useEffect(() => {
+    if (!isStaff) return;
     const settings = loadSettings();
     if (!settings.notifyNewOrders) return;
 
@@ -71,7 +74,7 @@ export default function AdminNotificationManager() {
     });
 
     return unsub;
-  }, [playSound]);
+  }, [isStaff, playSound]);
 
   return null;
 }
