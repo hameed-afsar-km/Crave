@@ -76,6 +76,7 @@ export default function Navbar() {
         animate={{ y: 0, opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4"
+        aria-label="Main navigation"
       >
         {/* Scrolled shadow glow — only when scrolled */}
         <AnimatePresence>
@@ -101,7 +102,7 @@ export default function Navbar() {
         >
           <div className="flex items-center justify-between h-[40px] md:h-[44px]">
             {/* Left: Nav links (desktop) */}
-            <div className="hidden md:flex items-center gap-1">
+            <div className="hidden md:flex items-center gap-1" role="list">
               {navLinks.map((link, i) => {
                 const active = pathname === link.href;
                 return (
@@ -136,6 +137,9 @@ export default function Navbar() {
             {/* Left mobile: Hamburger */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-menu"
+              aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
               className="md:hidden p-1.5 -ml-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all"
             >
               <motion.div animate={{ rotate: mobileOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
@@ -242,12 +246,17 @@ export default function Navbar() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
             className="fixed inset-0 z-40"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
+            id="mobile-menu"
           >
             <div className="absolute inset-0 bg-[#0C0C14]/95 backdrop-blur-xl" onClick={closeMobile} />
 
             <div className="relative flex flex-col h-full pt-24 pb-10 px-6">
               <button
                 onClick={closeMobile}
+                aria-label="Close navigation menu"
                 className="absolute top-5 right-5 p-2 rounded-xl text-zinc-500 hover:text-white hover:bg-white/5 border border-white/5 transition-all"
               >
                 <X className="w-5 h-5" />

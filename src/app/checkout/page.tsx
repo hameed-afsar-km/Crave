@@ -116,7 +116,7 @@ export default function CheckoutPage() {
         key: razorpayOrder.key_id,
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
-        name: 'Crave Express',
+        name: 'Crave',
         description: `Order • ${formatPrice(serverTotal)}`,
         order_id: razorpayOrder.id,
         prefill: {

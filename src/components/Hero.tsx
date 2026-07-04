@@ -6,7 +6,7 @@ import { ArrowRight, Star, Clock } from 'lucide-react';
 
 export default function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden bg-[#06060A]">
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-[#06060A]" aria-label="Hero banner">
 
       {/* Background - right side */}
       <div

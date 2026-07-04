@@ -28,7 +28,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
         <PWARegister />
         {!splashDone && <SplashScreen onFinish={handleSplashFinish} />}
         {!isAuth && !isAdmin && <Navbar />}
-        <main className="flex-1">{children}</main>
+        <main id="main-content" className="flex-1">{children}</main>
         {!isAuth && !isAdmin && <QueueWidget />}
         {!isAuth && !isAdmin && <Footer />}
       </CartProvider>

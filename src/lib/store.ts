@@ -24,7 +24,7 @@ export interface StoreSettings {
 }
 
 const defaults: StoreSettings = {
-  storeName: 'Crave Express',
+  storeName: 'Crave',
   storeOpen: true,
   acceptingOrders: true,
   openingTime: '10:00',

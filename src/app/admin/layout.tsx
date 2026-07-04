@@ -1,7 +1,20 @@
+import type { Metadata } from 'next';
 import { ReactNode } from 'react';
 import AdminNav from './AdminNav';
 import AdminNotificationManager from '@/components/AdminNotificationManager';
 import { AdminOutletProvider } from '@/context/AdminOutletContext';
+
+export const metadata: Metadata = {
+  title: 'Admin',
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
+};
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (

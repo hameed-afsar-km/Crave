@@ -46,7 +46,7 @@ export default function Footer() {
         {/* Info columns */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-px mb-6 sm:mb-8">
           <div className="bg-[#06060A] rounded-lg sm:rounded-none p-4 sm:p-5 md:p-6 space-y-3">
-            <h4 className="text-[10px] font-bold text-gold uppercase tracking-widest">About</h4>
+            <h2 className="text-[10px] font-bold text-gold uppercase tracking-widest">About</h2>
             <p className="text-zinc-500 text-sm leading-relaxed">
               Freshly prepared local favorites near LIC Metro, Chennai. Hot, fresh, and ready when you arrive.
             </p>
@@ -64,7 +64,7 @@ export default function Footer() {
           </div>
 
           <div className="bg-[#06060A] rounded-lg sm:rounded-none p-4 sm:p-5 md:p-6 space-y-3">
-            <h4 className="text-[10px] font-bold text-gold uppercase tracking-widest">Links</h4>
+            <h2 className="text-[10px] font-bold text-gold uppercase tracking-widest">Links</h2>
             <ul className="space-y-2">
               {links.map(link => (
                 <li key={link.href}>
@@ -80,7 +80,7 @@ export default function Footer() {
           </div>
 
           <div className="bg-[#06060A] rounded-lg sm:rounded-none p-4 sm:p-5 md:p-6 space-y-3">
-            <h4 className="text-[10px] font-bold text-gold uppercase tracking-widest">Contact</h4>
+            <h2 className="text-[10px] font-bold text-gold uppercase tracking-widest">Contact</h2>
             <ul className="space-y-2.5">
               {contact.map(({ icon: Icon, text, href }) => (
                 <li key={text} className="flex items-start gap-2.5 text-zinc-500 text-sm">
@@ -98,7 +98,7 @@ export default function Footer() {
           </div>
 
           <div className="bg-[#06060A] rounded-lg sm:rounded-none p-4 sm:p-5 md:p-6 space-y-3">
-            <h4 className="text-[10px] font-bold text-gold uppercase tracking-widest">Hours</h4>
+            <h2 className="text-[10px] font-bold text-gold uppercase tracking-widest">Hours</h2>
             <ul className="space-y-2.5">
               {hours.map(({ day, time }) => (
                 <li key={day} className="flex items-start gap-2.5 text-sm">
@@ -129,7 +129,7 @@ export default function Footer() {
           viewport={{ once: true }}
           className="border-t border-white/[0.04] py-5 sm:py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-zinc-700 text-[11px] font-semibold text-center sm:text-left"
         >
-          <p>© {new Date().getFullYear()} Crave Express. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Crave. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <a href="#" className="hover:text-zinc-500 transition-colors">Privacy</a>
             <a href="#" className="hover:text-zinc-500 transition-colors">Terms</a>

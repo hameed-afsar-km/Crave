@@ -79,7 +79,7 @@ export default function ReportBug() {
         >
           <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
           <h1 className="text-xl font-bold text-white mb-2">Report Submitted</h1>
-          <p className="text-sm text-zinc-400 mb-6">Thank you for helping us improve Crave Express. Our team will review your report shortly.</p>
+          <p className="text-sm text-zinc-400 mb-6">Thank you for helping us improve Crave. Our team will review your report shortly.</p>
           <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-medium rounded-lg transition-all">
             Back to Home
           </Link>

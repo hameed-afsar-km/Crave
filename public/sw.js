@@ -118,7 +118,7 @@ self.addEventListener('push', (event) => {
     const data = event.data.json();
     const notification = data.notification || data;
     event.waitUntil(
-      self.registration.showNotification(notification.title || 'Crave Express', {
+      self.registration.showNotification(notification.title || 'Crave', {
         body: notification.body || '',
         icon: '/icons/icon-192.svg',
         badge: '/icons/icon-192.svg',
@@ -127,7 +127,7 @@ self.addEventListener('push', (event) => {
       })
     );
   } catch {
-    const title = 'Crave Express';
+    const title = 'Crave';
     const body = event.data.text();
     event.waitUntil(
       self.registration.showNotification(title, {

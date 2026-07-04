@@ -44,7 +44,7 @@ export default function AdminSettings() {
 
   const handleReset = () => {
     const defaults: StoreSettings = {
-      storeName: 'Crave Express',
+      storeName: 'Crave',
       storeOpen: true,
       acceptingOrders: true,
       openingTime: '10:00',

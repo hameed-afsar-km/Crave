@@ -16,7 +16,7 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
   const data = payload.data || {};
-  const notificationTitle = data.title || payload.notification?.title || 'Crave Express';
+  const notificationTitle = data.title || payload.notification?.title || 'Crave';
   const notificationOptions = {
     body: data.body || payload.notification?.body || '',
     icon: '/icons/icon-192.svg',

@@ -65,6 +65,7 @@ export default function FoodCard({ item, index = 0, compact }: FoodCardProps) {
                 onClick={handleAddToCart}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
+                aria-label={`Add ${item.name} to cart`}
                 className="absolute top-3 right-3 w-9 h-9 bg-black/70 backdrop-blur-md rounded-full flex items-center justify-center text-gold border border-gold/18 hover:bg-gold hover:text-white hover:border-gold hover:shadow-[0_0_12px_rgba(212,175,55,0.4)] transition-all duration-300"
               >
                 <Plus className="w-4 h-4" />
@@ -103,6 +104,7 @@ export default function FoodCard({ item, index = 0, compact }: FoodCardProps) {
                   onClick={handleAddToCart}
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.96 }}
+                  aria-label={`Add ${item.name} to cart`}
                   className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-gold to-amber-600 hover:from-amber-500 hover:to-gold text-white text-[11px] font-black rounded-full shadow-md shadow-gold/10 transition-all duration-300"
                 >
                   <ShoppingCart className="w-3.5 h-3.5" />
