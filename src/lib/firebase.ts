@@ -1,5 +1,5 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
+import { getAuth, Auth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 
@@ -24,6 +24,10 @@ try {
     app = getApps()[0];
   }
   auth = getAuth(app);
+  // Use localStorage instead of IndexedDB for broader compatibility (incognito, strict privacy modes)
+  setPersistence(auth, browserLocalPersistence).catch((err) => {
+    console.warn('Failed to set auth persistence:', err);
+  });
   db = getFirestore(app);
   storage = getStorage(app);
 } catch {

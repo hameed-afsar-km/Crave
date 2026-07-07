@@ -3,20 +3,26 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Globe, ArrowLeft, Flame, Lock } from 'lucide-react';
+import { Globe, ArrowLeft, Flame, Lock, ExternalLink } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { auth } from '@/lib/firebase';
 import { UserProfile } from '@/types';
 import { GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import Link from 'next/link';
 
+function navigateHome() {
+  window.location.href = '/';
+}
+
 function handleUser(
   result: { user: { uid: string; displayName: string | null; email: string | null; phoneNumber: string | null } },
-  signIn: (user: UserProfile) => void,
-  router: ReturnType<typeof useRouter>
+  signIn: (user: UserProfile) => void
 ) {
   const firebaseUser = result.user;
-  if (!firebaseUser.email) return 'Google account must have an email address.';
+  if (!firebaseUser.email) {
+    console.warn('[Auth] No email in Firebase user');
+    return 'Google account must have an email address.';
+  }
   signIn({
     uid: firebaseUser.uid,
     name: firebaseUser.displayName || 'Google User',
@@ -24,69 +30,133 @@ function handleUser(
     phone: firebaseUser.phoneNumber || '',
     role: 'customer',
   });
-  router.push('/');
   return null;
 }
 
 export default function AuthPage() {
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signIn, user } = useAuth();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [useRedirect, setUseRedirect] = useState(false);
+  const [showRedirect, setShowRedirect] = useState(false);
 
-  // Handle redirect result on mount
+  // Log URL hash + search for debugging OAuth redirect
   useEffect(() => {
-    if (!auth) return;
-    getRedirectResult(auth).then((result) => {
-      if (result) {
-        const err = handleUser(result, signIn, router);
+    console.log('[Auth] Page mount — hash:', window.location.hash.slice(0, 120), 'search:', window.location.search.slice(0, 120));
+  }, []);
+
+  // Process redirect result on mount
+  useEffect(() => {
+    if (!auth) {
+      console.warn('[Auth] auth is null — Firebase not initialized');
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (cancelled) return;
+        if (result) {
+          console.log('[Auth] Redirect result obtained:', result.user?.email);
+          const err = handleUser(result, signIn);
+          if (err) {
+            setError(err);
+          } else {
+            navigateHome();
+          }
+          return;
+        }
+      } catch (err: unknown) {
+        if (cancelled) return;
+        const fbErr = err as { code?: string; message?: string };
+        console.error('[Auth] getRedirectResult error:', fbErr?.code, fbErr?.message);
+      }
+
+      // Fallback: redirect may have been consumed by onAuthStateChanged internally.
+      // Check if Firebase already has the user authenticated.
+      if (auth.currentUser) {
+        console.log('[Auth] User already authenticated via currentUser — handling');
+        const err = handleUser({ user: auth.currentUser }, signIn);
         if (err) setError(err);
+        else navigateHome();
       }
-    }).catch((err: unknown) => {
-      const fbErr = err as { code?: string; message?: string };
-      if (fbErr?.code !== 'auth/internal-error') {
-        console.error('[Auth] Redirect result:', fbErr?.code, fbErr?.message);
-      }
-    });
-  }, [signIn, router]);
+    })();
+
+    return () => { cancelled = true; };
+  }, [signIn]);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (user) {
+      console.log('[Auth] User already set — redirecting');
+      router.replace('/');
+    }
+  }, [user, router]);
 
   const handleGoogleSignIn = async () => {
+    setError('');
+    setShowRedirect(false);
+    if (!auth) {
+      setError('Firebase Auth is not initialized. Check your .env.local configuration.');
+      return;
+    }
+
+    const provider = new GoogleAuthProvider();
+    setLoading(true);
+
+    // Try popup first (does not rely on IndexedDB for state persistence)
     try {
-      setError('');
-      if (!auth) {
-        setError('Firebase Auth is not initialized. Check your .env.local configuration.');
-        return;
-      }
-      setLoading(true);
-      const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      const err = handleUser(result, signIn, router);
+      const err = handleUser(result, signIn);
       if (err) setError(err);
-    } catch (err: unknown) {
-      const fbErr = err as { code?: string; message?: string; customData?: Record<string, unknown> };
-      // Popup sign-in fails when third-party cookies are blocked (common in incognito/privacy modes).
-      // Fall back to redirect immediately — no need to show the user an error.
-      if (fbErr?.code === 'auth/internal-error' || fbErr?.code === 'auth/popup-blocked') {
-        try { await handleGoogleRedirect(); } catch { /* redirect navigates away */ }
+      return;
+    } catch (popupErr: unknown) {
+      const fbErr = popupErr as { code?: string; message?: string };
+      console.log('[Auth] Popup failed:', fbErr?.code, fbErr?.message);
+      // Fall back to redirect for known popup issues
+      if (
+        fbErr?.code === 'auth/popup-blocked' ||
+        fbErr?.code === 'auth/internal-error' ||
+        fbErr?.code === 'auth/cancelled-popup-request'
+      ) {
+        try {
+          await signInWithRedirect(auth, provider);
+        } catch (redirectErr: unknown) {
+          const rErr = redirectErr as { code?: string; message?: string };
+          console.error('[Auth] Redirect also failed:', rErr?.code, rErr?.message);
+          setError(`Sign-in failed (${rErr?.code || 'unknown'}).`);
+          setShowRedirect(true);
+        }
         return;
       }
-      console.error('[Auth] Error:', fbErr?.code, fbErr?.message, fbErr?.customData || '');
+      // Unexpected error — show message
+      console.error('[Auth] Popup error:', fbErr?.code, fbErr?.message);
       setError(`Sign-in failed (${fbErr?.code || 'unknown'}).`);
-      setUseRedirect(true);
+      setShowRedirect(true);
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleRedirect = async () => {
+    setError('');
     if (!auth) {
       setError('Firebase Auth is not initialized.');
       return;
     }
-    setError('');
+    setLoading(true);
     const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider);
+    try {
+      await signInWithRedirect(auth, provider);
+    } catch (err: unknown) {
+      const fbErr = err as { code?: string; message?: string };
+      console.error('[Auth] signInWithRedirect error:', fbErr?.code, fbErr?.message);
+      setError(`Sign-in failed (${fbErr?.code || 'unknown'}).`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -191,17 +261,18 @@ export default function AuthPage() {
               {loading ? 'Signing in...' : 'Continue with Google'}
             </motion.button>
 
-            {useRedirect && (
+            {showRedirect && (
               <motion.button
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 whileHover={{ scale: 1.015 }}
                 whileTap={{ scale: 0.985 }}
                 onClick={handleGoogleRedirect}
+                disabled={loading}
                 className="w-full flex items-center justify-center gap-3 py-3 border border-white/8 bg-white/3 hover:bg-gold/5 hover:border-gold/25 rounded-2xl font-bold text-xs text-zinc-400 transition-all duration-300 mt-3"
               >
-                <Globe className="w-3.5 h-3.5 text-zinc-500" />
-                Try alternate sign-in (redirect)
+                <ExternalLink className="w-3.5 h-3.5 text-zinc-500" />
+                Use redirect sign-in (if popup is blocked)
               </motion.button>
             )}
 
