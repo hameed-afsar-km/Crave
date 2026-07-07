@@ -25,9 +25,8 @@ export default function Hero() {
       </div>
 
       {/* Content */}
-      <motion.div
+      <div
         className="relative z-10 text-left px-5 sm:px-10 md:px-14 max-w-2xl pt-32 md:pt-40 ml-0 md:ml-8 lg:ml-16"
-        suppressHydrationWarning
       >
         {/* Top bar */}
         <motion.div
@@ -108,7 +107,7 @@ export default function Hero() {
             View Menu
           </Link>
         </motion.div>
-      </motion.div>
+      </div>
     </section>
   );
 }

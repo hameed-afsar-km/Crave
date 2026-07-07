@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 /**
  * Edge Runtime limitations prevent full Firebase Admin SDK usage here.
- * This middleware handles ONLY:
+ * This proxy handles ONLY:
  *   - Redirecting unauthenticated users away from /admin to /auth
  *   - Clearing expired auth cookies
  *
@@ -36,7 +36,7 @@ function clearAuthCookies(res: NextResponse) {
   res.cookies.set('crave-user', '', { maxAge: 0, path: '/', sameSite: 'strict', secure: true });
 }
 
-export function middleware(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (!pathname.startsWith('/admin') && !pathname.startsWith('/checkout') && !pathname.startsWith('/orders') && !pathname.startsWith('/profile') && !pathname.startsWith('/rewards')) {

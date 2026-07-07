@@ -54,6 +54,7 @@ export default function AdminDashboard() {
   const [localRewards, setLocalRewards] = useState(settings.rewards || []);
 
   useEffect(() => {
+    if (!canAccessDashboard) return;
     setSeeded(isSeeded());
     const outletFilter = !isAllOutlets && selectedOutletId ? selectedOutletId : undefined;
     const unsubOrders = subscribeOrders((firestoreOrders) => {

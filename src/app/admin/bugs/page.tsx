@@ -53,6 +53,7 @@ export default function AdminBugs() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isMasterAdmin) return;
     if (!db) { setLoading(false); return; }
     const q = query(collection(db, 'bugReports'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(

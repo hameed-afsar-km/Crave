@@ -28,6 +28,7 @@ export default function AdminAnalytics() {
   const [data, setData] = useState<{ orders: any[]; revenue: number }>({ orders: [], revenue: 0 });
 
   useEffect(() => {
+    if (!canManageAnalytics) return;
     const unsub = subscribeOrders((firestoreOrders) => {
       const orders = isAllOutlets ? firestoreOrders : firestoreOrders.filter((o: any) => o.outletId === selectedOutletId);
       const revenue = orders.reduce((s: number, o: any) => s + (o.amount || 0), 0);

@@ -31,6 +31,7 @@ export default function AdminMenu() {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
+    if (!canManageMenu) return;
     const unsub = subscribeMenuItems((firestoreItems) => {
       setItems(firestoreItems);
     });
@@ -47,6 +48,7 @@ export default function AdminMenu() {
   const [itemOrderCounts, setItemOrderCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
+    if (!canManageMenu) return;
     const unsub = subscribeOrders((firestoreOrders) => {
       const counts: Record<string, number> = {};
       firestoreOrders.forEach((o: any) => {
@@ -58,7 +60,7 @@ export default function AdminMenu() {
       setItemOrderCounts(counts);
     });
     return unsub;
-  }, []);
+  }, [canManageMenu]);
 
   const maxOrders = Math.max(...Object.values(itemOrderCounts), 1);
 

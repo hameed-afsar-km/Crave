@@ -73,6 +73,7 @@ export default function AdminLogs() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isMasterAdmin) return;
     if (!db) { setLoading(false); return; }
     const q = query(
       collection(db, 'auditLogs'),

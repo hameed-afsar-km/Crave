@@ -63,6 +63,7 @@ export default function KitchenPage() {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
+    if (!canManageKitchen) return;
     const outletFilter = !isAllOutlets && selectedOutletId ? selectedOutletId : undefined;
     const unsub = subscribeOrders((firestoreOrders) => {
       const mapped = firestoreOrders.map((o: any) => ({

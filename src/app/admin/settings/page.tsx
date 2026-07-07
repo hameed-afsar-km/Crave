@@ -24,6 +24,7 @@ export default function AdminSettings() {
   const [showClearDataConfirm, setShowClearDataConfirm] = useState(false);
 
   useEffect(() => {
+    if (!canManageSettings) return;
     const unsub = subscribeSettings((firestoreSettings) => {
       setForm(firestoreSettings);
     });
@@ -76,11 +77,12 @@ export default function AdminSettings() {
   const maxSlotsToShow = 8;
 
   useEffect(() => {
+    if (!canManageSettings) return;
     const unsub = subscribeOrders((firestoreOrders) => {
       setOrders(firestoreOrders);
     });
     return unsub;
-  }, []);
+  }, [canManageSettings]);
 
   if (!canManageSettings) {
     return (

@@ -48,6 +48,7 @@ export default function AdminOrders() {
   const presetReasons = ['Out of stock', 'Customer request', 'Duplicate order', 'Other'];
 
   useEffect(() => {
+    if (!canManageOrders) return;
     const outletFilter = !isAllOutlets && selectedOutletId ? selectedOutletId : undefined;
     const unsub = subscribeOrders((firestoreOrders) => {
       const mapped = firestoreOrders.map((o: any) => ({
