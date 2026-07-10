@@ -663,7 +663,8 @@ export async function saveUserProfile(uid: string, data: Partial<UserProfile>): 
   try {
     const docRef = doc(db!, COLLECTIONS.USERS, uid);
     await setDoc(docRef, { ...sanitized, uid, updatedAt: serverTimestamp() }, { merge: true });
-  } catch {
+  } catch (err) {
+    console.error('[saveUserProfile] Firestore write failed:', err);
     throw new Error('Failed to save profile. Please try again.');
   }
 }

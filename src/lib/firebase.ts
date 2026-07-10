@@ -1,6 +1,6 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { getFirestore, Firestore, setLogLevel } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 const firebaseConfig = {
@@ -29,6 +29,7 @@ try {
     console.warn('Failed to set auth persistence:', err);
   });
   db = getFirestore(app);
+  setLogLevel('warn');
   storage = getStorage(app);
 } catch {
   console.warn('Firebase initialization failed. Using mock data.');

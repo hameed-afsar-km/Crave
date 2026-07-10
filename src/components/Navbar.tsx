@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation';
 import { ShoppingCart, Menu, X, User, LogOut, LayoutDashboard, Package, Bug } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import LoginModal from '@/components/LoginModal';
 import { cn } from '@/lib/utils';
 import { loadSettings } from '@/lib/store';
 
@@ -32,9 +33,14 @@ const statusBg = {
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
   const pathname = usePathname();
   const { itemCount } = useCart();
   const { user, signOut, isStaff } = useAuth();
+
+  useEffect(() => {
+    if (user) setLoginOpen(false);
+  }, [user]);
 
   const handleScroll = useCallback(() => {
     setScrolled(window.scrollY > 60);
@@ -216,12 +222,12 @@ export default function Navbar() {
                     <User className="w-[18px] h-[18px]" />
                   </IconBtn>
                 ) : (
-                  <Link
-                    href="/auth"
+                  <button
+                    onClick={() => setLoginOpen(true)}
                     className="px-3 py-1.5 text-xs font-bold tracking-wider rounded-lg text-zinc-400 hover:text-gold hover:bg-gold/8 transition-all uppercase"
                   >
                     Sign In
-                  </Link>
+                  </button>
                 )}
               </div>
             </div>
@@ -360,13 +366,12 @@ export default function Navbar() {
                       </button>
                     </>
                   ) : (
-                    <Link
-                      href="/auth"
-                      onClick={closeMobile}
+                    <button
+                      onClick={() => { closeMobile(); setLoginOpen(true); }}
                       className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-gold to-amber-500 text-white font-bold text-sm transition-all hover:brightness-110"
                     >
                       Sign In to Order
-                    </Link>
+                    </button>
                   )}
                 </div>
               </motion.div>
@@ -374,6 +379,8 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
     </>
   );
 }

@@ -146,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (profile) {
             if (!profile.role) {
               profile.role = (claimRole as UserProfile['role']) || 'customer';
-              saveUserProfile(firebaseUser.uid, profile);
+              saveUserProfile(firebaseUser.uid, profile).catch(() => {});
             }
             setUser(profile);
             setAuthCookie(profile);
@@ -161,7 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             };
             setUser(minimal);
             setAuthCookie(minimal);
-            saveUserProfile(firebaseUser.uid, minimal);
+            saveUserProfile(firebaseUser.uid, minimal).catch(() => {});
           } else {
             const minimal: UserProfile = {
               uid: firebaseUser.uid,
@@ -172,7 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             };
             setUser(minimal);
             setAuthCookie(minimal);
-            saveUserProfile(firebaseUser.uid, minimal);
+            saveUserProfile(firebaseUser.uid, minimal).catch(() => {});
           }
           await setTokenCookie();
         } catch {
@@ -191,7 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userData);
     setAuthCookie(userData);
     if (userData.uid) {
-      saveUserProfile(userData.uid, userData);
+      saveUserProfile(userData.uid, userData).catch(() => {});
     }
     resetSessionTimer();
   }, [resetSessionTimer]);
@@ -206,7 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const updated = { ...prev, ...data };
       setAuthCookie(updated);
       if (updated.uid) {
-        saveUserProfile(updated.uid, updated);
+        saveUserProfile(updated.uid, updated).catch(() => {});
       }
       return updated;
     });
