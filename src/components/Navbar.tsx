@@ -8,7 +8,6 @@ import { usePathname } from 'next/navigation';
 import { ShoppingCart, Menu, X, User, LogOut, LayoutDashboard, Package, Bug } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import LoginModal from '@/components/LoginModal';
 import { cn } from '@/lib/utils';
 import { loadSettings } from '@/lib/store';
 
@@ -33,14 +32,9 @@ const statusBg = {
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
   const pathname = usePathname();
   const { itemCount } = useCart();
   const { user, signOut, isStaff } = useAuth();
-
-  useEffect(() => {
-    if (user) setLoginOpen(false);
-  }, [user]);
 
   const handleScroll = useCallback(() => {
     setScrolled(window.scrollY > 60);
@@ -183,21 +177,33 @@ export default function Navbar() {
               {/* Icons */}
               <div className="flex items-center gap-0.5">
                 {isStaff && (
-                  <IconBtn href="/admin/dashboard" title="Dashboard">
+                  <Link
+                    href="/admin/dashboard"
+                    title="Dashboard"
+                    className="p-1 rounded-lg text-zinc-500 hover:text-gold hover:bg-gold/8 transition-all"
+                  >
                     <LayoutDashboard className="w-[18px] h-[18px]" />
-                  </IconBtn>
+                  </Link>
                 )}
 
                 {user && (
-                  <IconBtn href="/orders" title="Orders">
+                  <Link
+                    href="/orders"
+                    title="Orders"
+                    className="p-1 rounded-lg text-zinc-500 hover:text-gold hover:bg-gold/8 transition-all"
+                  >
                     <Package className="w-[18px] h-[18px]" />
-                  </IconBtn>
+                  </Link>
                 )}
 
                 {user && (
-                  <IconBtn href="/report-bug" title="Report a Bug">
+                  <Link
+                    href="/report-bug"
+                    title="Report a Bug"
+                    className="p-1 rounded-lg text-zinc-500 hover:text-gold hover:bg-gold/8 transition-all"
+                  >
                     <Bug className="w-[18px] h-[18px]" />
-                  </IconBtn>
+                  </Link>
                 )}
 
                 <Link
@@ -217,18 +223,13 @@ export default function Navbar() {
                   )}
                 </Link>
 
-                {user ? (
-                  <IconBtn href="/profile" title="Profile">
-                    <User className="w-[18px] h-[18px]" />
-                  </IconBtn>
-                ) : (
-                  <button
-                    onClick={() => setLoginOpen(true)}
-                    className="px-3 py-1.5 text-xs font-bold tracking-wider rounded-lg text-zinc-400 hover:text-gold hover:bg-gold/8 transition-all uppercase"
-                  >
-                    Sign In
-                  </button>
-                )}
+                <Link
+                  href={user ? '/profile' : '/auth'}
+                  title={user ? 'Profile' : 'Sign In'}
+                  className="p-1 rounded-lg text-zinc-500 hover:text-gold hover:bg-gold/8 transition-all"
+                >
+                  <User className="w-[18px] h-[18px]" />
+                </Link>
               </div>
             </div>
           </div>
@@ -366,12 +367,13 @@ export default function Navbar() {
                       </button>
                     </>
                   ) : (
-                    <button
-                      onClick={() => { closeMobile(); setLoginOpen(true); }}
+                    <Link
+                      href="/auth"
+                      onClick={closeMobile}
                       className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-gold to-amber-500 text-white font-bold text-sm transition-all hover:brightness-110"
                     >
                       Sign In to Order
-                    </button>
+                    </Link>
                   )}
                 </div>
               </motion.div>
@@ -379,28 +381,6 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
     </>
-  );
-}
-
-function IconBtn({
-  href,
-  title,
-  children,
-}: {
-  href: string;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      title={title}
-      className="p-1 rounded-lg text-zinc-500 hover:text-gold hover:bg-gold/8 transition-all"
-    >
-      {children}
-    </Link>
   );
 }

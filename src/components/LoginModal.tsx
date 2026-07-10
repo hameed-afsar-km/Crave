@@ -1,14 +1,11 @@
-'use client';
-
-import { useState, useCallback } from 'react';
+import { useState, useCallback, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Lock, Globe, AlertCircle, Eye, EyeOff, UserPlus, LogIn } from 'lucide-react';
+import { X, Mail, Lock, Eye, EyeOff, UserPlus, LogIn, Globe, AlertCircle } from 'lucide-react';
 import { auth } from '@/lib/firebase';
+import { signInWithGoogle } from '@/lib/google-auth';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup,
-  GoogleAuthProvider,
 } from 'firebase/auth';
 
 interface LoginModalProps {
@@ -48,7 +45,7 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
     setMode((m) => (m === 'signin' ? 'signup' : 'signin'));
   }, []);
 
-  const handleEmailAuth = async (e: React.FormEvent) => {
+  const handleEmailAuth = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -91,11 +88,9 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
 
   const handleGoogleAuth = async () => {
     setError('');
-    if (!auth) { setError('Auth is not initialized.'); return; }
     setLoading(true);
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      await signInWithGoogle();
       handleClose();
     } catch (err: unknown) {
       const fbErr = err as { code?: string; message?: string };

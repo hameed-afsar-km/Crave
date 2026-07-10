@@ -32,6 +32,19 @@ export async function showBrowserNotification(title: string, options?: Record<st
 
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (!('serviceWorker' in navigator)) return null;
+  
+  if (process.env.NODE_ENV === 'development') {
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const reg of registrations) {
+        await reg.unregister();
+      }
+    } catch (err) {
+      console.warn('Failed to unregister service workers in dev:', err);
+    }
+    return null;
+  }
+
   try {
     const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
     localStorage.setItem(REGISTRATION_KEY, 'true');
