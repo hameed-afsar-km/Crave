@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireStaff } from '@/lib/firebase-admin';
 import { rateLimit } from '@/lib/rate-limiter';
-import { uploadToCloudinary } from '@/lib/cloudinary';
+import { uploadToCloudinaryServer } from '@/lib/cloudinary-admin';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.avif'];
@@ -151,7 +151,7 @@ export async function POST(req: Request) {
       }
     }
 
-    const result = await uploadToCloudinary(Buffer.from(buffer), 'crave/menu-items');
+    const result = await uploadToCloudinaryServer(Buffer.from(buffer), 'crave/menu-items');
 
     return NextResponse.json({
       url: result.url,

@@ -74,10 +74,11 @@ service cloud.firestore {
     // Admin: everything
 
     match /orders/{orderId} {
-      allow read: if isAuth() && (
+      allow get: if isAuth() && (
         resource.data.customerId == request.auth.uid ||
         (isStaffOrAbove() && (isAdmin() || canAccessOutlet(resource.data.outletId)))
       );
+      allow list: if isAuth() && isStaffOrAbove();
       allow create: if isAuth();
       allow update: if isAuth() && (
         (isStaffOrAbove() && (isAdmin() || canAccessOutlet(resource.data.outletId))
@@ -149,7 +150,8 @@ service cloud.firestore {
     // Authenticated create, admin read/manage, author can read own
 
     match /bugReports/{reportId} {
-      allow read: if isAdmin() || (isAuth() && resource.data.userId == request.auth.uid);
+      allow get: if isAdmin() || (isAuth() && resource.data.userId == request.auth.uid);
+      allow list: if isAdmin();
       allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
       allow update: if isAdmin();
       allow delete: if isAdmin();
@@ -159,7 +161,8 @@ service cloud.firestore {
     // Tied to user — self-manage, admin read
 
     match /pushSubscriptions/{subId} {
-      allow read: if isAdmin() || (isAuth() && resource.data.userId == request.auth.uid);
+      allow get: if isAdmin() || (isAuth() && resource.data.userId == request.auth.uid);
+      allow list: if isAdmin();
       allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
       allow delete: if isAuth() && resource.data.userId == request.auth.uid;
     }

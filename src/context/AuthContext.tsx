@@ -36,26 +36,19 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 function setAuthCookie(userData: UserProfile) {
-  // Only store essential non-sensitive data in cookie
-  // User roles, outlet assignments, and other permissions must come from Firebase token
   const payload = JSON.stringify({
     uid: userData.uid,
     email: userData.email,
   });
-  document.cookie = `crave-user=${encodeURIComponent(payload)};path=/;max-age=2592000;SameSite=Strict;Secure`;
+  const isSecure = window.location.protocol === 'https:';
+  document.cookie = `crave-user=${encodeURIComponent(payload)};path=/;max-age=2592000;SameSite=Lax${isSecure ? ';Secure' : ''}`;
 }
 
 function clearAuthCookie() {
-  const host = window.location.hostname;
-  const domainAttrs = host ? ['', `domain=${host}`] : [''];
-  const paths = ['/', '/auth', '/admin', '/checkout', '/orders', '/profile'];
+  const isSecure = window.location.protocol === 'https:';
+  const samesite = 'Lax';
   for (const suffix of ['crave-user', 'crave-token', 'crave-session']) {
-    for (const domainAttr of domainAttrs) {
-      for (const path of paths) {
-        const domainPart = domainAttr ? `;${domainAttr}` : '';
-        document.cookie = `${suffix}=;path=${path}${domainPart};max-age=0;SameSite=Strict;Secure`;
-      }
-    }
+    document.cookie = `${suffix}=;path=/;max-age=0;SameSite=${samesite}${isSecure ? ';Secure' : ''}`;
   }
 }
 
@@ -63,7 +56,8 @@ async function setTokenCookie() {
   if (!auth) return;
   try {
     const token = await getIdToken(auth.currentUser!, true);
-    document.cookie = `crave-token=${token};path=/;max-age=1800;SameSite=Strict;Secure`;
+    const isSecure = window.location.protocol === 'https:';
+    document.cookie = `crave-token=${token};path=/;max-age=1800;SameSite=Lax${isSecure ? ';Secure' : ''}`;
   } catch {
     clearAuthCookie();
   }
@@ -174,10 +168,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setAuthCookie(minimal);
             saveUserProfile(firebaseUser.uid, minimal).catch(() => {});
           }
-          await setTokenCookie();
         } catch {
-          // Token/claims unavailable — fall through, loading stays true until timeout
+          // Profile loading may fail — continue anyway
         }
+        await setTokenCookie();
         setLoading(false);
       } else {
         clearAuthCookie();

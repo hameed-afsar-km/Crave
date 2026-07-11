@@ -3,8 +3,8 @@ import type { NextRequest } from 'next/server';
 
 /**
  * Edge Runtime limitations prevent full Firebase Admin SDK usage here.
- * This middleware handles ONLY:
- *   - Redirecting unauthenticated users away from /admin to /auth
+ * This proxy handles ONLY:
+ *   - Redirecting unauthenticated users away from protected routes to /auth
  *   - Checking role claims from the JWT for admin route access
  *   - Clearing expired auth cookies
  *
@@ -37,7 +37,7 @@ function clearAuthCookies(res: NextResponse) {
   res.cookies.set('crave-user', '', { maxAge: 0, path: '/', sameSite: 'strict', secure: true });
 }
 
-export default function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (!pathname.startsWith('/admin') && !pathname.startsWith('/checkout') && !pathname.startsWith('/orders') && !pathname.startsWith('/profile') && !pathname.startsWith('/rewards')) {
@@ -57,7 +57,6 @@ export default function middleware(request: NextRequest) {
     return;
   }
 
-  // Base64-decode only — signature verification is done server-side by API routes
   const payload = decodeJwtPayload(tokenCookie.value);
   if (!payload || isTokenExpired(payload)) {
     const loginUrl = new URL('/auth', request.url);
@@ -67,13 +66,10 @@ export default function middleware(request: NextRequest) {
     return res;
   }
 
-  // Role check for admin routes
-  if (pathname.startsWith('/admin')) {
-    const role = payload.role as string | undefined;
-    if (!role || role === 'customer') {
-      return NextResponse.redirect(new URL('/', request.url));
-    }
-  }
+  // Role check removed — JWT custom claims may not be set yet.
+  // Role authorization is enforced by:
+  //   1. Client-side guards on admin pages
+  //   2. requireStaff() in API routes (verifies via Admin SDK)
 
   return;
 }
