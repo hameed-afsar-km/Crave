@@ -190,9 +190,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback((userData: UserProfile) => {
     setUser(userData);
     setAuthCookie(userData);
-    if (userData.uid) {
-      saveUserProfile(userData.uid, userData).catch(() => {});
-    }
     resetSessionTimer();
   }, [resetSessionTimer]);
 

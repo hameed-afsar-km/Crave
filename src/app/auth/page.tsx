@@ -37,7 +37,6 @@ export default function AuthPage() {
         name: u.displayName,
         email: u.email,
         phone: u.phoneNumber,
-        role: 'customer',
       });
       router.replace('/');
     } catch (err: any) {
@@ -64,7 +63,6 @@ export default function AuthPage() {
         name: u.displayName || email.split('@')[0],
         email: u.email || email,
         phone: u.phoneNumber || '',
-        role: 'customer',
       });
       router.replace('/');
     } catch (err: any) {

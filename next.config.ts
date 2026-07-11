@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "firebasestorage.googleapis.com",
       },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
     ],
   },
   experimental: {
@@ -36,7 +40,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://*.firebaseio.com https://*.googleapis.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: blob: https://images.unsplash.com https://firebasestorage.googleapis.com *.googleapis.com *.gstatic.com",
+              "img-src 'self' data: blob: https://images.unsplash.com https://firebasestorage.googleapis.com https://res.cloudinary.com *.googleapis.com *.gstatic.com",
               "font-src 'self' https://fonts.gstatic.com",
               "connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://identitytoolkit.googleapis.com https://checkout.razorpay.com https://api.razorpay.com wss://*.firebaseio.com",
               "frame-src 'self' https://checkout.razorpay.com",

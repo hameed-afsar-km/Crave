@@ -9,8 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useAdminOutlet } from '@/context/AdminOutletContext';
 import { MenuItem } from '@/types';
 import { subscribeMenuItems, subscribeOrders, addMenuItem as addFirestoreItem, updateMenuItem, deleteMenuItem as deleteFirestoreItem } from '@/lib/firestore-service';
-import { storage } from '@/lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 import { logAction } from '@/lib/audit';
 import { validateImageMagicBytes } from '@/lib/validate-image';
 
@@ -148,13 +147,15 @@ export default function AdminMenu() {
     setUploading(true);
     try {
       let imageUrl = form.image;
-      if (imageFile && storage) {
-        const ext = imageFile.name.split('.').pop() || 'jpg';
-        const id = crypto.randomUUID();
-        const path = `menu-items/${id}.${ext}`;
-        const storageRef = ref(storage, path);
-        await uploadBytes(storageRef, imageFile);
-        imageUrl = await getDownloadURL(storageRef);
+      if (imageFile) {
+        try {
+          const result = await uploadToCloudinary(imageFile, 'crave/menu-items');
+          imageUrl = result.url;
+        } catch (uploadError) {
+          console.error('Image upload failed:', uploadError);
+          alert('Image upload failed. Please try again or use an existing image URL.');
+          return;
+        }
       }
       const auditUser = { email: user?.email || '', role: user?.role || '', name: user?.name || '' };
       if (editingItem) {
@@ -187,6 +188,9 @@ export default function AdminMenu() {
       setImageFile(null);
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
+    } catch (error) {
+      console.error('Failed to save menu item:', error);
+      alert('Failed to save menu item. Please try again.');
     } finally {
       setUploading(false);
     }

@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireStaff } from '@/lib/firebase-admin';
 import { rateLimit } from '@/lib/rate-limiter';
-import { getStorage } from 'firebase-admin/storage';
-import crypto from 'crypto';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.avif'];
@@ -152,36 +151,16 @@ export async function POST(req: Request) {
       }
     }
 
-    const ext = ALLOWED_EXTENSIONS.find((e) => file.name.toLowerCase().endsWith(e)) || '.jpg';
-    const uuid = crypto.randomUUID();
-    const fileName = `menu-items/${uuid}${ext}`;
-
-    const bucket = getStorage().bucket(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET);
-    const blob = bucket.file(fileName);
-
-    await blob.save(Buffer.from(buffer), {
-      metadata: {
-        contentType: mimeType,
-        metadata: {
-          uploadedBy: auth.uid,
-          uploadedAt: new Date().toISOString(),
-          originalName: file.name,
-        },
-      },
-    });
-
-    await blob.makePublic();
-
-    const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}/o/${encodeURIComponent(fileName)}?alt=media`;
+    const result = await uploadToCloudinary(Buffer.from(buffer), 'crave/menu-items');
 
     return NextResponse.json({
-      url: publicUrl,
-      fileName,
+      url: result.url,
+      publicId: result.publicId,
       mimeType,
       size: file.size,
       dimensions,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Upload error:', err);
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
   }

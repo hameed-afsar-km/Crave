@@ -3,17 +3,18 @@ import type { NextRequest } from 'next/server';
 
 /**
  * Edge Runtime limitations prevent full Firebase Admin SDK usage here.
- * This proxy handles ONLY:
+ * This middleware handles ONLY:
  *   - Redirecting unauthenticated users away from /admin to /auth
+ *   - Checking role claims from the JWT for admin route access
  *   - Clearing expired auth cookies
  *
- * It does NOT authorize. Authorization is enforced at three levels:
+ * Full authorization is enforced at three levels:
  *   1. Firebase Admin SDK verifyIdToken() in every API route (requireAuth)
  *   2. Firestore Security Rules on every document read/write
  *   3. Client-side permission guards on every admin page
  */
 
-function decodeJwtPayload(token: string): Record<string, any> | null {
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
@@ -26,7 +27,7 @@ function decodeJwtPayload(token: string): Record<string, any> | null {
   }
 }
 
-function isTokenExpired(payload: Record<string, any>): boolean {
+function isTokenExpired(payload: Record<string, unknown>): boolean {
   if (!payload.exp) return true;
   return payload.exp * 1000 < Date.now();
 }
@@ -36,7 +37,7 @@ function clearAuthCookies(res: NextResponse) {
   res.cookies.set('crave-user', '', { maxAge: 0, path: '/', sameSite: 'strict', secure: true });
 }
 
-export default function proxy(request: NextRequest) {
+export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (!pathname.startsWith('/admin') && !pathname.startsWith('/checkout') && !pathname.startsWith('/orders') && !pathname.startsWith('/profile') && !pathname.startsWith('/rewards')) {
@@ -46,7 +47,7 @@ export default function proxy(request: NextRequest) {
   const tokenCookie = request.cookies.get('crave-token');
 
   if (!tokenCookie?.value) {
-    if (pathname.startsWith('/admin')) {
+    if (pathname.startsWith('/admin') || pathname.startsWith('/orders') || pathname.startsWith('/profile') || pathname.startsWith('/rewards') || pathname.startsWith('/checkout')) {
       const loginUrl = new URL('/auth', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       const res = NextResponse.redirect(loginUrl);
@@ -59,16 +60,19 @@ export default function proxy(request: NextRequest) {
   // Base64-decode only — signature verification is done server-side by API routes
   const payload = decodeJwtPayload(tokenCookie.value);
   if (!payload || isTokenExpired(payload)) {
-    if (pathname.startsWith('/admin')) {
-      const loginUrl = new URL('/auth', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
-      const res = NextResponse.redirect(loginUrl);
-      clearAuthCookies(res);
-      return res;
-    }
-    const res = NextResponse.next();
+    const loginUrl = new URL('/auth', request.url);
+    loginUrl.searchParams.set('redirect', pathname);
+    const res = NextResponse.redirect(loginUrl);
     clearAuthCookies(res);
     return res;
+  }
+
+  // Role check for admin routes
+  if (pathname.startsWith('/admin')) {
+    const role = payload.role as string | undefined;
+    if (!role || role === 'customer') {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
   }
 
   return;
