@@ -63,7 +63,9 @@ export default function CheckoutPage() {
   for (const item of items) {
     const unitPrice = item.price;
     if (item.inclusiveOfGst) {
-      displaySubtotal += unitPrice * item.quantity;
+      const base = unitPrice / (1 + TAX_RATE);
+      displaySubtotal += base * item.quantity;
+      displayTax += (unitPrice - base) * item.quantity;
     } else {
       displaySubtotal += unitPrice * item.quantity;
       displayTax += unitPrice * TAX_RATE * item.quantity;
@@ -528,12 +530,10 @@ export default function CheckoutPage() {
                   <span>Subtotal</span>
                   <span className="font-bold text-zinc-300">{formatPrice(displaySubtotal)}</span>
                 </div>
-                {displayTax > 0 && (
-                  <div className="flex justify-between text-zinc-500 text-xs">
-                    <span>GST (18%)</span>
-                    <span className="font-bold text-zinc-300">{formatPrice(displayTax)}</span>
-                  </div>
-                )}
+                <div className="flex justify-between text-zinc-500 text-xs">
+                  <span>GST (18%)</span>
+                  <span className="font-bold text-zinc-300">{formatPrice(displayTax)}</span>
+                </div>
               </div>
 
               <div className="divider-gold mb-4" />

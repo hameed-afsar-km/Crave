@@ -127,7 +127,9 @@ export async function calculateOrderTotal(
   for (const item of verified) {
     const unitPrice = item.price + item.addonTotal;
     if (item.inclusiveOfGst) {
-      subtotal += Math.round(unitPrice * item.quantity * 100) / 100;
+      const unitBase = unitPrice / (1 + TAX_RATE);
+      subtotal += Math.round(unitBase * item.quantity * 100) / 100;
+      tax += Math.round((unitPrice - unitBase) * item.quantity * 100) / 100;
     } else {
       subtotal += Math.round(unitPrice * item.quantity * 100) / 100;
       tax += Math.round(unitPrice * TAX_RATE * item.quantity * 100) / 100;

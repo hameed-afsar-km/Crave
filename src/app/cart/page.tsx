@@ -10,10 +10,25 @@ import { formatPrice } from '@/lib/utils';
 import { loadSettings } from '@/lib/store';
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, clearCart, subtotal } = useCart();
+  const { items, updateQuantity, removeItem, clearCart } = useCart();
   const [storeStatus, setStoreStatus] = useState(() => loadSettings());
-  const tax = subtotal * 0.18;
-  const total = subtotal + tax;
+
+  const TAX_RATE = 0.18;
+  let displaySubtotal = 0;
+  let displayTax = 0;
+  for (const item of items) {
+    if (item.inclusiveOfGst) {
+      const base = item.price / (1 + TAX_RATE);
+      displaySubtotal += base * item.quantity;
+      displayTax += (item.price - base) * item.quantity;
+    } else {
+      displaySubtotal += item.price * item.quantity;
+      displayTax += item.price * TAX_RATE * item.quantity;
+    }
+  }
+  displaySubtotal = Math.round(displaySubtotal * 100) / 100;
+  displayTax = Math.round(displayTax * 100) / 100;
+  const total = Math.round((displaySubtotal + displayTax) * 100) / 100;
   const canOrder = storeStatus.storeOpen && storeStatus.acceptingOrders;
 
   useEffect(() => {
@@ -158,11 +173,11 @@ export default function CartPage() {
               <div className="space-y-3.5 mb-5">
                 <div className="flex justify-between text-zinc-500 text-sm">
                   <span>Subtotal</span>
-                  <span className="font-bold text-zinc-300">{formatPrice(subtotal)}</span>
+                  <span className="font-bold text-zinc-300">{formatPrice(displaySubtotal)}</span>
                 </div>
                 <div className="flex justify-between text-zinc-500 text-sm">
                   <span>GST (18%)</span>
-                  <span className="font-bold text-zinc-300">{formatPrice(tax)}</span>
+                  <span className="font-bold text-zinc-300">{formatPrice(displayTax)}</span>
                 </div>
                 <div className="flex justify-between text-zinc-500 text-sm">
                   <span>Delivery</span>
