@@ -14,8 +14,11 @@ service cloud.firestore {
     }
 
     function getUserRole() {
-      let userData = getUserData();
-      return userData != null && userData.exists ? userData.data.role : 'customer';
+      return !isAuth() ? 'customer' : (
+        request.auth.token.role != null ? request.auth.token.role : (
+          getUserData().exists ? getUserData().data.role : 'customer'
+        )
+      );
     }
 
     function getUserAssignedOutlet() {
@@ -124,7 +127,10 @@ service cloud.firestore {
     // Admin can write any field on any user
 
     match /users/{userId} {
-      allow read: if isAuth() && (isOwner(userId) || isStaffOrAbove());
+      // NOTE: We use custom claims (request.auth.token.role) here instead of
+      // isAdmin()/isStaffOrAbove() to avoid infinite recursion — those helpers
+      // call getUserData() → get(/users/{uid}) which re-enters this rule.
+      allow read: if isAuth() && (isOwner(userId) || request.auth.token.role in ['admin', 'outlet_manager', 'outlet_staff']);
       allow create: if isAuth() && isOwner(userId);
       allow update: if isAuth() && (
         isAdmin() ||

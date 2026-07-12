@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useSoundAlert } from '@/hooks/useSoundAlert';
 import { useAuth } from '@/context/AuthContext';
+import { auth } from '@/lib/firebase';
 import { subscribeOrders } from '@/lib/firestore-service';
 import {
   isPushSupported,
@@ -49,6 +50,12 @@ export default function AdminNotificationManager() {
     if (!isStaff) return;
     const settings = loadSettings();
     if (!settings.notifyNewOrders) return;
+
+    console.log('[AdminNotificationManager] Subscribing to orders. Auth state:', {
+      uid: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      isStaff,
+    });
 
     const unsub = subscribeOrders((allOrders) => {
       const received = allOrders.filter((o) => o.status === 'received');

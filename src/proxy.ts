@@ -29,7 +29,7 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
 
 function isTokenExpired(payload: Record<string, unknown>): boolean {
   if (!payload.exp) return true;
-  return payload.exp * 1000 < Date.now();
+  return (payload.exp as number) * 1000 < Date.now();
 }
 
 function clearAuthCookies(res: NextResponse) {

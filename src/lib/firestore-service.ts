@@ -247,7 +247,8 @@ export function subscribeOrders(
       callback(orders);
     },
     (error) => {
-      console.warn('[subscribeOrders] Listener error (likely permissions):', error);
+      console.error('[subscribeOrders] ERROR:', String(error));
+      console.error('[subscribeOrders] ERROR keys:', Object.getOwnPropertyNames(error));
       callback([]);
     }
   );
