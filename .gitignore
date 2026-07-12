@@ -47,3 +47,6 @@ next-env.d.ts
 
 # firestore
 firestore.rules
+
+# firebase service account
+*-firebase-adminsdk-*.json
