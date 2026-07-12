@@ -13,6 +13,7 @@ import { useAdminOutlet } from '@/context/AdminOutletContext';
 import { Outlet } from '@/types';
 import { saveOutletToFirestore, deleteOutletFromFirestore } from '@/lib/firestore-service';
 import { logAction } from '@/lib/audit';
+import { adminPath } from '@/lib/admin-slug';
 
 
 export default function OutletManagement() {
@@ -129,7 +130,7 @@ export default function OutletManagement() {
         <div className="px-6 sm:px-8 py-5">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Link href="/admin/settings" className="p-1.5 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
+              <Link href={adminPath('settings')} className="p-1.5 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
                 <ArrowLeft className="w-4 h-4" />
               </Link>
               <div>

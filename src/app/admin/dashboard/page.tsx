@@ -16,6 +16,7 @@ import { subscribeOrders, updateOrderStatus, subscribeSettings, saveSettingsToFi
 import { AnimatedCounter } from '@/components/admin/AnimatedCounter';
 import { BarChart } from '@/components/admin/BarChart';
 import { hourlyRevenue } from '@/lib/revenue';
+import { adminPath } from '@/lib/admin-slug';
 
 const statusColors: Record<string, string> = {
   received: 'bg-blue-500/10 text-blue-400',
@@ -297,7 +298,7 @@ export default function AdminDashboard() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-zinc-200">Order Pipeline</h2>
-            <Link href="/admin/kitchen" className="text-xs font-medium text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1">
+            <Link href={adminPath('kitchen')} className="text-xs font-medium text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1">
               Full Kitchen <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -371,7 +372,7 @@ export default function AdminDashboard() {
           <div className="lg:col-span-2 bg-[#12121A] rounded-xl border border-zinc-800/60 p-5">
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-zinc-800/60">
               <h2 className="text-sm font-semibold text-zinc-200">Recent Activity</h2>
-              <Link href="/admin/orders" className="text-xs font-medium text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1">
+              <Link href={adminPath('orders')} className="text-xs font-medium text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1">
                 View All <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -433,7 +434,7 @@ export default function AdminDashboard() {
                   <p className="text-xs text-zinc-500">Avg Value</p>
                 </div>
               </div>
-              <Link href="/admin/analytics" className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-800/30 hover:bg-zinc-800/50 transition-all">
+              <Link href={adminPath('analytics')} className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-800/30 hover:bg-zinc-800/50 transition-all">
                 <span className="text-xs font-medium text-zinc-400">Full Analytics</span>
                 <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
               </Link>

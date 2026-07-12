@@ -14,6 +14,7 @@ import { loadSettings, saveSettings, StoreSettings } from '@/lib/store';
 import { generateTimeSlots } from '@/lib/utils';
 import { saveSettingsToFirestore, subscribeSettings, subscribeOrders } from '@/lib/firestore-service';
 import { logAction } from '@/lib/audit';
+import { adminPath } from '@/lib/admin-slug';
 
 export default function AdminSettings() {
   const { canManageSettings, isMasterAdmin, user } = useAuth();
@@ -98,7 +99,7 @@ export default function AdminSettings() {
       <div className="bg-[#0D0D14] border-b border-zinc-800/60">
         <div className="px-6 sm:px-8 py-5">
           <div className="flex items-center gap-3">
-            <Link href="/admin/dashboard" className="p-1.5 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
+              <Link href={adminPath('dashboard')} className="p-1.5 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <div>
@@ -126,7 +127,7 @@ export default function AdminSettings() {
                   <p className="text-xs text-zinc-500 mt-0.5">{outlets.length} outlets configured</p>
                 </div>
               </div>
-              <Link href="/admin/outlets"
+              <Link href={adminPath('outlets')}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 text-xs font-medium transition-all"
               >
                 Manage

@@ -12,6 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useAdminOutlet } from '@/context/AdminOutletContext';
 import { subscribeOrders, updateOrderStatus, deleteOrder as deleteOrderFromFirestore } from '@/lib/firestore-service';
 import { escapeHtml } from '@/lib/sanitize';
+import { adminPath } from '@/lib/admin-slug';
 
 interface OrderItem { name: string; qty: number; }
 interface Order {
@@ -190,7 +191,7 @@ export default function AdminOrders() {
       <div className="bg-[#0D0D14] border-b border-zinc-800/60">
         <div className="px-6 sm:px-8 py-5">
           <div className="flex items-center gap-4 mb-4">
-            <Link href="/admin/dashboard" className="p-1.5 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all"><ArrowLeft className="w-4 h-4" /></Link>
+            <Link href={adminPath('dashboard')} className="p-1.5 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all"><ArrowLeft className="w-4 h-4" /></Link>
             <div className="flex-1">
               <h1 className="text-xl font-bold text-white">Order Management</h1>
               <p className="text-zinc-500 text-sm mt-0.5">{outletFiltered.length} total · {outletFiltered.filter(o => o.status !== 'completed' && o.status !== 'cancelled').length} active</p>

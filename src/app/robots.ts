@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://crave.app';
+  const adminSlug = process.env.NEXT_PUBLIC_ADMIN_SLUG || 'admin';
 
   return {
     rules: [
@@ -17,7 +18,7 @@ export default function robots(): MetadataRoute.Robots {
           '/report-bug',
         ],
         disallow: [
-          '/admin/',
+          `/${adminSlug}/`,
           '/api/',
           '/security/',
           '/checkout/',

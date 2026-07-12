@@ -8,6 +8,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import PWARegister from './PWARegister';
+import { ADMIN_SLUG } from '@/lib/admin-slug';
 
 const SplashScreen = dynamic(() => import('./SplashScreen'), { ssr: false });
 const QueueWidget = dynamic(() => import('./QueueWidget'), { ssr: false });
@@ -16,7 +17,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   const [splashDone, setSplashDone] = useState(false);
   const pathname = usePathname();
   const isAuth = pathname?.startsWith('/auth');
-  const isAdmin = pathname?.startsWith('/admin');
+  const isAdmin = pathname?.startsWith(`/${ADMIN_SLUG}`);
 
   const handleSplashFinish = () => {
     setSplashDone(true);

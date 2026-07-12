@@ -20,6 +20,7 @@ const extras = [
 export default function FoodDetailPage() {
   const params = useParams();
   const [items, setItems] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
@@ -27,11 +28,20 @@ export default function FoodDetailPage() {
   useEffect(() => {
     const unsub = subscribeMenuItems((menuItems) => {
       setItems(menuItems);
+      setLoading(false);
     });
     return unsub;
   }, []);
 
   const item = items.find(i => i.id === params.id);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#06060A] flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!item) return notFound();
 

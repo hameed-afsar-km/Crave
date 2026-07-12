@@ -15,6 +15,7 @@ import {
   isDocumentHidden,
 } from '@/lib/notification-service';
 import { loadSettings } from '@/lib/store';
+import { adminPath } from '@/lib/admin-slug';
 
 export default function AdminNotificationManager() {
   const { isStaff } = useAuth();
@@ -71,7 +72,7 @@ export default function AdminNotificationManager() {
             {
               body: `You have ${count} order${count > 1 ? 's' : ''} waiting in the queue.`,
               tag: 'new-order',
-              data: { url: '/admin/kitchen' },
+              data: { url: adminPath('kitchen') },
             }
           );
         }

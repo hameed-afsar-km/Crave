@@ -10,6 +10,7 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { loadSettings } from '@/lib/store';
+import { adminPath } from '@/lib/admin-slug';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -178,7 +179,7 @@ export default function Navbar() {
               <div className="flex items-center gap-0.5">
                 {isStaff && (
                   <Link
-                    href="/admin/dashboard"
+                    href={adminPath('dashboard')}
                     title="Dashboard"
                     className="p-1 rounded-lg text-zinc-500 hover:text-gold hover:bg-gold/8 transition-all"
                   >
@@ -326,7 +327,7 @@ export default function Navbar() {
                     <>
                       {isStaff && (
                         <Link
-                          href="/admin/dashboard"
+                          href={adminPath('dashboard')}
                           onClick={closeMobile}
                           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/5 text-zinc-300 hover:text-white hover:bg-white/10 transition-all text-sm font-medium"
                         >

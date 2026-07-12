@@ -10,6 +10,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { useAdminOutlet } from '@/context/AdminOutletContext';
 import { auth } from '@/lib/firebase';
+import { adminPath } from '@/lib/admin-slug';
 
 interface ManagedUser {
   uid: string;
@@ -132,7 +133,7 @@ export default function UserManagement() {
         <div className="px-6 sm:px-8 py-5">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Link href="/admin/dashboard" className="p-1.5 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
+              <Link href={adminPath('dashboard')} className="p-1.5 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
                 <ArrowLeft className="w-4 h-4" />
               </Link>
               <div>

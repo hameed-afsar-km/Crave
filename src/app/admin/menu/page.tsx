@@ -12,6 +12,7 @@ import { subscribeMenuItems, subscribeOrders, addMenuItem as addFirestoreItem, u
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { logAction } from '@/lib/audit';
 import { validateImageMagicBytes } from '@/lib/validate-image';
+import { adminPath } from '@/lib/admin-slug';
 
 export default function AdminMenu() {
   const { canManageMenu, isMasterAdmin, isOutletStaff, user } = useAuth();
@@ -210,7 +211,7 @@ export default function AdminMenu() {
         <div className="px-6 sm:px-8 py-5">
           <div className="flex items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-4">
-              <Link href="/admin/dashboard" className="p-1.5 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
+              <Link href={adminPath('dashboard')} className="p-1.5 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-all">
                 <ArrowLeft className="w-4 h-4" />
               </Link>
               <div>

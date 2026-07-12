@@ -9,6 +9,7 @@ import {
   ChevronLeft, Store, Activity, Bug, Users
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { adminPath } from '@/lib/admin-slug';
 
 export default function AdminNav() {
   const pathname = usePathname();
@@ -18,35 +19,35 @@ export default function AdminNav() {
 
   const links = isMasterAdmin
     ? [
-        { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { href: '/admin/orders', label: 'Orders', icon: ClipboardList },
-        { href: '/admin/kitchen', label: 'Kitchen', icon: CookingPot },
-        { href: '/admin/menu', label: 'Menu', icon: UtensilsCrossed },
-        { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
-        { href: '/admin/outlets', label: 'Outlets', icon: Store },
-        { href: '/admin/users', label: 'Users', icon: Users },
-        { href: '/admin/logs', label: 'Logs', icon: Activity },
-        { href: '/admin/bugs', label: 'Bugs', icon: Bug },
-        { href: '/admin/settings', label: 'Settings', icon: Settings },
+        { href: adminPath('dashboard'), label: 'Dashboard', icon: LayoutDashboard },
+        { href: adminPath('orders'), label: 'Orders', icon: ClipboardList },
+        { href: adminPath('kitchen'), label: 'Kitchen', icon: CookingPot },
+        { href: adminPath('menu'), label: 'Menu', icon: UtensilsCrossed },
+        { href: adminPath('analytics'), label: 'Analytics', icon: BarChart3 },
+        { href: adminPath('outlets'), label: 'Outlets', icon: Store },
+        { href: adminPath('users'), label: 'Users', icon: Users },
+        { href: adminPath('logs'), label: 'Logs', icon: Activity },
+        { href: adminPath('bugs'), label: 'Bugs', icon: Bug },
+        { href: adminPath('settings'), label: 'Settings', icon: Settings },
       ]
     : isOutletStaff
     ? [
-        { href: '/admin/orders', label: 'Orders', icon: ClipboardList },
-        { href: '/admin/kitchen', label: 'Kitchen', icon: CookingPot },
-        { href: '/admin/menu', label: 'Menu', icon: UtensilsCrossed },
+        { href: adminPath('orders'), label: 'Orders', icon: ClipboardList },
+        { href: adminPath('kitchen'), label: 'Kitchen', icon: CookingPot },
+        { href: adminPath('menu'), label: 'Menu', icon: UtensilsCrossed },
       ]
     : [
-        { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { href: '/admin/orders', label: 'Orders', icon: ClipboardList },
-        { href: '/admin/kitchen', label: 'Kitchen', icon: CookingPot },
-        { href: '/admin/menu', label: 'Menu', icon: UtensilsCrossed },
-        { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+        { href: adminPath('dashboard'), label: 'Dashboard', icon: LayoutDashboard },
+        { href: adminPath('orders'), label: 'Orders', icon: ClipboardList },
+        { href: adminPath('kitchen'), label: 'Kitchen', icon: CookingPot },
+        { href: adminPath('menu'), label: 'Menu', icon: UtensilsCrossed },
+        { href: adminPath('analytics'), label: 'Analytics', icon: BarChart3 },
       ];
 
   const nav = (
     <nav className={`flex flex-col h-full ${collapsed ? 'items-center px-2' : 'px-3'}`}>
       <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} h-14 shrink-0 ${collapsed ? '' : 'px-1'}`}>
-        <Link href="/admin/dashboard" className="flex items-center gap-1.5">
+        <Link href={adminPath('dashboard')} className="flex items-center gap-1.5">
           {collapsed ? (
             <span className="text-base font-bold tracking-tight text-white">C</span>
           ) : (
@@ -130,7 +131,7 @@ export default function AdminNav() {
       </aside>
 
       <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#0A0A0F] border-b border-zinc-800/60 z-40 flex items-center justify-between px-4">
-        <Link href="/admin/dashboard" className="flex items-center gap-1.5">
+        <Link href={adminPath('dashboard')} className="flex items-center gap-1.5">
           <span className="text-base font-bold tracking-tight text-white">Crave</span>
           <span className="text-[9px] font-medium text-zinc-500 uppercase tracking-wider border border-zinc-700 px-1.5 py-0.5 rounded">
             {isMasterAdmin ? 'Admin' : isOutletStaff ? 'Staff' : 'Manager'}
