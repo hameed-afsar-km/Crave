@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
+import { AddToCartPopupProvider } from '@/context/AddToCartPopupContext';
+import AddToCartPopup from './AddToCartPopup';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import PWARegister from './PWARegister';
@@ -26,12 +28,15 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
       <CartProvider>
-        <PWARegister />
-        {!splashDone && <SplashScreen onFinish={handleSplashFinish} />}
-        {!isAuth && !isAdmin && <Navbar />}
-        <main id="main-content" className="flex-1">{children}</main>
-        {!isAuth && !isAdmin && <QueueWidget />}
-        {!isAuth && !isAdmin && <Footer />}
+        <AddToCartPopupProvider>
+          <PWARegister />
+          {!splashDone && <SplashScreen onFinish={handleSplashFinish} />}
+          {!isAuth && !isAdmin && <Navbar />}
+          <main id="main-content" className="flex-1">{children}</main>
+          {!isAuth && !isAdmin && <QueueWidget />}
+          {!isAuth && !isAdmin && <Footer />}
+          <AddToCartPopup />
+        </AddToCartPopupProvider>
       </CartProvider>
     </AuthProvider>
   );

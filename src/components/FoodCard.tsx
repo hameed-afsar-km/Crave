@@ -7,6 +7,7 @@ import { Star, Plus, ShoppingCart } from 'lucide-react';
 import { MenuItem } from '@/types';
 import { formatPrice } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
+import { useAddToCartPopup } from '@/context/AddToCartPopupContext';
 
 interface FoodCardProps {
   item: MenuItem;
@@ -16,6 +17,7 @@ interface FoodCardProps {
 
 export default function FoodCard({ item, index = 0, compact }: FoodCardProps) {
   const { addItem } = useCart();
+  const { showPopup } = useAddToCartPopup();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -29,6 +31,7 @@ export default function FoodCard({ item, index = 0, compact }: FoodCardProps) {
       addons: undefined,
       inclusiveOfGst: item.inclusiveOfGst,
     });
+    showPopup({ name: item.name, image: item.image, price: item.price, category: item.category });
   };
 
   return (

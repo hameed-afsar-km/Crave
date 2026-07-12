@@ -70,23 +70,53 @@ export function generateOrderId(): string {
   return result;
 }
 
+function parseTime(t: string): number {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
 export function generateTimeSlots(
   openingTime?: string,
   closingTime?: string,
 ): { time: string; label: string }[] {
-  const slots = [];
+  const slots: { time: string; label: string }[] = [];
   const now = new Date();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
   const startMinutes = Math.ceil((currentMinutes + 15) / 15) * 15;
 
-  for (let i = 0; i < 40; i++) {
+  if (!openingTime || !closingTime) {
+    for (let i = 0; i < 40; i++) {
+      const totalMinutes = startMinutes + i * 15;
+      const hours = Math.floor(totalMinutes / 60) % 24;
+      const minutes = totalMinutes % 60;
+      const time = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const h12 = hours % 12 || 12;
+      const label = `${h12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+      slots.push({ time, label });
+    }
+    return slots;
+  }
+
+  const openMin = parseTime(openingTime);
+  const closeMin = parseTime(closingTime);
+  const isOvernight = closeMin <= openMin;
+
+  for (let i = 0; i < 100; i++) {
     const totalMinutes = startMinutes + i * 15;
     const hours = Math.floor(totalMinutes / 60) % 24;
     const minutes = totalMinutes % 60;
+    const minsToday = hours * 60 + minutes;
     const time = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 
-    if (openingTime && closingTime) {
-      if (time < openingTime || time >= closingTime) continue;
+    if (isOvernight) {
+      const inWindow = minsToday >= openMin || minsToday < closeMin;
+      if (!inWindow) {
+        if (totalMinutes >= 24 * 60 && minsToday >= closeMin) break;
+        continue;
+      }
+    } else {
+      if (minsToday < openMin || minsToday >= closeMin) continue;
     }
 
     const ampm = hours >= 12 ? 'PM' : 'AM';

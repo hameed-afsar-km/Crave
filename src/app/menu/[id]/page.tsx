@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Star, Minus, Plus, ShoppingCart, ArrowLeft, Check } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
+import { useAddToCartPopup } from '@/context/AddToCartPopupContext';
 import Link from 'next/link';
 import { subscribeMenuItems } from '@/lib/firestore-service';
 import type { MenuItem } from '@/types';
@@ -16,6 +17,7 @@ export default function FoodDetailPage() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
+  const { showPopup } = useAddToCartPopup();
   const [quantity, setQuantity] = useState(1);
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
 
@@ -54,6 +56,7 @@ export default function FoodDetailPage() {
       addons: addons.length > 0 ? addons : undefined,
       inclusiveOfGst: item.inclusiveOfGst,
     });
+    showPopup({ name: item.name, image: item.image, price: item.price + addonPriceTotal, category: item.category });
   };
 
   const toggleAddon = (name: string) => {

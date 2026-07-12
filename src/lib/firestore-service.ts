@@ -112,6 +112,7 @@ function mapOutletDoc(doc: any): Outlet {
     email: data.email || '',
     openingHours: data.openingHours || '10:00',
     closingHours: data.closingHours || '22:00',
+    weeklyHours: data.weeklyHours || undefined,
     preparationTime: data.preparationTime || 10,
     maxOrdersPerSlot: data.maxOrdersPerSlot || 10,
     pickupWindow: data.pickupWindow || 15,

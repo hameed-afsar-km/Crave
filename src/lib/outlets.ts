@@ -1,4 +1,5 @@
 import type { Outlet } from '@/types';
+import { getOutletTodayHours } from './utils';
 
 export const DEFAULT_OUTLETS: Outlet[] = [
   {
@@ -83,14 +84,20 @@ export function isOutletOpen(outletId: string): boolean {
   const outlet = getOutlet(outletId);
   if (!outlet) return false;
   if (!outlet.isOpen || outlet.status !== 'active') return false;
-  const now = new Date();
-  const [openH, openM] = outlet.openingHours.split(':').map(Number);
-  const [closeH, closeM] = outlet.closingHours.split(':').map(Number);
-  const openMin = openH * 60 + openM;
-  const closeMin = closeH * 60 + closeM;
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  const isWithinHours = nowMin >= openMin && nowMin <= closeMin;
-  if (!isWithinHours) return false;
   if (outlet.maxOrdersPerSlot <= 0) return false;
-  return true;
+
+  const today = getOutletTodayHours(outlet);
+  if (today.closed) return false;
+
+  const [oH, oM] = today.open.split(':').map(Number);
+  const [cH, cM] = today.close.split(':').map(Number);
+  const openMin = oH * 60 + oM;
+  const closeMin = cH * 60 + cM;
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+
+  if (closeMin <= openMin) {
+    return nowMin >= openMin || nowMin <= closeMin;
+  }
+  return nowMin >= openMin && nowMin <= closeMin;
 }
