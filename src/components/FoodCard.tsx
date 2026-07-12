@@ -26,6 +26,8 @@ export default function FoodCard({ item, index = 0, compact }: FoodCardProps) {
       price: item.price,
       quantity: 1,
       image: item.image,
+      addons: undefined,
+      inclusiveOfGst: item.inclusiveOfGst,
     });
   };
 
@@ -93,10 +95,15 @@ export default function FoodCard({ item, index = 0, compact }: FoodCardProps) {
             )}
 
             <div className="flex items-center justify-between mt-4">
-              <div>
+              <div className="flex items-center gap-2">
                 <span className="text-xl font-black text-gradient-gold glow-text-sm tracking-tight">
                   {formatPrice(item.price)}
                 </span>
+                {item.inclusiveOfGst && (
+                  <span className="text-[8px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                    incl. GST
+                  </span>
+                )}
               </div>
 
               {compact ? (

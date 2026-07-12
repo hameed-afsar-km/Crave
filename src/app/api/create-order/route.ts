@@ -13,6 +13,7 @@ interface CartItemRequest {
   menuItemId: string;
   quantity: number;
   name?: string;
+  addons?: { name: string; price: number }[];
 }
 
 export async function POST(req: Request) {
@@ -47,6 +48,7 @@ export async function POST(req: Request) {
     const cartItems: CartItemRequest[] = body.cartItems.map((item: any) => ({
       menuItemId: String(item.menuItemId || item.id || ''),
       quantity: Math.max(1, Math.min(99, Math.floor(Number(item.quantity) || 1))),
+      addons: Array.isArray(item.addons) ? item.addons : undefined,
     }));
 
     if (cartItems.some((i) => !i.menuItemId)) {

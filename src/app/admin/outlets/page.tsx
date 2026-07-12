@@ -6,14 +6,18 @@ import Link from 'next/link';
 import {
   ArrowLeft, Store, MapPin, Clock, Plus, Edit2, Trash2,
   X, Users, Phone, Mail, CookingPot, AlertTriangle,
-  Search, CheckCircle, XCircle
+  Search, CheckCircle, XCircle, Copy
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAdminOutlet } from '@/context/AdminOutletContext';
-import { Outlet } from '@/types';
+import { Outlet, DayHours } from '@/types';
 import { saveOutletToFirestore, deleteOutletFromFirestore } from '@/lib/firestore-service';
 import { logAction } from '@/lib/audit';
 import { adminPath } from '@/lib/admin-slug';
+import {
+  DAY_KEYS, DAY_LABELS, SHORT_DAY_LABELS,
+  formatDayRange, formatTime12, groupWeeklyHours, defaultWeeklyHours,
+} from '@/lib/utils';
 
 
 export default function OutletManagement() {
@@ -27,6 +31,7 @@ export default function OutletManagement() {
     maxOrdersPerSlot: 10, preparationTime: 18,
     isOpen: true,
   });
+  const [weeklyHours, setWeeklyHours] = useState<Record<string, DayHours>>(defaultWeeklyHours());
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -39,6 +44,7 @@ export default function OutletManagement() {
       openingHours: '08:00', closingHours: '23:00',
       maxOrdersPerSlot: 10, preparationTime: 18, isOpen: true,
     });
+    setWeeklyHours(defaultWeeklyHours('10:00', '22:00'));
     setShowForm(true);
   };
 
@@ -55,7 +61,37 @@ export default function OutletManagement() {
       preparationTime: outlet.preparationTime || 18,
       isOpen: outlet.isOpen !== false,
     });
+    setWeeklyHours(outlet.weeklyHours || defaultWeeklyHours(outlet.openingHours || '10:00', outlet.closingHours || '22:00'));
     setShowForm(true);
+  };
+
+  const updateDay = (day: string, patch: Partial<DayHours>) => {
+    setWeeklyHours(prev => ({ ...prev, [day]: { ...prev[day], ...patch } }));
+  };
+
+  const applyToAll = (day: string) => {
+    const src = weeklyHours[day];
+    const next: Record<string, DayHours> = {};
+    for (const k of DAY_KEYS) next[k] = { ...src };
+    setWeeklyHours(next);
+  };
+
+  const applyToWeekdays = () => {
+    const src = weeklyHours['mon'];
+    setWeeklyHours(prev => {
+      const next = { ...prev };
+      for (const k of ['mon', 'tue', 'wed', 'thu', 'fri'] as const) next[k] = { ...src };
+      return next;
+    });
+  };
+
+  const applyToWeekend = () => {
+    const src = weeklyHours['sat'];
+    setWeeklyHours(prev => {
+      const next = { ...prev };
+      for (const k of ['sat', 'sun'] as const) next[k] = { ...src };
+      return next;
+    });
   };
 
   const save = async () => {
@@ -64,14 +100,18 @@ export default function OutletManagement() {
     setMessage('');
     try {
       const id = editingOutlet?.id || form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now();
+      const today = new Date().getDay();
+      const todayKey = DAY_KEYS[today];
+      const todayH = weeklyHours[todayKey];
       const outletData: Outlet = {
         id,
         name: form.name,
         address: form.address,
         phone: form.phone,
         email: form.email,
-        openingHours: form.openingHours,
-        closingHours: form.closingHours,
+        openingHours: todayH.open,
+        closingHours: todayH.close,
+        weeklyHours,
         maxOrdersPerSlot: form.maxOrdersPerSlot,
         preparationTime: form.preparationTime,
         pickupWindow: 30,
@@ -261,7 +301,7 @@ export default function OutletManagement() {
                           )}
                         </div>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2.5 pt-2.5 border-t border-zinc-800/60 text-xs text-zinc-500">
-                          <span className="flex items-center gap-1.5"><Clock className="w-3 h-3 text-zinc-600" /> {outlet.openingHours || '08:00'} - {outlet.closingHours || '23:00'}</span>
+                          <span className="flex items-center gap-1.5"><Clock className="w-3 h-3 text-zinc-600" /> {outlet.weeklyHours ? groupWeeklyHours(outlet.weeklyHours).map(formatDayRange).join(' · ') : `${outlet.openingHours || '08:00'} – ${outlet.closingHours || '23:00'}`}</span>
                           <span className="flex items-center gap-1.5"><CookingPot className="w-3 h-3 text-zinc-600" /> Prep: {outlet.preparationTime || 18}min</span>
                           <span className="flex items-center gap-1.5"><Users className="w-3 h-3 text-zinc-600" /> Max: {outlet.maxOrdersPerSlot || 10}/slot</span>
                         </div>
@@ -335,17 +375,43 @@ export default function OutletManagement() {
                       className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-500 mb-1.5">Opening Time</label>
-                    <input type="time" value={form.openingHours} onChange={(e) => setForm({...form, openingHours: e.target.value})}
-                      className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" />
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-medium text-zinc-500">Weekly Schedule</label>
+                    <div className="flex gap-1.5">
+                      <button type="button" onClick={applyToWeekdays} className="px-2 py-0.5 text-[10px] font-medium text-zinc-500 border border-zinc-700 rounded hover:bg-zinc-800 transition-all">Weekdays same</button>
+                      <button type="button" onClick={applyToWeekend} className="px-2 py-0.5 text-[10px] font-medium text-zinc-500 border border-zinc-700 rounded hover:bg-zinc-800 transition-all">Weekend same</button>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-500 mb-1.5">Closing Time</label>
-                    <input type="time" value={form.closingHours} onChange={(e) => setForm({...form, closingHours: e.target.value})}
-                      className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" />
+                  <div className="space-y-1.5">
+                    {DAY_KEYS.map((dayKey, i) => {
+                      const dh = weeklyHours[dayKey] || { open: '10:00', close: '22:00', closed: false };
+                      return (
+                        <div key={dayKey} className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${dh.closed ? 'border-zinc-800/40 bg-zinc-900/30' : 'border-zinc-700/50 bg-zinc-800/30'}`}>
+                          <span className="text-xs font-semibold text-zinc-400 w-8 shrink-0">{SHORT_DAY_LABELS[i]}</span>
+                          <div onClick={() => updateDay(dayKey, { closed: !dh.closed })}
+                            className={`relative w-9 h-5 rounded-full transition-all cursor-pointer shrink-0 ${dh.closed ? 'bg-zinc-700' : 'bg-emerald-500/30'}`}>
+                            <div className={`absolute top-0.5 w-4 h-4 rounded-full shadow-sm transition-all ${dh.closed ? 'left-0.5 bg-zinc-400' : 'left-4.5 bg-emerald-400'}`} />
+                          </div>
+                          {dh.closed ? (
+                            <span className="text-xs text-zinc-600 italic">Closed</span>
+                          ) : (
+                            <div className="flex items-center gap-1.5 flex-1">
+                              <input type="time" value={dh.open} onChange={(e) => updateDay(dayKey, { open: e.target.value })}
+                                className="flex-1 px-2 py-1 bg-zinc-800/50 border border-zinc-700 rounded text-xs text-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-600" />
+                              <span className="text-xs text-zinc-600">to</span>
+                              <input type="time" value={dh.close} onChange={(e) => updateDay(dayKey, { close: e.target.value })}
+                                className="flex-1 px-2 py-1 bg-zinc-800/50 border border-zinc-700 rounded text-xs text-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-600" />
+                              <button type="button" onClick={() => applyToAll(dayKey)} title="Apply to all days" className="p-1 text-zinc-600 hover:text-zinc-400 transition-colors shrink-0">
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
+                  <p className="text-[10px] text-zinc-600 mt-1.5">Hours are synced to today's schedule for checkout time slots.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>

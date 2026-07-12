@@ -369,12 +369,23 @@ export default function OrderTrackingPage() {
                   </div>
                   <div className="space-y-2.5">
                     {order.items.map((item: any, i: number) => (
-                      <div key={i} className="flex items-center justify-between text-xs">
-                        <span className="font-semibold text-zinc-300">{item.name || item.menuItemId}</span>
-                        <div className="flex gap-6">
-                          <span className="font-black text-zinc-400 w-6 text-center">{item.qty || item.quantity}</span>
-                          <span className="font-black text-zinc-200 w-14 text-right">₹{(item.price || 0) * (item.qty || item.quantity || 0)}</span>
+                      <div key={i}>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-semibold text-zinc-300">{item.name || item.menuItemId}</span>
+                          <div className="flex gap-6">
+                            <span className="font-black text-zinc-400 w-6 text-center">{item.qty || item.quantity}</span>
+                            <span className="font-black text-zinc-200 w-14 text-right">₹{(item.unitPrice || item.price || 0) * (item.qty || item.quantity || 0)}</span>
+                          </div>
                         </div>
+                        {item.addons && item.addons.length > 0 && (
+                          <div className="ml-2 mt-1 space-y-0.5">
+                            {item.addons.map((addon: any, idx: number) => (
+                              <p key={idx} className="text-[10px] text-zinc-500">
+                                + {addon.name} ({formatPrice(addon.price)})
+                              </p>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

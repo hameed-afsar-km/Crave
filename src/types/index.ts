@@ -1,3 +1,9 @@
+export interface DayHours {
+  open: string;
+  close: string;
+  closed: boolean;
+}
+
 export interface Outlet {
   id: string;
   name: string;
@@ -6,6 +12,7 @@ export interface Outlet {
   email: string;
   openingHours: string;
   closingHours: string;
+  weeklyHours?: Record<string, DayHours>;
   preparationTime: number;
   maxOrdersPerSlot: number;
   pickupWindow: number;
@@ -21,6 +28,11 @@ export interface Outlet {
 
 export type UserRole = 'customer' | 'outlet_staff' | 'outlet_manager' | 'admin';
 
+export interface MenuItemAddon {
+  name: string;
+  price: number;
+}
+
 export interface MenuItem {
   id: string;
   name: string;
@@ -33,6 +45,8 @@ export interface MenuItem {
   available: boolean;
   availableOutlets?: string[];
   availability?: Record<string, boolean>;
+  addons?: MenuItemAddon[];
+  inclusiveOfGst?: boolean;
   createdAt?: string;
 }
 
@@ -44,6 +58,8 @@ export interface CartItem {
   quantity: number;
   image: string;
   options?: string[];
+  addons?: MenuItemAddon[];
+  inclusiveOfGst?: boolean;
 }
 
 export interface Order {

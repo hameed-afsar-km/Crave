@@ -1,8 +1,14 @@
 import { getAdminDb } from '@/lib/firebase-admin';
 
+interface CartItemAddon {
+  name: string;
+  price: number;
+}
+
 interface CartItemRequest {
   menuItemId: string;
   quantity: number;
+  addons?: CartItemAddon[];
 }
 
 interface VerifiedItem {
@@ -11,6 +17,9 @@ interface VerifiedItem {
   price: number;
   quantity: number;
   available: boolean;
+  addons: CartItemAddon[];
+  addonTotal: number;
+  inclusiveOfGst: boolean;
 }
 
 interface PricingResult {
@@ -81,17 +90,52 @@ export async function calculateOrderTotal(
       continue;
     }
 
+    const inclusiveOfGst = menuItem.inclusiveOfGst || false;
+    const menuAddons: CartItemAddon[] = menuItem.addons || [];
+    const validAddons: CartItemAddon[] = [];
+    let addonTotal = 0;
+
+    if (cartItem.addons && cartItem.addons.length > 0) {
+      for (const reqAddon of cartItem.addons) {
+        const menuAddon = menuAddons.find(
+          (ma: CartItemAddon) => ma.name === reqAddon.name && ma.price === reqAddon.price
+        );
+        if (!menuAddon) {
+          errors.push(`Invalid addon "${reqAddon.name}" for ${menuItem.name}`);
+          continue;
+        }
+        validAddons.push({ name: menuAddon.name, price: menuAddon.price });
+        addonTotal += menuAddon.price;
+      }
+    }
+
     verified.push({
       menuItemId: cartItem.menuItemId,
       name: menuItem.name,
       price,
       quantity,
       available: true,
+      addons: validAddons,
+      addonTotal,
+      inclusiveOfGst,
     });
   }
 
-  const subtotal = Math.round(verified.reduce((sum, item) => sum + item.price * item.quantity, 0) * 100) / 100;
-  const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
+  let subtotal = 0;
+  let tax = 0;
+
+  for (const item of verified) {
+    const unitPrice = item.price + item.addonTotal;
+    if (item.inclusiveOfGst) {
+      const unitBase = unitPrice / (1 + TAX_RATE);
+      subtotal += Math.round(unitBase * item.quantity * 100) / 100;
+      tax += Math.round((unitPrice - unitBase) * item.quantity * 100) / 100;
+    } else {
+      subtotal += Math.round(unitPrice * item.quantity * 100) / 100;
+      tax += Math.round(unitPrice * TAX_RATE * item.quantity * 100) / 100;
+    }
+  }
+
   const total = Math.round((subtotal + tax) * 100) / 100;
 
   return { items: verified, subtotal, tax, total, errors };

@@ -96,6 +96,8 @@ function mapMenuItemDoc(doc: any): MenuItem {
     available: data.available ?? true,
     availableOutlets: data.availableOutlets || undefined,
     availability: data.availability || undefined,
+    addons: data.addons || undefined,
+    inclusiveOfGst: data.inclusiveOfGst || false,
     createdAt: typeof data.createdAt === 'string' ? data.createdAt : timestampToDate(data.createdAt),
   };
 }

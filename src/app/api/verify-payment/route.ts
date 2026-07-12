@@ -152,6 +152,7 @@ export async function POST(req: Request) {
             quantity: i.quantity || 0,
             unitPrice: i.unitPrice || 0,
             subtotal: i.subtotal || 0,
+            addons: i.addons || undefined,
           })),
           amount: expectedAmount || paymentAmount,
           paymentStatus: 'paid',

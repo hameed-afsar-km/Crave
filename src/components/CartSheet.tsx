@@ -84,6 +84,15 @@ export default function CartSheet({ open, onClose }: CartSheetProps) {
                       />
                       <div className="flex-1 min-w-0">
                         <h4 className="font-bold text-white tracking-wide truncate">{item.name}</h4>
+                        {item.addons && item.addons.length > 0 && (
+                          <div className="mt-1 space-y-0.5">
+                            {item.addons.map((addon, idx) => (
+                              <p key={idx} className="text-[10px] text-zinc-500">
+                                + {addon.name} ({formatPrice(addon.price)})
+                              </p>
+                            ))}
+                          </div>
+                        )}
                         <p className="text-gold font-black text-sm mt-1">{formatPrice(item.price)}</p>
                         <div className="flex items-center gap-3 mt-2">
                           <button

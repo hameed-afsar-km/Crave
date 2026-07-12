@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Plus, Edit2, Trash2, Search, Eye, EyeOff, Store, MapPin } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, Search, Eye, EyeOff, Store, MapPin, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAdminOutlet } from '@/context/AdminOutletContext';
 import { MenuItem } from '@/types';
@@ -25,6 +25,8 @@ export default function AdminMenu() {
     name: '', description: '', price: '', category: 'Burgers', image: '',
     availableOutlets: [] as string[],
     pricing: {} as Record<string, number>,
+    addons: [] as { name: string; price: number }[],
+    inclusiveOfGst: false,
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -127,6 +129,8 @@ export default function AdminMenu() {
       image: item.image,
       availableOutlets: item.availableOutlets || [],
       pricing: item.pricing || {},
+      addons: item.addons || [],
+      inclusiveOfGst: item.inclusiveOfGst || false,
     });
     setShowForm(true);
   };
@@ -139,6 +143,8 @@ export default function AdminMenu() {
       image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80',
       availableOutlets: [],
       pricing: {},
+      addons: [],
+      inclusiveOfGst: false,
     });
     setShowForm(true);
   };
@@ -168,6 +174,8 @@ export default function AdminMenu() {
           image: imageUrl,
           availableOutlets: form.availableOutlets,
           pricing: form.pricing,
+          addons: form.addons.length > 0 ? form.addons : undefined,
+          inclusiveOfGst: form.inclusiveOfGst,
         });
         logAction('menu.updated', 'menu', editingItem.id, { name: form.name, category: form.category, price: form.price }, auditUser);
       } else {
@@ -181,6 +189,8 @@ export default function AdminMenu() {
           available: true,
           availableOutlets: form.availableOutlets,
           pricing: form.pricing,
+          addons: form.addons.length > 0 ? form.addons : undefined,
+          inclusiveOfGst: form.inclusiveOfGst,
         });
         logAction('menu.created', 'menu', newId || 'unknown', { name: form.name, category: form.category, price: form.price }, auditUser);
       }
@@ -443,6 +453,76 @@ export default function AdminMenu() {
                   }}
                     className="w-full text-sm text-zinc-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-zinc-800 file:text-zinc-300 hover:file:bg-zinc-700 file:cursor-pointer cursor-pointer" />
                 </div>
+              </div>
+
+              {/* Inclusive of GST */}
+              <div className="border-t border-zinc-800/60 pt-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.inclusiveOfGst}
+                    onChange={(e) => setForm({ ...form, inclusiveOfGst: e.target.checked })}
+                    className="w-4 h-4 rounded border-zinc-600 bg-zinc-800 text-gold focus:ring-zinc-500"
+                  />
+                  <div>
+                    <span className="text-xs font-semibold text-zinc-300">Inclusive of GST</span>
+                    <p className="text-[10px] text-zinc-500 mt-0.5">Price already includes 18% GST</p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Custom Addons */}
+              <div className="border-t border-zinc-800/60 pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider">Custom Addons</label>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, addons: [...form.addons, { name: '', price: 0 }] })}
+                    className="flex items-center gap-1 text-[10px] font-bold text-gold hover:text-amber-400 transition-colors"
+                  >
+                    <Plus className="w-3 h-3" /> Add Addon
+                  </button>
+                </div>
+                {form.addons.length > 0 && (
+                  <div className="space-y-2">
+                    {form.addons.map((addon, idx) => (
+                      <div key={idx} className="flex items-center gap-2 p-2.5 rounded-lg bg-zinc-800/30 border border-zinc-800/60">
+                        <input
+                          type="text"
+                          placeholder="Addon name"
+                          value={addon.name}
+                          onChange={(e) => {
+                            const updated = [...form.addons];
+                            updated[idx] = { ...updated[idx], name: e.target.value };
+                            setForm({ ...form, addons: updated });
+                          }}
+                          className="flex-1 px-2.5 py-1.5 bg-zinc-800/50 border border-zinc-700 rounded text-xs text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500"
+                        />
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-zinc-500">₹</span>
+                          <input
+                            type="number"
+                            placeholder="0"
+                            value={addon.price || ''}
+                            onChange={(e) => {
+                              const updated = [...form.addons];
+                              updated[idx] = { ...updated[idx], price: Number(e.target.value) || 0 };
+                              setForm({ ...form, addons: updated });
+                            }}
+                            className="w-16 px-2 py-1.5 bg-zinc-800/50 border border-zinc-700 rounded text-xs text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setForm({ ...form, addons: form.addons.filter((_, i) => i !== idx) })}
+                          className="p-1 text-zinc-500 hover:text-red-400 transition-colors"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {isMasterAdmin && outlets.length > 0 && (

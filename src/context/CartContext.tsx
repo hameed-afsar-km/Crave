@@ -61,14 +61,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = (item: CartItem) => {
     setItems(prev => {
-      const optionsKey = (k: CartItem) => k.options?.length ? [...k.options].sort().join('|') : '';
-      const itemKey = optionsKey(item);
+      const variantKey = (k: CartItem) => {
+        const optPart = k.options?.length ? [...k.options].sort().join('|') : '';
+        const addonPart = k.addons?.length ? k.addons.map(a => `${a.name}:${a.price}`).sort().join('|') : '';
+        return `${optPart}||${addonPart}`;
+      };
+      const itemKey = variantKey(item);
       const existing = prev.find(i =>
-        i.menuItemId === item.menuItemId && optionsKey(i) === itemKey
+        i.menuItemId === item.menuItemId && variantKey(i) === itemKey
       );
       if (existing) {
         return prev.map(i =>
-          i.menuItemId === item.menuItemId && optionsKey(i) === itemKey
+          i.menuItemId === item.menuItemId && variantKey(i) === itemKey
             ? { ...i, quantity: i.quantity + item.quantity }
             : i
         );

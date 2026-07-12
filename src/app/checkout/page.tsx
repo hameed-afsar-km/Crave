@@ -10,7 +10,8 @@ import { loadSettings, getTimeUntilOpen } from '@/lib/store';
 import { loadRazorpayScript } from '@/lib/razorpay';
 import { updateLoyaltyPoints } from '@/lib/firestore-service';
 import { sanitizeString, sanitizePhone, sanitizeEmail } from '@/lib/sanitize';
-import { loadOutlets } from '@/lib/outlets';
+import { loadOutlets, getOutlet } from '@/lib/outlets';
+import { getOutletTodayHours } from '@/lib/utils';
 import StoreStatusBanner from '@/components/StoreStatusBanner';
 import Link from 'next/link';
 
@@ -56,9 +57,29 @@ export default function CheckoutPage() {
 
   const canOrder = storeStatus.storeOpen && storeStatus.acceptingOrders;
 
-  const tax = subtotal * 0.18;
-  const total = subtotal + tax;
-  const timeSlots = generateTimeSlots(storeStatus.openingTime, storeStatus.closingTime);
+  const TAX_RATE = 0.18;
+  let displaySubtotal = 0;
+  let displayTax = 0;
+  for (const item of items) {
+    const unitPrice = item.price;
+    if (item.inclusiveOfGst) {
+      const unitBase = unitPrice / (1 + TAX_RATE);
+      displaySubtotal += unitBase * item.quantity;
+      displayTax += (unitPrice - unitBase) * item.quantity;
+    } else {
+      displaySubtotal += unitPrice * item.quantity;
+      displayTax += unitPrice * TAX_RATE * item.quantity;
+    }
+  }
+  displaySubtotal = Math.round(displaySubtotal * 100) / 100;
+  displayTax = Math.round(displayTax * 100) / 100;
+  const total = Math.round((displaySubtotal + displayTax) * 100) / 100;
+
+  const selectedOutlet = selectedOutletId ? getOutlet(selectedOutletId) : null;
+  const todayHours = selectedOutlet ? getOutletTodayHours(selectedOutlet) : null;
+  const timeSlots = todayHours && !todayHours.closed
+    ? generateTimeSlots(todayHours.open, todayHours.close)
+    : generateTimeSlots(storeStatus.openingTime, storeStatus.closingTime);
 
   useEffect(() => {
     if (pickupOption === 'asap' && timeSlots.length > 0) {
@@ -87,7 +108,7 @@ export default function CheckoutPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
-          cartItems: items.map((i) => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
+          cartItems: items.map((i) => ({ menuItemId: i.menuItemId, quantity: i.quantity, addons: i.addons })),
           outletId: selectedOutletId,
           outletName: selectedOutletName,
           customerName: sanitizeString(name, 100),
@@ -148,6 +169,7 @@ export default function CheckoutPage() {
                   quantity: i.quantity,
                   unitPrice: i.price,
                   subtotal: i.price * i.quantity,
+                  addons: i.addons || undefined,
                 })),
                 pickupTime: selectedTime,
                 pointsEarned,
@@ -187,6 +209,7 @@ export default function CheckoutPage() {
                 quantity: i.quantity,
                 unitPrice: i.price,
                 subtotal: i.price * i.quantity,
+                addons: i.addons || undefined,
               })),
               amount: serverTotal,
               paymentStatus: 'paid' as const,
@@ -480,11 +503,22 @@ export default function CheckoutPage() {
               {/* Items list */}
               <div className="space-y-3 max-h-52 overflow-y-auto mb-5 pr-1">
                 {items.map(item => (
-                  <div key={item.id} className="flex justify-between text-xs gap-3">
-                    <span className="text-zinc-400 font-semibold leading-tight">
-                      <span className="text-gold font-black">{item.quantity}×</span> {item.name}
-                    </span>
-                    <span className="font-black text-zinc-200 shrink-0">{formatPrice(item.price * item.quantity)}</span>
+                  <div key={item.id}>
+                    <div className="flex justify-between text-xs gap-3">
+                      <span className="text-zinc-400 font-semibold leading-tight">
+                        <span className="text-gold font-black">{item.quantity}×</span> {item.name}
+                      </span>
+                      <span className="font-black text-zinc-200 shrink-0">{formatPrice(item.price * item.quantity)}</span>
+                    </div>
+                    {item.addons && item.addons.length > 0 && (
+                      <div className="ml-5 mt-1 space-y-0.5">
+                        {item.addons.map((addon, idx) => (
+                          <p key={idx} className="text-[10px] text-zinc-500">
+                            + {addon.name} ({formatPrice(addon.price)})
+                          </p>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -494,11 +528,11 @@ export default function CheckoutPage() {
               <div className="space-y-3 mb-5">
                 <div className="flex justify-between text-zinc-500 text-xs">
                   <span>Subtotal</span>
-                  <span className="font-bold text-zinc-300">{formatPrice(subtotal)}</span>
+                  <span className="font-bold text-zinc-300">{formatPrice(displaySubtotal)}</span>
                 </div>
                 <div className="flex justify-between text-zinc-500 text-xs">
                   <span>GST (18%)</span>
-                  <span className="font-bold text-zinc-300">{formatPrice(tax)}</span>
+                  <span className="font-bold text-zinc-300">{formatPrice(displayTax)}</span>
                 </div>
               </div>
 

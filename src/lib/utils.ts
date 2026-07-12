@@ -1,5 +1,57 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import type { Outlet, DayHours } from '@/types';
+
+export const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+export const DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
+export const SHORT_DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+
+export function getOutletTodayHours(outlet: Outlet): { open: string; close: string; closed: boolean } {
+  if (outlet.weeklyHours) {
+    const dayKey = DAY_KEYS[new Date().getDay()];
+    const dayHours = outlet.weeklyHours[dayKey];
+    if (dayHours) return dayHours;
+  }
+  return { open: outlet.openingHours, close: outlet.closingHours, closed: false };
+}
+
+export function formatDayRange(group: { days: string[]; open: string; close: string; closed: boolean }): string {
+  if (group.closed) return `${group.days[0]}: Closed`;
+  if (group.days.length === 1) return `${group.days[0]}: ${formatTime12(group.open)} – ${formatTime12(group.close)}`;
+  if (group.days.length === 2) return `${group.days[0]} – ${group.days[1]}: ${formatTime12(group.open)} – ${formatTime12(group.close)}`;
+  return `${group.days[0]} – ${group.days[group.days.length - 1]}: ${formatTime12(group.open)} – ${formatTime12(group.close)}`;
+}
+
+export function formatTime12(time24: string): string {
+  const [h, m] = time24.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return m === 0 ? `${h12} ${ampm}` : `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
+}
+
+export function groupWeeklyHours(weeklyHours: Record<string, DayHours>): { days: string[]; open: string; close: string; closed: boolean }[] {
+  const groups: { days: string[]; open: string; close: string; closed: boolean }[] = [];
+  let current: { days: string[]; open: string; close: string; closed: boolean } | null = null;
+
+  for (const key of DAY_KEYS) {
+    const dh = weeklyHours[key] || { open: '10:00', close: '22:00', closed: false };
+    if (current && current.open === dh.open && current.close === dh.close && current.closed === dh.closed) {
+      current.days.push(SHORT_DAY_LABELS[DAY_KEYS.indexOf(key)]);
+    } else {
+      current = { days: [SHORT_DAY_LABELS[DAY_KEYS.indexOf(key)]], open: dh.open, close: dh.close, closed: dh.closed };
+      groups.push(current);
+    }
+  }
+  return groups;
+}
+
+export function defaultWeeklyHours(open = '10:00', close = '22:00'): Record<string, DayHours> {
+  const hours: Record<string, DayHours> = {};
+  for (const key of DAY_KEYS) {
+    hours[key] = { open, close, closed: false };
+  }
+  return hours;
+}
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

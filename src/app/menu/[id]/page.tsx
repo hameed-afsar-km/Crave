@@ -11,19 +11,13 @@ import Link from 'next/link';
 import { subscribeMenuItems } from '@/lib/firestore-service';
 import type { MenuItem } from '@/types';
 
-const extras = [
-  { label: 'Extra Cheese', price: 30 },
-  { label: 'Extra Spicy', price: 0 },
-  { label: 'No Onion', price: 0 },
-];
-
 export default function FoodDetailPage() {
   const params = useParams();
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
-  const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
+  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
 
   useEffect(() => {
     const unsub = subscribeMenuItems((menuItems) => {
@@ -46,28 +40,34 @@ export default function FoodDetailPage() {
   if (!item) return notFound();
 
   const handleAddToCart = () => {
-    const optionsKey = selectedExtras.length > 0 ? `-${[...selectedExtras].sort().join('-')}` : '';
+    const addons = (item.addons || []).filter(a => selectedAddons.includes(a.name));
+    const addonKey = addons.length > 0 ? addons.map(a => a.name).sort().join('-') : '';
+    const optionsKey = addonKey ? `-${addonKey}` : '';
+    const addonPriceTotal = addons.reduce((sum, a) => sum + a.price, 0);
     addItem({
       id: `${item.id}${optionsKey}`,
       menuItemId: item.id,
       name: item.name,
-      price: totalPrice,
+      price: item.price + addonPriceTotal,
       quantity,
       image: item.image,
-      options: selectedExtras,
+      addons: addons.length > 0 ? addons : undefined,
+      inclusiveOfGst: item.inclusiveOfGst,
     });
   };
 
-  const toggleExtra = (label: string) => {
-    setSelectedExtras(prev =>
-      prev.includes(label) ? prev.filter(e => e !== label) : [...prev, label]
+  const toggleAddon = (name: string) => {
+    setSelectedAddons(prev =>
+      prev.includes(name) ? prev.filter(a => a !== name) : [...prev, name]
     );
   };
 
-  const totalPrice = item.price + selectedExtras.reduce((sum, e) => {
-    const extra = extras.find(x => x.label === e);
-    return sum + (extra?.price || 0);
-  }, 0);
+  const addons = item.addons || [];
+  const selectedAddonTotal = addons
+    .filter(a => selectedAddons.includes(a.name))
+    .reduce((sum, a) => sum + a.price, 0);
+
+  const totalPrice = item.price + selectedAddonTotal;
 
   return (
     <div className="min-h-screen bg-[#06060A] pt-32 md:pt-40 pb-20 relative overflow-hidden">
@@ -125,46 +125,53 @@ export default function FoodDetailPage() {
             <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-4 leading-tight">{item.name}</h1>
             <p className="text-zinc-400 text-sm md:text-base leading-relaxed mb-6">{item.description}</p>
 
-            <div className="text-3xl font-black text-gradient-gold mb-8 tracking-tight">
+            <div className="text-3xl font-black text-gradient-gold mb-8 tracking-tight flex items-center gap-3">
               {formatPrice(item.price)}
+              {item.inclusiveOfGst && (
+                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Inclusive of GST
+                </span>
+              )}
             </div>
 
             {/* Customize Section */}
-            <div className="border-t border-white/5 pt-6 mb-8">
-              <h3 className="font-bold text-white text-base tracking-wide mb-4">Customize Your Order</h3>
-              <div className="flex flex-col gap-3">
-                {extras.map(extra => {
-                  const isSelected = selectedExtras.includes(extra.label);
-                  return (
-                    <button
-                      key={extra.label}
-                      onClick={() => toggleExtra(extra.label)}
-                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 ${
-                        isSelected
-                          ? 'border-gold/40 bg-gold/[0.04] shadow-[0_0_15px_rgba(212,175,55,0.06)]'
-                          : 'border-white/[0.06] bg-white/[0.02] backdrop-blur-sm hover:border-white/15'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all duration-300 ${
+            {addons.length > 0 && (
+              <div className="border-t border-white/5 pt-6 mb-8">
+                <h3 className="font-bold text-white text-base tracking-wide mb-4">Customize Your Order</h3>
+                <div className="flex flex-col gap-3">
+                  {addons.map(addon => {
+                    const isSelected = selectedAddons.includes(addon.name);
+                    return (
+                      <button
+                        key={addon.name}
+                        onClick={() => toggleAddon(addon.name)}
+                        className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 ${
                           isSelected
-                            ? 'border-gold bg-gold text-black'
-                            : 'border-white/20 bg-black/40'
-                        }`}>
-                          {isSelected && (
-                            <Check className="w-3.5 h-3.5 stroke-[3.5px] text-black" />
-                          )}
+                            ? 'border-gold/40 bg-gold/[0.04] shadow-[0_0_15px_rgba(212,175,55,0.06)]'
+                            : 'border-white/[0.06] bg-white/[0.02] backdrop-blur-sm hover:border-white/15'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all duration-300 ${
+                            isSelected
+                              ? 'border-gold bg-gold text-black'
+                              : 'border-white/20 bg-black/40'
+                          }`}>
+                            {isSelected && (
+                              <Check className="w-3.5 h-3.5 stroke-[3.5px] text-black" />
+                            )}
+                          </div>
+                          <span className="font-bold text-sm text-zinc-200">{addon.name}</span>
                         </div>
-                        <span className="font-bold text-sm text-zinc-200">{extra.label}</span>
-                      </div>
-                      {extra.price > 0 && (
-                        <span className="text-xs font-black text-gold">+{formatPrice(extra.price)}</span>
-                      )}
-                    </button>
-                  );
-                })}
+                        {addon.price > 0 && (
+                          <span className="text-xs font-black text-gold">+{formatPrice(addon.price)}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Quantity Selector */}
             <div className="border-t border-white/5 pt-6 mb-8">
