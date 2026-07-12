@@ -37,24 +37,21 @@ function clearAuthCookies(res: NextResponse) {
   res.cookies.set('crave-user', '', { maxAge: 0, path: '/', sameSite: 'strict', secure: true });
 }
 
-export function proxy(request: NextRequest) {
+export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
 
   if (!pathname.startsWith('/admin') && !pathname.startsWith('/checkout') && !pathname.startsWith('/orders') && !pathname.startsWith('/profile') && !pathname.startsWith('/rewards')) {
-    return;
+    return NextResponse.next();
   }
 
   const tokenCookie = request.cookies.get('crave-token');
 
   if (!tokenCookie?.value) {
-    if (pathname.startsWith('/admin') || pathname.startsWith('/orders') || pathname.startsWith('/profile') || pathname.startsWith('/rewards') || pathname.startsWith('/checkout')) {
-      const loginUrl = new URL('/auth', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
-      const res = NextResponse.redirect(loginUrl);
-      clearAuthCookies(res);
-      return res;
-    }
-    return;
+    const loginUrl = new URL('/auth', request.url);
+    loginUrl.searchParams.set('redirect', pathname);
+    const res = NextResponse.redirect(loginUrl);
+    clearAuthCookies(res);
+    return res;
   }
 
   const payload = decodeJwtPayload(tokenCookie.value);
@@ -66,12 +63,7 @@ export function proxy(request: NextRequest) {
     return res;
   }
 
-  // Role check removed — JWT custom claims may not be set yet.
-  // Role authorization is enforced by:
-  //   1. Client-side guards on admin pages
-  //   2. requireStaff() in API routes (verifies via Admin SDK)
-
-  return;
+  return NextResponse.next();
 }
 
 export const config = {

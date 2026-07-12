@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
-  ArrowLeft, Users, Search, Shield, ShieldCheck, UserCog,
+  ArrowLeft, Users, Search, ShieldCheck, UserCog,
   AlertCircle, CheckCircle, Store
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -27,7 +27,6 @@ const ROLES = [
   { value: 'customer', label: 'Customer', icon: Users, color: 'zinc' },
   { value: 'outlet_staff', label: 'Outlet Staff', icon: UserCog, color: 'blue' },
   { value: 'outlet_manager', label: 'Outlet Manager', icon: ShieldCheck, color: 'amber' },
-  { value: 'admin', label: 'Admin', icon: Shield, color: 'red' },
 ] as const;
 
 const roleColor: Record<string, string> = {
@@ -221,7 +220,7 @@ export default function UserManagement() {
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium border ${roleColor[u.role] || roleColor.customer}`}>
                       {u.role.replace('_', ' ')}
                     </span>
-                    {u.uid !== currentUser?.uid && (
+                    {u.uid !== currentUser?.uid && u.role !== 'admin' && (
                       <button onClick={() => setEditingUser(u)}
                         className="p-2 rounded-lg border border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-all text-xs"
                       >

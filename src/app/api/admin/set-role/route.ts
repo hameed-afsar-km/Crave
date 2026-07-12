@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { requireStaff, getAdminDb, syncUserRoleToClaims } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
-const VALID_ROLES = ['customer', 'outlet_staff', 'outlet_manager', 'admin'];
+const VALID_ROLES = ['customer', 'outlet_staff', 'outlet_manager'];
+const ADMIN_ROLE = 'admin';
 
 export async function POST(req: Request) {
   try {
@@ -27,6 +28,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Service unavailable' }, { status: 503 });
     }
 
+    if (uid === auth.uid) {
+      return NextResponse.json({ error: 'Cannot modify your own role' }, { status: 403 });
+    }
+
+    const targetDoc = await db.collection('users').doc(uid).get();
+    const targetRole = targetDoc.data()?.role || 'customer';
+
+    if (targetRole === ADMIN_ROLE) {
+      return NextResponse.json({ error: 'Admin users cannot be modified' }, { status: 403 });
+    }
+
     const updates: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
 
     if (role) {
@@ -49,7 +61,7 @@ export async function POST(req: Request) {
       action: 'user.role_updated',
       targetType: 'user',
       targetId: uid,
-      details: { role, assignedOutletId },
+      details: { role, assignedOutletId, previousRole: targetRole },
       userEmail: auth.email ? auth.email.replace(/(.{2})(.*)(@.*)/, '$1***$3') : 'unknown',
       userRole: auth.role || 'unknown',
       userName: (auth as any).name || 'unknown',

@@ -136,7 +136,8 @@ service cloud.firestore {
         isAdmin() ||
         (isOwner(userId) &&
           request.resource.data.diff(resource.data).affectedKeys().hasAny(['name', 'phone', 'email', 'photoURL', 'address', 'uid', 'updatedAt']) &&
-          (request.resource.data.role == 'customer' || request.resource.data.role == resource.data.role)
+          (request.resource.data.role == 'customer' || request.resource.data.role == resource.data.role) &&
+          (resource.data.role != 'admin' || request.resource.data.role == resource.data.role)
         )
       );
       allow delete: if isAdmin();
