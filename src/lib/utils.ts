@@ -70,19 +70,69 @@ export function generateOrderId(): string {
   return result;
 }
 
-function parseTime(t: string): number {
+export function parseTime(t: string): number {
   const [h, m] = t.split(':').map(Number);
   return h * 60 + m;
+}
+
+export function isOutletCurrentlyOpen(hours: { open: string; close: string; closed: boolean }): boolean {
+  if (hours.closed) return false;
+  const openMin = parseTime(hours.open);
+  const closeMin = parseTime(hours.close);
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  if (closeMin <= openMin) {
+    return nowMin >= openMin || nowMin <= closeMin;
+  }
+  return nowMin >= openMin && nowMin <= closeMin;
+}
+
+export function getNextOpenDate(hours: { open: string; close: string; closed: boolean }): Date {
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const openMin = parseTime(hours.open);
+  const closeMin = parseTime(hours.close);
+  const isOvernight = closeMin <= openMin;
+
+  const today = new Date(now);
+  today.setHours(Math.floor(openMin / 60), openMin % 60, 0, 0);
+
+  if (hours.closed) {
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(Math.floor(openMin / 60), openMin % 60, 0, 0);
+    return tomorrow;
+  }
+
+  if (isOvernight) {
+    if (nowMin >= openMin || nowMin <= closeMin) {
+      return today;
+    }
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(Math.floor(openMin / 60), openMin % 60, 0, 0);
+    return tomorrow;
+  }
+
+  if (nowMin < openMin) {
+    return today;
+  }
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(Math.floor(openMin / 60), openMin % 60, 0, 0);
+  return tomorrow;
 }
 
 export function generateTimeSlots(
   openingTime?: string,
   closingTime?: string,
+  preparationTime: number = 0,
 ): { time: string; label: string }[] {
   const slots: { time: string; label: string }[] = [];
   const now = new Date();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const startMinutes = Math.ceil((currentMinutes + 15) / 15) * 15;
+  const earliestPickup = currentMinutes + preparationTime;
+  const startMinutes = Math.ceil(earliestPickup / 15) * 15;
 
   if (!openingTime || !closingTime) {
     for (let i = 0; i < 40; i++) {
@@ -101,24 +151,30 @@ export function generateTimeSlots(
   const openMin = parseTime(openingTime);
   const closeMin = parseTime(closingTime);
   const isOvernight = closeMin <= openMin;
+  const effectiveStart = Math.max(startMinutes, openMin);
+  const slotStart = Math.ceil(effectiveStart / 15) * 15;
+  let wasInWindow = false;
 
-  for (let i = 0; i < 100; i++) {
-    const totalMinutes = startMinutes + i * 15;
+  for (let i = 0; i < 96; i++) {
+    const totalMinutes = slotStart + i * 15;
     const hours = Math.floor(totalMinutes / 60) % 24;
     const minutes = totalMinutes % 60;
     const minsToday = hours * 60 + minutes;
     const time = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 
+    let inWindow: boolean;
     if (isOvernight) {
-      const inWindow = minsToday >= openMin || minsToday < closeMin;
-      if (!inWindow) {
-        if (totalMinutes >= 24 * 60 && minsToday >= closeMin) break;
-        continue;
-      }
+      inWindow = minsToday >= openMin || minsToday <= closeMin;
     } else {
-      if (minsToday < openMin || minsToday >= closeMin) continue;
+      inWindow = minsToday >= openMin && minsToday <= closeMin;
     }
 
+    if (!inWindow) {
+      if (wasInWindow) break;
+      continue;
+    }
+
+    wasInWindow = true;
     const ampm = hours >= 12 ? 'PM' : 'AM';
     const h12 = hours % 12 || 12;
     const label = `${h12}:${minutes.toString().padStart(2, '0')} ${ampm}`;

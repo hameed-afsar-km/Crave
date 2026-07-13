@@ -24,7 +24,11 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    if (user) router.replace('/');
+    if (user) {
+      const params = new URLSearchParams(window.location.search);
+      const redirectTo = params.get('redirect') || '/';
+      router.replace(redirectTo);
+    }
   }, [user, router]);
 
   async function handleGoogleSignIn() {
@@ -39,7 +43,8 @@ export default function AuthPage() {
         phone: u.phoneNumber || '',
         role: 'customer',
       });
-      router.replace('/');
+      const redirectTo = new URLSearchParams(window.location.search).get('redirect') || '/';
+      router.replace(redirectTo);
     } catch (err: any) {
       setError(err?.message || 'Google sign-in failed. Please try again.');
     } finally {
@@ -66,7 +71,8 @@ export default function AuthPage() {
         phone: u.phoneNumber || '',
         role: 'customer',
       });
-      router.replace('/');
+      const redirectTo = new URLSearchParams(window.location.search).get('redirect') || '/';
+      router.replace(redirectTo);
     } catch (err: any) {
       setError(err?.message || 'Sign-in failed. Please try again.');
     } finally {

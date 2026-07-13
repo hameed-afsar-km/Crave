@@ -1,17 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, ShoppingBag, ArrowLeft, User, CheckCircle, ArrowRight, Store, Ban, MapPin, ChefHat } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import { formatPrice, generateTimeSlots } from '@/lib/utils';
+import { formatPrice, generateTimeSlots, isOutletCurrentlyOpen, formatTime12, getNextOpenDate, parseTime, getOutletTodayHours } from '@/lib/utils';
 import { loadSettings, getTimeUntilOpen } from '@/lib/store';
 import { loadRazorpayScript } from '@/lib/razorpay';
-import { updateLoyaltyPoints } from '@/lib/firestore-service';
+import { updateLoyaltyPoints, subscribeOutlets } from '@/lib/firestore-service';
 import { sanitizeString, sanitizePhone, sanitizeEmail } from '@/lib/sanitize';
 import { loadOutlets, getOutlet } from '@/lib/outlets';
-import { getOutletTodayHours } from '@/lib/utils';
 import StoreStatusBanner from '@/components/StoreStatusBanner';
 import Link from 'next/link';
 
@@ -31,17 +30,20 @@ export default function CheckoutPage() {
   const [outlets, setOutlets] = useState(() => loadOutlets());
   const [storeStatus, setStoreStatus] = useState(() => loadSettings());
   const [timeUntilOpen, setTimeUntilOpen] = useState('');
+  const [countdown, setCountdown] = useState('');
 
   useEffect(() => {
-    const allOutlets = loadOutlets();
-    const openOnes = allOutlets.filter((o) => o.isOpen && o.status === 'active');
-    setOutlets(openOnes);
-    if (openOnes.length === 1 && !selectedOutletId) {
-      setSelectedOutlet(openOnes[0].id, openOnes[0].name);
-    } else if (selectedOutletId) {
-      const stillOpen = openOnes.find((o) => o.id === selectedOutletId);
-      if (!stillOpen) setSelectedOutlet('', '');
-    }
+    const unsub = subscribeOutlets((allOutlets) => {
+      const openOnes = allOutlets.filter((o) => o.isOpen && o.status === 'active');
+      setOutlets(openOnes);
+      if (openOnes.length === 1 && !selectedOutletId) {
+        setSelectedOutlet(openOnes[0].id, openOnes[0].name);
+      } else if (selectedOutletId) {
+        const stillOpen = openOnes.find((o) => o.id === selectedOutletId);
+        if (!stillOpen) setSelectedOutlet('', '');
+      }
+    });
+    return unsub;
   }, []);
 
   useEffect(() => {
@@ -77,15 +79,82 @@ export default function CheckoutPage() {
 
   const selectedOutlet = selectedOutletId ? getOutlet(selectedOutletId) : null;
   const todayHours = selectedOutlet ? getOutletTodayHours(selectedOutlet) : null;
-  const timeSlots = todayHours && !todayHours.closed
-    ? generateTimeSlots(todayHours.open, todayHours.close)
-    : generateTimeSlots(storeStatus.openingTime, storeStatus.closingTime);
+  const shopIsOpen = todayHours ? isOutletCurrentlyOpen(todayHours) : true;
+  const preparationTime = selectedOutlet?.preparationTime ?? 10;
+
+  const timeSlots = useMemo(() =>
+    todayHours && !todayHours.closed
+      ? generateTimeSlots(todayHours.open, todayHours.close, preparationTime)
+      : generateTimeSlots(storeStatus.openingTime, storeStatus.closingTime, preparationTime),
+    [todayHours?.open, todayHours?.close, todayHours?.closed, storeStatus.openingTime, storeStatus.closingTime, preparationTime]
+  );
+
+  const asapReadyTime = useMemo(() => {
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const earliest = currentMinutes + preparationTime;
+    const openMin = todayHours ? parseTime(todayHours.open) : 0;
+    const effectiveEarliest = Math.max(earliest, openMin);
+    const rounded = Math.ceil(effectiveEarliest / 15) * 15;
+    const h = Math.floor(rounded / 60) % 24;
+    const m = rounded % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  }, [preparationTime, todayHours?.open]);
+
+  const asapFitsInWindow = useMemo(() => {
+    if (!todayHours || todayHours.closed || !shopIsOpen) return false;
+    const openMin = parseInt(todayHours.open.split(':')[0]) * 60 + parseInt(todayHours.open.split(':')[1]);
+    const closeMin = parseInt(todayHours.close.split(':')[0]) * 60 + parseInt(todayHours.close.split(':')[1]);
+    const [h, m] = asapReadyTime.split(':').map(Number);
+    const readyMin = h * 60 + m;
+    const isOvernight = closeMin <= openMin;
+    if (isOvernight) {
+      return readyMin >= openMin || readyMin <= closeMin;
+    }
+    return readyMin >= openMin && readyMin <= closeMin;
+  }, [todayHours, asapReadyTime, shopIsOpen]);
+
+  const canScheduleLater = timeSlots.length > 0;
 
   useEffect(() => {
-    if (pickupOption === 'asap' && timeSlots.length > 0) {
-      setSelectedTime(timeSlots[0].time);
+    if (pickupOption === 'asap' && asapFitsInWindow) {
+      setSelectedTime(asapReadyTime);
+    } else if (pickupOption === 'asap' && !asapFitsInWindow && canScheduleLater) {
+      setPickupOption('later');
     }
-  }, [pickupOption]);
+  }, [pickupOption, asapFitsInWindow, asapReadyTime, canScheduleLater]);
+
+  useEffect(() => {
+    if (todayHours && !shopIsOpen) {
+      const tick = () => {
+        const target = getNextOpenDate(todayHours);
+        const diff = target.getTime() - Date.now();
+        if (diff <= 0) { setCountdown(''); return; }
+        const hrs = Math.floor(diff / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
+        const secs = Math.floor((diff % 60000) / 1000);
+        setCountdown(`${hrs}h ${mins}m ${secs}s`);
+      };
+      tick();
+      const interval = setInterval(tick, 1000);
+      return () => clearInterval(interval);
+    } else if (todayHours && shopIsOpen && !asapFitsInWindow && !canScheduleLater) {
+      const tick = () => {
+        const target = getNextOpenDate(todayHours);
+        const diff = target.getTime() - Date.now();
+        if (diff <= 0) { setCountdown(''); return; }
+        const hrs = Math.floor(diff / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
+        const secs = Math.floor((diff % 60000) / 1000);
+        setCountdown(`${hrs}h ${mins}m ${secs}s`);
+      };
+      tick();
+      const interval = setInterval(tick, 1000);
+      return () => clearInterval(interval);
+    } else {
+      setCountdown('');
+    }
+  }, [shopIsOpen, asapFitsInWindow, canScheduleLater, todayHours]);
 
   const isPhoneValid = /^\d{10}$/.test(phone);
 
@@ -438,55 +507,107 @@ export default function CheckoutPage() {
                 <h2 className="text-base font-black text-white">Pickup Time</h2>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mb-5">
-                {[
-                  { key: 'asap', label: 'Pickup ASAP', sub: '~18 min wait' },
-                  { key: 'later', label: 'Schedule Later', sub: 'Choose a slot' },
-                ].map(opt => (
-                  <button
-                    key={opt.key}
-                    onClick={() => setPickupOption(opt.key as 'asap' | 'later')}
-                    className={`p-4 rounded-2xl border transition-all duration-300 text-left ${
-                      pickupOption === opt.key
-                        ? 'border-gold/45 bg-gold/6 shadow-[0_0_15px_rgba(212,175,55,0.08)]'
-                        : 'border-white/6 bg-white/2 hover:border-white/12'
-                    }`}
-                  >
-                    <p className="font-black text-sm text-white">{opt.label}</p>
-                    <p className="text-xs text-zinc-500 mt-0.5">{opt.sub}</p>
-                  </button>
-                ))}
-              </div>
+              {!shopIsOpen && todayHours && (
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center gap-2.5 p-3 rounded-2xl border border-amber-500/20 bg-amber-500/5">
+                    <Ban className="w-4 h-4 text-amber-400 shrink-0" />
+                    <p className="text-xs text-amber-300">
+                      Store is currently closed. Opens at <strong>{formatTime12(todayHours.open)}</strong>
+                    </p>
+                  </div>
+                  {countdown && (
+                    <div className="flex items-center gap-2.5 p-3 rounded-2xl border border-gold/20 bg-gold/5">
+                      <Clock className="w-4 h-4 text-gold shrink-0" />
+                      <p className="text-xs text-gold">
+                        Opens in <strong>{countdown}</strong>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
-              {pickupOption === 'later' && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-44 overflow-y-auto p-3 rounded-2xl border border-white/5 bg-black/30"
-                >
-                  {timeSlots.map(slot => (
-                    <button
-                      key={slot.time}
-                      onClick={() => setSelectedTime(slot.time)}
-                      className={`py-2 px-2.5 rounded-xl text-[11px] font-black transition-all duration-200 ${
-                        selectedTime === slot.time
-                          ? 'bg-gradient-to-r from-gold to-amber-600 text-white shadow-md'
-                          : 'bg-zinc-900/50 text-zinc-400 border border-white/5 hover:border-gold/25 hover:text-gold'
-                      }`}
+              {!asapFitsInWindow && !canScheduleLater ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2.5 p-3 rounded-2xl border border-amber-500/20 bg-amber-500/5">
+                    <Ban className="w-4 h-4 text-amber-400 shrink-0" />
+                    <p className="text-xs text-amber-300">
+                      No pickup slots available. Preparation time ({preparationTime} min) exceeds store hours.
+                    </p>
+                  </div>
+                  {countdown && (
+                    <div className="flex items-center gap-2.5 p-3 rounded-2xl border border-gold/20 bg-gold/5">
+                      <Clock className="w-4 h-4 text-gold shrink-0" />
+                      <p className="text-xs text-gold">
+                        Next ordering window opens in <strong>{countdown}</strong>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : canScheduleLater ? (
+                <>
+                  <div className="grid grid-cols-2 gap-3 mb-5">
+                    {[
+                      { key: 'asap', label: 'Pickup ASAP', sub: asapFitsInWindow ? `~${preparationTime} min wait` : 'Not available now' },
+                      { key: 'later', label: 'Schedule Later', sub: canScheduleLater ? 'Choose a slot' : 'No slots' },
+                    ].map(opt => (
+                      <button
+                        key={opt.key}
+                        disabled={opt.key === 'asap' ? !asapFitsInWindow : !canScheduleLater}
+                        onClick={() => setPickupOption(opt.key as 'asap' | 'later')}
+                        className={`p-4 rounded-2xl border transition-all duration-300 text-left ${
+                          pickupOption === opt.key
+                            ? 'border-gold/45 bg-gold/6 shadow-[0_0_15px_rgba(212,175,55,0.08)]'
+                            : 'border-white/6 bg-white/2 hover:border-white/12'
+                        } ${(opt.key === 'asap' && !asapFitsInWindow) || (opt.key === 'later' && !canScheduleLater) ? 'opacity-40 cursor-not-allowed' : ''}`}
+                      >
+                        <p className="font-black text-sm text-white">{opt.label}</p>
+                        <p className="text-xs text-zinc-500 mt-0.5">{opt.sub}</p>
+                      </button>
+                    ))}
+                  </div>
+
+                  {pickupOption === 'asap' && !asapFitsInWindow && (
+                    <div className="flex items-center gap-2.5 p-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 mb-4">
+                      <Ban className="w-4 h-4 text-amber-400 shrink-0" />
+                      <p className="text-xs text-amber-300">
+                        {!shopIsOpen
+                          ? 'Store is currently closed. Choose a pickup slot below.'
+                          : `Pickup not available now. Ready time (${formatTime12(asapReadyTime)}) exceeds closing (${formatTime12(todayHours?.close || '22:00')}).`}
+                      </p>
+                    </div>
+                  )}
+
+                  {pickupOption === 'later' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-44 overflow-y-auto p-3 rounded-2xl border border-white/5 bg-black/30"
                     >
-                      {slot.label}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
+                      {timeSlots.map(slot => (
+                        <button
+                          key={slot.time}
+                          onClick={() => setSelectedTime(slot.time)}
+                          className={`py-2 px-2.5 rounded-xl text-[11px] font-black transition-all duration-200 ${
+                            selectedTime === slot.time
+                              ? 'bg-gradient-to-r from-gold to-amber-600 text-white shadow-md'
+                              : 'bg-zinc-900/50 text-zinc-400 border border-white/5 hover:border-gold/25 hover:text-gold'
+                          }`}
+                        >
+                          {slot.label}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
 
-              {pickupOption === 'asap' && selectedTime && (
-                <p className="text-xs text-zinc-500 mt-4 flex items-center gap-2">
-                  <CheckCircle className="w-3.5 h-3.5 text-gold shrink-0" />
-                  Ready at approximately <strong className="text-gold ml-1">{selectedTime}</strong>
-                </p>
-              )}
+                  {pickupOption === 'asap' && asapFitsInWindow && selectedTime && (
+                    <p className="text-xs text-zinc-500 mt-4 flex items-center gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-gold shrink-0" />
+                      Ready at approximately <strong className="text-gold ml-1">{formatTime12(selectedTime)}</strong>
+                    </p>
+                  )}
+                </>
+              ) : null}
             </motion.div>
           </div>
 
@@ -545,7 +666,7 @@ export default function CheckoutPage() {
 
               <motion.button
                 onClick={handlePlaceOrder}
-                disabled={processing || !name || !phone || !isPhoneValid || !canOrder}
+                disabled={processing || !name || !phone || !isPhoneValid || !canOrder || !selectedTime}
                 whileHover={{ scale: processing ? 1 : 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="relative flex items-center justify-center gap-2.5 w-full py-4 bg-gradient-to-r from-gold via-amber-500 to-amber-600 text-white font-black rounded-2xl shadow-lg shadow-gold/12 hover:shadow-gold/28 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed text-sm overflow-hidden group"

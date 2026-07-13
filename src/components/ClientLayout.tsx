@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { CartProvider } from '@/context/CartContext';
@@ -11,6 +11,8 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import PWARegister from './PWARegister';
 import { ADMIN_SLUG } from '@/lib/admin-slug';
+import { subscribeOutlets } from '@/lib/firestore-service';
+import { saveOutlets } from '@/lib/outlets';
 
 const SplashScreen = dynamic(() => import('./SplashScreen'), { ssr: false });
 const QueueWidget = dynamic(() => import('./QueueWidget'), { ssr: false });
@@ -24,6 +26,13 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   const handleSplashFinish = () => {
     setSplashDone(true);
   };
+
+  useEffect(() => {
+    const unsub = subscribeOutlets((fetched) => {
+      saveOutlets(fetched);
+    });
+    return unsub;
+  }, []);
 
   return (
     <AuthProvider>
