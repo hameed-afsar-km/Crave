@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ShoppingBag, ArrowLeft, User, CheckCircle, ArrowRight, Store, Ban, MapPin, ChefHat } from 'lucide-react';
+import { Clock, ShoppingBag, ArrowLeft, User, CheckCircle, ArrowRight, Store, Ban, MapPin, ChefHat, Phone, Save } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { formatPrice, generateTimeSlots, isOutletCurrentlyOpen, formatTime12, getNextOpenDate, parseTime, getOutletTodayHours } from '@/lib/utils';
@@ -16,7 +16,7 @@ import Link from 'next/link';
 
 export default function CheckoutPage() {
   const { items, subtotal, clearCart, selectedOutletId, selectedOutletName, setSelectedOutlet } = useCart();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -186,9 +186,24 @@ export default function CheckoutPage() {
     }
   }, [shopIsOpen, asapFitsInWindow, canScheduleLater, todayHours]);
 
+  const handleSavePhone = useCallback(async () => {
+    if (!user?.uid || !phone) return;
+    setPhoneSaveLoading(true);
+    try {
+      updateUser({ phone });
+      setShowPhoneSavePrompt(false);
+    } catch {
+      // Silently fail — non-critical feature
+    } finally {
+      setPhoneSaveLoading(false);
+    }
+  }, [user?.uid, phone, updateUser]);
+
   const isPhoneValid = /^\d{10}$/.test(phone);
 
   const [paymentError, setPaymentError] = useState('');
+  const [showPhoneSavePrompt, setShowPhoneSavePrompt] = useState(false);
+  const [phoneSaveLoading, setPhoneSaveLoading] = useState(false);
 
   const handlePlaceOrder = async () => {
     if (!name || !phone || !isPhoneValid) return;
@@ -326,6 +341,11 @@ export default function CheckoutPage() {
             setConfirmedOrder(order);
             setConfirmedOrderId(orderId);
             setShowConfirmation(true);
+
+            // Prompt to save phone to profile if user is logged in and has no saved phone
+            if (user?.uid && !user.phone && phone) {
+              setTimeout(() => setShowPhoneSavePrompt(true), 1500);
+            }
           } catch {
             setPaymentError('Payment successful but order creation failed. Please contact support.');
           } finally {
@@ -906,6 +926,57 @@ export default function CheckoutPage() {
                   Continue Shopping
                 </Link>
               </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Save Phone to Profile Prompt ── */}
+      <AnimatePresence>
+        {showPhoneSavePrompt && user?.uid && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-5"
+          >
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setShowPhoneSavePrompt(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+              transition={{ type: 'spring', damping: 22, stiffness: 200 }}
+              className="relative bg-[rgba(12,9,5,0.95)] backdrop-blur-2xl border border-gold/15 rounded-[28px] p-7 w-full max-w-sm text-center"
+            >
+              <div className="w-14 h-14 rounded-full bg-gold/10 border border-gold/20 flex items-center justify-center mx-auto mb-5">
+                <Phone className="w-7 h-7 text-gold" />
+              </div>
+              <h2 className="text-lg font-black text-white tracking-tight mb-1.5">Save your phone number?</h2>
+              <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
+                Save <span className="font-bold text-zinc-200">+91 {phone}</span> to your profile for faster checkout next time.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowPhoneSavePrompt(false)}
+                  className="flex-1 py-3 rounded-xl border border-white/8 text-zinc-400 text-sm font-bold hover:bg-white/3 transition-all"
+                >
+                  Not now
+                </button>
+                <button
+                  onClick={handleSavePhone}
+                  disabled={phoneSaveLoading}
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-gold to-amber-600 text-white text-sm font-black shadow-lg shadow-gold/15 hover:shadow-gold/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {phoneSaveLoading ? (
+                    <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Save
+                    </>
+                  )}
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}

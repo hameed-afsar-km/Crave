@@ -29,7 +29,7 @@ import { DEFAULT_OUTLETS, saveOutlets, setCachedOutlets } from '@/lib/outlets';
 import { sanitizeUserProfile } from '@/lib/sanitize';
 
 const PROTECTED_ORDER_FIELDS = ['paymentStatus', 'paymentId', 'amount', 'subtotal', 'tax', 'createdAt', 'completedAt'];
-const PROTECTED_USER_FIELDS = ['paymentStatus', 'paymentId', 'loyaltyPoints', 'amount', 'subtotal', 'tax', 'createdAt', 'completedAt', 'status', 'assignedOutletId', 'assignedOutletName'];
+const PROTECTED_USER_FIELDS = ['paymentStatus', 'paymentId', 'loyaltyPoints', 'amount', 'subtotal', 'tax', 'createdAt', 'completedAt', 'status', 'assignedOutletId', 'assignedOutletName', 'role', 'uid'];
 
 function stripProtectedFields(data: Record<string, any>, protectedFields: string[]): Record<string, any> {
   const out = { ...data };

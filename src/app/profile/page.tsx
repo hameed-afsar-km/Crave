@@ -3,16 +3,20 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { User, Phone, Mail, Package, LogOut, ArrowLeft, Star, ShoppingBag } from 'lucide-react';
+import { User, Phone, Mail, Package, LogOut, ArrowLeft, Star, ShoppingBag, Save, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { subscribeCustomerOrders, getLoyaltyPoints } from '@/lib/firestore-service';
 
 export default function ProfilePage() {
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut, loading, updateUser } = useAuth();
   const router = useRouter();
   const [pastOrders, setPastOrders] = useState<any[]>([]);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [editingPhone, setEditingPhone] = useState(false);
+  const [phoneValue, setPhoneValue] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [phoneSaving, setPhoneSaving] = useState(false);
 
   useEffect(() => {
     if (user?.uid) {
@@ -31,6 +35,37 @@ export default function ProfilePage() {
       router.replace('/auth');
     }
   }, [loading, user, router]);
+
+  const startEditPhone = () => {
+    setPhoneValue(user?.phone || '');
+    setPhoneError('');
+    setEditingPhone(true);
+  };
+
+  const cancelEditPhone = () => {
+    setEditingPhone(false);
+    setPhoneValue('');
+    setPhoneError('');
+  };
+
+  const savePhone = async () => {
+    const digits = phoneValue.replace(/\D/g, '');
+    if (digits.length !== 10) {
+      setPhoneError('Phone must be exactly 10 digits');
+      return;
+    }
+    if (!user?.uid) return;
+    setPhoneSaving(true);
+    try {
+      updateUser({ phone: digits });
+      setEditingPhone(false);
+      setPhoneError('');
+    } catch {
+      setPhoneError('Failed to save. Try again.');
+    } finally {
+      setPhoneSaving(false);
+    }
+  };
 
   if (loading || !user) return null;
 
@@ -104,20 +139,64 @@ export default function ProfilePage() {
 
           {/* Contact fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-5">
-            {[
-              { icon: Phone, label: 'Phone', value: user.phone || 'Not configured' },
-              { icon: Mail, label: 'Email', value: user.email || 'Not configured' },
-            ].map(({ icon: Icon, label, value }) => (
-              <div key={label} className="flex items-center gap-3.5 p-4 bg-black/30 border border-white/5 rounded-2xl">
-                <div className="p-2 bg-gold/8 rounded-xl border border-gold/15 shrink-0">
-                  <Icon className="w-4 h-4 text-gold" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{label}</p>
-                  <p className="font-bold text-zinc-200 text-sm mt-0.5">{value}</p>
-                </div>
+            <div className="flex items-center gap-3.5 p-4 bg-black/30 border border-white/5 rounded-2xl">
+              <div className="p-2 bg-gold/8 rounded-xl border border-gold/15 shrink-0">
+                <Phone className="w-4 h-4 text-gold" />
               </div>
-            ))}
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Phone</p>
+                {editingPhone ? (
+                  <div className="mt-1">
+                    <div className={`flex rounded-lg overflow-hidden border transition-all bg-[rgba(6,6,10,0.6)] ${
+                      phoneError ? 'border-rose-500/40' : 'border-white/10 focus-within:border-gold/45'
+                    }`}>
+                      <span className="flex items-center px-2 bg-white/3 border-r border-white/5 text-zinc-500 text-xs font-bold shrink-0">+91</span>
+                      <input
+                        type="tel"
+                        value={phoneValue}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          if (val.length <= 10) {
+                            setPhoneValue(val);
+                            setPhoneError(val.length === 10 || val.length === 0 ? '' : '10 digits required');
+                          }
+                        }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') savePhone(); if (e.key === 'Escape') cancelEditPhone(); }}
+                        autoFocus
+                        className="flex-1 px-2 py-1.5 bg-transparent text-white text-xs font-semibold focus:outline-none"
+                      />
+                    </div>
+                    {phoneError && <p className="text-[9px] text-rose-400 font-semibold mt-1">{phoneError}</p>}
+                    <div className="flex gap-1.5 mt-1.5">
+                      <button onClick={savePhone} disabled={phoneSaving || phoneValue.replace(/\D/g, '').length !== 10}
+                        className="flex items-center gap-1 px-2 py-1 rounded-md bg-gold/15 text-gold text-[10px] font-bold hover:bg-gold/25 transition-all disabled:opacity-40">
+                        {phoneSaving ? <span className="w-2.5 h-2.5 rounded-full border border-gold/30 border-t-gold animate-spin" /> : <Save className="w-2.5 h-2.5" />}
+                        Save
+                      </button>
+                      <button onClick={cancelEditPhone}
+                        className="flex items-center gap-1 px-2 py-1 rounded-md border border-white/8 text-zinc-500 text-[10px] font-bold hover:bg-white/3 transition-all">
+                        <X className="w-2.5 h-2.5" /> Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={startEditPhone}
+                    className="font-bold text-zinc-200 text-sm mt-0.5 hover:text-gold transition-colors text-left w-full group">
+                    {user.phone || <span className="text-zinc-600 italic">Tap to add phone</span>}
+                    <span className="text-[9px] text-zinc-600 ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-3.5 p-4 bg-black/30 border border-white/5 rounded-2xl">
+              <div className="p-2 bg-gold/8 rounded-xl border border-gold/15 shrink-0">
+                <Mail className="w-4 h-4 text-gold" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Email</p>
+                <p className="font-bold text-zinc-200 text-sm mt-0.5">{user.email || 'Not configured'}</p>
+              </div>
+            </div>
           </div>
         </motion.div>
 
