@@ -4,22 +4,29 @@ import { useState, useEffect } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { Star, Minus, Plus, ShoppingCart, ArrowLeft, Check } from 'lucide-react';
+import { Star, Minus, Plus, ShoppingCart, ArrowLeft, Check, Send } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import { useAddToCartPopup } from '@/context/AddToCartPopupContext';
 import Link from 'next/link';
-import { subscribeMenuItems } from '@/lib/firestore-service';
-import type { MenuItem } from '@/types';
+import { subscribeMenuItems, subscribeReviews, addReview } from '@/lib/firestore-service';
+import type { MenuItem, Review } from '@/types';
 
 export default function FoodDetailPage() {
   const params = useParams();
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
+  const { user } = useAuth();
   const { showPopup } = useAddToCartPopup();
   const [quantity, setQuantity] = useState(1);
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   useEffect(() => {
     const unsub = subscribeMenuItems((menuItems) => {
@@ -30,6 +37,12 @@ export default function FoodDetailPage() {
   }, []);
 
   const item = items.find(i => i.id === params.id);
+
+  useEffect(() => {
+    if (!item) return;
+    const unsub = subscribeReviews(item.id, setReviews);
+    return unsub;
+  }, [item?.id]);
 
   if (loading) {
     return (
@@ -63,6 +76,29 @@ export default function FoodDetailPage() {
     setSelectedAddons(prev =>
       prev.includes(name) ? prev.filter(a => a !== name) : [...prev, name]
     );
+  };
+
+  const handleSubmitReview = async () => {
+    if (!user?.uid || !item) return;
+    setReviewSubmitting(true);
+    try {
+      await addReview({
+        menuItemId: item.id,
+        userId: user.uid,
+        userName: user.name || user.email || 'Anonymous',
+        userEmail: user.email || '',
+        rating: reviewRating,
+        comment: reviewComment.trim(),
+      });
+      setReviewSubmitted(true);
+      setReviewComment('');
+      setReviewRating(5);
+      setTimeout(() => setReviewSubmitted(false), 3000);
+    } catch {
+      // silently fail
+    } finally {
+      setReviewSubmitting(false);
+    }
   };
 
   const addons = item.addons || [];
@@ -109,7 +145,10 @@ export default function FoodDetailPage() {
                 {/* Translucent Rating Badge */}
                 <div className="absolute top-4 left-4 bg-black/60 border border-gold/20 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-bold text-gold flex items-center gap-1.5">
                   <Star className="w-3.5 h-3.5 fill-gold text-gold" />
-                  <span>{item.rating}</span>
+                  <span>{item.rating || 'New'}</span>
+                  {reviews.length > 0 && (
+                    <span className="text-zinc-400">({reviews.length})</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -194,6 +233,90 @@ export default function FoodDetailPage() {
                   <Plus className="w-4 h-4 text-zinc-300" />
                 </button>
               </div>
+            </div>
+
+            {/* Reviews Section */}
+            <div className="border-t border-white/5 pt-8 mb-8">
+              <h3 className="font-bold text-white text-base tracking-wide mb-5">
+                Reviews {reviews.length > 0 && <span className="text-zinc-500 font-normal text-sm">({reviews.length})</span>}
+              </h3>
+
+              {/* Write Review */}
+              {user?.uid ? (
+                <div className="p-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] mb-5">
+                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">Write a Review</p>
+                  <div className="flex items-center gap-1 mb-3">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => setReviewRating(star)}
+                        className="p-0.5 transition-transform hover:scale-110"
+                      >
+                        <Star className={`w-5 h-5 ${star <= reviewRating ? 'fill-gold text-gold' : 'text-zinc-600'}`} />
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    placeholder="Share your experience..."
+                    rows={3}
+                    className="w-full px-4 py-3 bg-black/30 border border-white/[0.06] rounded-xl text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-gold/40 resize-none"
+                  />
+                  <div className="flex items-center justify-between mt-3">
+                    {reviewSubmitted && (
+                      <p className="text-[11px] text-emerald-400 font-semibold">Review submitted!</p>
+                    )}
+                    <div className="ml-auto">
+                      <button
+                        onClick={handleSubmitReview}
+                        disabled={reviewSubmitting || !reviewComment.trim()}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-gold to-amber-600 text-white text-xs font-black rounded-xl disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-gold/20 transition-all"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        {reviewSubmitting ? 'Posting...' : 'Post'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-zinc-500 mb-5">
+                  <Link href="/auth" className="text-gold hover:underline font-semibold">Sign in</Link> to leave a review.
+                </p>
+              )}
+
+              {/* Review List */}
+              {reviews.length === 0 ? (
+                <p className="text-sm text-zinc-600">No reviews yet. Be the first to review!</p>
+              ) : (
+                <div className="space-y-3">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="p-4 rounded-2xl border border-white/[0.04] bg-white/[0.015]">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-gold/10 border border-gold/15 flex items-center justify-center">
+                            <span className="text-[10px] font-black text-gold">
+                              {(review.userName || 'A')[0].toUpperCase()}
+                            </span>
+                          </div>
+                          <span className="text-xs font-bold text-zinc-300">{review.userName}</span>
+                        </div>
+                        <span className="text-[10px] text-zinc-600">
+                          {review.createdAt ? new Date(review.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-0.5 mb-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star key={star} className={`w-3 h-3 ${star <= review.rating ? 'fill-gold text-gold' : 'text-zinc-700'}`} />
+                        ))}
+                      </div>
+                      {review.comment && (
+                        <p className="text-xs text-zinc-400 leading-relaxed">{review.comment}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Floating Action Bar */}

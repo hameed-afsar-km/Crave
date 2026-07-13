@@ -33,6 +33,10 @@ export async function uploadToCloudinaryServer(
         resource_type: 'image',
         format: 'webp',
         quality: 'auto',
+        width: 800,
+        height: 800,
+        crop: 'fill',
+        gravity: 'center',
       },
       (error, result) => {
         if (error) reject(error);

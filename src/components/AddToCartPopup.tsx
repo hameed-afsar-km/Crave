@@ -72,7 +72,7 @@ export default function AddToCartPopup() {
                     alt={popupItem.name}
                     width={64}
                     height={64}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover aspect-square"
                   />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -95,7 +95,7 @@ export default function AddToCartPopup() {
                           alt={rec.name}
                           width={44}
                           height={44}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover aspect-square"
                         />
                       </div>
                       <div className="min-w-0 flex-1">

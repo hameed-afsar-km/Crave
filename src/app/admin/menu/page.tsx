@@ -446,6 +446,17 @@ export default function AdminMenu() {
                         e.target.value = '';
                         return;
                       }
+                      const dims = await new Promise<{ w: number; h: number }>((resolve) => {
+                        const img = new window.Image();
+                        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+                        img.onerror = () => resolve({ w: 0, h: 0 });
+                        img.src = URL.createObjectURL(file);
+                      });
+                      if (dims.w !== dims.h || dims.w === 0) {
+                        alert(`Image must be square (${dims.w}×${dims.h} detected). Please upload a square image.`);
+                        e.target.value = '';
+                        return;
+                      }
                     }
                     setImageFile(file);
                     if (previewUrl) URL.revokeObjectURL(previewUrl);

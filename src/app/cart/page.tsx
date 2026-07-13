@@ -114,7 +114,7 @@ export default function CartPage() {
                   alt={item.name}
                   width={80}
                   height={80}
-                  className="rounded-xl object-cover shrink-0 group-hover:scale-105 transition-transform duration-300"
+                  className="rounded-xl object-cover shrink-0 aspect-square group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="flex-1 min-w-0 flex flex-col justify-between">
                   <div className="flex items-start justify-between gap-3">

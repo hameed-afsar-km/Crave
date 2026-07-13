@@ -47,6 +47,7 @@ export interface MenuItem {
   availability?: Record<string, boolean>;
   addons?: MenuItemAddon[];
   inclusiveOfGst?: boolean;
+  reviewCount?: number;
   createdAt?: string;
 }
 
@@ -106,6 +107,18 @@ export interface Testimonial {
   review: string;
   rating: number;
   image?: string;
+}
+
+export interface Review {
+  id: string;
+  menuItemId: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface TimeSlot {

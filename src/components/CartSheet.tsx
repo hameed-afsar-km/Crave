@@ -80,7 +80,7 @@ export default function CartSheet({ open, onClose }: CartSheetProps) {
                         alt={item.name}
                         width={80}
                         height={80}
-                        className="rounded-lg object-cover"
+                        className="rounded-lg object-cover aspect-square"
                       />
                       <div className="flex-1 min-w-0">
                         <h4 className="font-bold text-white tracking-wide truncate">{item.name}</h4>

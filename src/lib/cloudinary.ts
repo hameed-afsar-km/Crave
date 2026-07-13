@@ -9,6 +9,7 @@ export async function uploadToCloudinary(
   formData.append('file', file);
   formData.append('upload_preset', 'crave_unsigned');
   formData.append('folder', folder);
+  formData.append('transformation', 'w_800,h_800,c_fill,g_center');
   if (filename) formData.append('public_id', filename);
 
   const res = await fetch(

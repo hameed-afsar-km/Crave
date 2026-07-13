@@ -47,7 +47,7 @@ export default function FoodCard({ item, index = 0, compact }: FoodCardProps) {
         <div className="relative rounded-[26px] overflow-hidden border border-white/[0.06] bg-[rgba(10,9,18,0.7)] backdrop-blur-lg shadow-2xl transition-all duration-500 group-hover:border-gold/28 group-hover:shadow-[0_8px_40px_rgba(212,175,55,0.12)]">
 
           {/* Image section */}
-          <div className="relative overflow-hidden aspect-[4/3] m-2 rounded-[20px]">
+          <div className="relative overflow-hidden aspect-square m-2 rounded-[20px]">
             <Image
               src={item.image}
               alt={item.name}

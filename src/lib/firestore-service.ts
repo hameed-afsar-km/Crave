@@ -19,7 +19,7 @@ import {
   limit,
   startAfter,
 } from 'firebase/firestore';
-import { Order, MenuItem, UserProfile, Outlet } from '@/types';
+import { Order, MenuItem, UserProfile, Outlet, Review } from '@/types';
 import { logAction, AuditUser } from './audit';
 import { StoreSettings, loadSettings, saveSettings as saveLocalSettings } from '@/lib/store';
 import { getStoredOrders, getStoredMenuItems } from '@/lib/seed-data';
@@ -45,6 +45,7 @@ const COLLECTIONS = {
   SETTINGS: 'settings',
   USERS: 'users',
   OUTLETS: 'outlets',
+  REVIEWS: 'reviews',
 } as const;
 
 function isReady(): boolean {
@@ -98,6 +99,7 @@ function mapMenuItemDoc(doc: any): MenuItem {
     availability: data.availability || undefined,
     addons: data.addons || undefined,
     inclusiveOfGst: data.inclusiveOfGst || false,
+    reviewCount: data.reviewCount || 0,
     createdAt: typeof data.createdAt === 'string' ? data.createdAt : timestampToDate(data.createdAt),
   };
 }
@@ -870,4 +872,75 @@ export async function seedDefaultMenuItems(): Promise<number> {
     }
   }
   return count;
+}
+
+// ─── REVIEWS ───
+
+export function subscribeReviews(
+  menuItemId: string,
+  callback: (reviews: Review[]) => void,
+): () => void {
+  if (!isReady()) { callback([]); return () => {}; }
+
+  const q = query(
+    collection(db!, COLLECTIONS.REVIEWS),
+    where('menuItemId', '==', menuItemId),
+    orderBy('createdAt', 'desc'),
+  );
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const reviews = snapshot.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          menuItemId: data.menuItemId || '',
+          userId: data.userId || '',
+          userName: data.userName || '',
+          userEmail: data.userEmail || '',
+          rating: data.rating || 0,
+          comment: data.comment || '',
+          createdAt: typeof data.createdAt === 'string' ? data.createdAt : (data.createdAt?.toDate?.()?.toISOString() || ''),
+          updatedAt: data.updatedAt,
+        } as Review;
+      });
+      callback(reviews);
+    },
+    (error) => {
+      console.warn('[subscribeReviews] Error:', error);
+      callback([]);
+    }
+  );
+}
+
+export async function addReview(
+  review: Omit<Review, 'id' | 'createdAt'>,
+): Promise<string> {
+  if (!isReady()) throw new Error('Unable to connect to server.');
+
+  const docRef = await addDoc(collection(db!, COLLECTIONS.REVIEWS), {
+    ...review,
+    createdAt: serverTimestamp(),
+  });
+
+  // Recalculate aggregate rating for this menu item
+  const aggSnap = await getDocs(
+    query(collection(db!, COLLECTIONS.REVIEWS), where('menuItemId', '==', review.menuItemId))
+  );
+  let total = 0;
+  let count = 0;
+  aggSnap.forEach((d) => {
+    total += (d.data().rating || 0);
+    count++;
+  });
+  const avgRating = count > 0 ? Math.round((total / count) * 10) / 10 : 0;
+
+  const menuDocRef = doc(db!, COLLECTIONS.MENU_ITEMS, review.menuItemId);
+  const menuDoc = await getDoc(menuDocRef);
+  if (menuDoc.exists()) {
+    await updateDoc(menuDocRef, { rating: avgRating, reviewCount: count });
+  }
+
+  return docRef.id;
 }

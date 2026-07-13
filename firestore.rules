@@ -174,6 +174,16 @@ service cloud.firestore {
       allow delete: if isAuth() && resource.data.userId == request.auth.uid;
     }
 
+    // ─── REVIEWS ──────────────────────────────────────
+    // Public read, authenticated create (own reviews), admin manage
+
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuth() && resource.data.userId == request.auth.uid;
+      allow delete: if isAdmin() || (isAuth() && resource.data.userId == request.auth.uid);
+    }
+
     // ─── DENY ALL ELSE ──────────────────────────────
     match /{document=**} {
       allow read, write: if false;
