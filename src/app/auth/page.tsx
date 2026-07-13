@@ -15,7 +15,7 @@ import Link from 'next/link';
 
 export default function AuthPage() {
   const router = useRouter();
-  const { signIn, user } = useAuth();
+  const { signIn, user, loading: authLoading } = useAuth();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
@@ -30,6 +30,14 @@ export default function AuthPage() {
       router.replace(redirectTo);
     }
   }, [user, router]);
+
+  if (authLoading && !user) {
+    return (
+      <div className="min-h-screen bg-[#06060A] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   async function handleGoogleSignIn() {
     setError('');

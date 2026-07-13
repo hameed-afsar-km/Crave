@@ -53,13 +53,13 @@ function clearAuthCookie() {
 }
 
 async function setTokenCookie() {
-  if (!auth) return;
+  if (!auth || !auth.currentUser) return;
   try {
-    const token = await getIdToken(auth.currentUser!, true);
+    const token = await getIdToken(auth.currentUser, true);
     const isSecure = window.location.protocol === 'https:';
     document.cookie = `crave-token=${token};path=/;max-age=1800;SameSite=Lax${isSecure ? ';Secure' : ''}`;
   } catch {
-    clearAuthCookie();
+    // Token refresh may fail temporarily — don't destroy the session
   }
 }
 
@@ -68,15 +68,6 @@ function clearAllStorage() {
   localStorage.removeItem('crave-push-subscription');
   localStorage.removeItem('crave-sw-registered');
   sessionStorage.clear();
-  try {
-    if ('indexedDB' in window) {
-      indexedDB.databases().then((dbs) => {
-        dbs.forEach((db) => {
-          if (db.name) indexedDB.deleteDatabase(db.name);
-        });
-      });
-    }
-  } catch {}
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -84,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const sessionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastActivityRef = useRef<number>(0);
+  const authResolvedRef = useRef(false);
 
   const performSignOut = useCallback(async () => {
     try {
@@ -127,6 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        authResolvedRef.current = true;
         try {
           // Use custom claims for fast initial render while Firestore loads
           const tokenResult = await getIdTokenResult(firebaseUser, true);
@@ -169,12 +162,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             saveUserProfile(firebaseUser.uid, minimal).catch(() => {});
           }
         } catch {
-          // Profile loading may fail — continue anyway
+          // Profile loading may fail — use Firebase Auth data as fallback
+          if (!user) {
+            const fallback: UserProfile = {
+              uid: firebaseUser.uid,
+              name: firebaseUser.displayName || '',
+              email: firebaseUser.email || '',
+              phone: firebaseUser.phoneNumber || '',
+              role: 'customer',
+            };
+            setUser(fallback);
+            setAuthCookie(fallback);
+          }
         }
         await setTokenCookie();
         setLoading(false);
       } else {
-        clearAuthCookie();
+        if (authResolvedRef.current) {
+          setUser(null);
+          clearAuthCookie();
+        }
         setLoading(false);
       }
     });

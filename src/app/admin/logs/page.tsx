@@ -71,6 +71,7 @@ export default function AdminLogs() {
   const [search, setSearch] = useState('');
   const [actionFilter, setActionFilter] = useState('all');
   const [userFilter, setUserFilter] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -115,11 +116,13 @@ export default function AdminLogs() {
   }, []);
 
   const uniqueEmails = useMemo(() => [...new Set(logs.map((l) => l.userEmail).filter(Boolean))], [logs]);
+  const uniqueRoles = useMemo(() => [...new Set(logs.map((l) => l.userRole).filter(Boolean))].sort(), [logs]);
 
   const filtered = useMemo(() => {
     return logs.filter((l) => {
       if (actionFilter !== 'all' && l.action !== actionFilter) return false;
       if (userFilter && l.userEmail !== userFilter) return false;
+      if (roleFilter !== 'all' && l.userRole !== roleFilter) return false;
       if (search) {
         const q = search.toLowerCase();
         if (!l.targetId.toLowerCase().includes(q) &&
@@ -129,7 +132,7 @@ export default function AdminLogs() {
       }
       return true;
     });
-  }, [logs, actionFilter, userFilter, search]);
+  }, [logs, actionFilter, userFilter, roleFilter, search]);
 
   const daysUntilPurge = useMemo(() => {
     if (logs.length === 0) return 30;
@@ -170,11 +173,12 @@ export default function AdminLogs() {
     doc.text(`Total Entries: ${filtered.length}`, 14, 32);
     autoTable(doc, {
       startY: 37,
-      head: [['Timestamp', 'Action', 'User', 'Target', 'Outlet']],
+      head: [['Timestamp', 'Action', 'User', 'Role', 'Target', 'Outlet']],
       body: filtered.slice(0, 100).map((l) => [
         l.createdAt ? new Date(l.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '-',
         ACTION_LABELS[l.action] || l.action,
         l.userName || l.userEmail,
+        l.userRole ? l.userRole.charAt(0).toUpperCase() + l.userRole.slice(1) : '-',
         `${l.targetType}:${l.targetId.slice(0, 12)}`,
         l.outletName || '-',
       ]),
@@ -238,6 +242,13 @@ export default function AdminLogs() {
                   <option key={email} value={email}>{email}</option>
                 ))}
               </select>
+              <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}
+                className="px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-xs text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600">
+                <option value="all">All Roles</option>
+                {uniqueRoles.map((role) => (
+                  <option key={role} value={role}>{role.charAt(0).toUpperCase() + role.slice(1)}</option>
+                ))}
+              </select>
               <button onClick={exportAsCSV} className="flex items-center gap-1.5 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium rounded-lg transition-all border border-zinc-700">
                 <Download className="w-3.5 h-3.5" /> CSV
               </button>
@@ -274,6 +285,11 @@ export default function AdminLogs() {
                   </div>
                   <div className="mt-1 text-xs text-zinc-400 space-x-1">
                     <span className="text-zinc-300 font-medium">{entry.userName || entry.userEmail}</span>
+                    {entry.userRole && (
+                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${entry.userRole === 'master_admin' ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : entry.userRole === 'admin' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-zinc-700/50 text-zinc-400 border-zinc-600/50'}`}>
+                        {entry.userRole === 'master_admin' ? 'Master Admin' : entry.userRole.charAt(0).toUpperCase() + entry.userRole.slice(1)}
+                      </span>
+                    )}
                     <span className="text-zinc-600">·</span>
                     <span className="text-zinc-500">{entry.targetType}</span>
                     <span className="text-zinc-600">·</span>
