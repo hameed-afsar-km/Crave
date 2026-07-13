@@ -86,7 +86,7 @@ export async function logAction(
       details: maskPII(details),
       userEmail: user?.email ? maskEmail(user.email) : 'unknown',
       userRole: user?.role || 'unknown',
-      userName: user?.name || 'unknown',
+      userName: user?.name || (user?.email ? user.email.split('@')[0] : 'unknown'),
       outletId: outletId || '',
       outletName: outletName || '',
       createdAt: serverTimestamp(),

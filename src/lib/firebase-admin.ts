@@ -121,7 +121,7 @@ export async function requireAuth(request: Request): Promise<{ uid: string; emai
   };
 }
 
-export async function requireStaff(request: Request): Promise<{ uid: string; email: string; role: string } | null> {
+export async function requireStaff(request: Request): Promise<{ uid: string; email: string; role: string; name: string } | null> {
   const auth = await requireAuth(request);
   if (!auth) return null;
 
@@ -138,7 +138,7 @@ export async function requireStaff(request: Request): Promise<{ uid: string; ema
       return null;
     }
 
-    return { ...auth, role };
+    return { ...auth, role, name: userData?.name || '' };
   } catch {
     return null;
   }

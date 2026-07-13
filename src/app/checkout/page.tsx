@@ -663,7 +663,8 @@ export default function CheckoutPage() {
                   {pickupOption === 'asap' && asapFitsInWindow && selectedTime && (
                     <p className="text-xs text-zinc-500 mt-4 flex items-center gap-2">
                       <CheckCircle className="w-3.5 h-3.5 text-gold shrink-0" />
-                      Ready at approximately <strong className="text-gold ml-1">{formatTime12(selectedTime)}</strong>
+                      Ready in ~<strong className="text-gold">{preparationTime} min</strong>
+                      <span className="text-zinc-600">(at {formatTime12(selectedTime)})</span>
                     </p>
                   )}
                 </>

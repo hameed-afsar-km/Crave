@@ -147,7 +147,7 @@ export default function AdminLogs() {
       l.targetType,
       l.targetId,
       l.userEmail,
-      l.userName,
+      l.userName && l.userName !== 'unknown' ? l.userName : l.userEmail,
       l.userRole,
       l.outletName || '-',
       JSON.stringify(l.details),
@@ -177,7 +177,7 @@ export default function AdminLogs() {
       body: filtered.slice(0, 100).map((l) => [
         l.createdAt ? new Date(l.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '-',
         ACTION_LABELS[l.action] || l.action,
-        l.userName || l.userEmail,
+        l.userName && l.userName !== 'unknown' ? l.userName : l.userEmail,
         l.userRole ? l.userRole.charAt(0).toUpperCase() + l.userRole.slice(1) : '-',
         `${l.targetType}:${l.targetId.slice(0, 12)}`,
         l.outletName || '-',
@@ -284,7 +284,7 @@ export default function AdminLogs() {
                     </span>
                   </div>
                   <div className="mt-1 text-xs text-zinc-400 space-x-1">
-                    <span className="text-zinc-300 font-medium">{entry.userName || entry.userEmail}</span>
+                    <span className="text-zinc-300 font-medium">{entry.userName && entry.userName !== 'unknown' ? entry.userName : entry.userEmail}</span>
                     {entry.userRole && (
                       <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${entry.userRole === 'master_admin' ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : entry.userRole === 'admin' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-zinc-700/50 text-zinc-400 border-zinc-600/50'}`}>
                         {entry.userRole === 'master_admin' ? 'Master Admin' : entry.userRole.charAt(0).toUpperCase() + entry.userRole.slice(1)}

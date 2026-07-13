@@ -64,7 +64,7 @@ export async function POST(req: Request) {
       details: { role, assignedOutletId, previousRole: targetRole },
       userEmail: auth.email ? auth.email.replace(/(.{2})(.*)(@.*)/, '$1***$3') : 'unknown',
       userRole: auth.role || 'unknown',
-      userName: (auth as any).name || 'unknown',
+      userName: auth.name || auth.email?.split('@')[0] || 'unknown',
       createdAt: FieldValue.serverTimestamp(),
       expireAt,
     });
