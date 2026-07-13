@@ -120,8 +120,8 @@ self.addEventListener('push', (event) => {
     event.waitUntil(
       self.registration.showNotification(notification.title || 'Crave', {
         body: notification.body || '',
-        icon: '/icons/icon-192.svg',
-        badge: '/icons/icon-192.svg',
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
         vibrate: [200, 100, 200],
         data: notification.data || {},
       })
@@ -132,8 +132,8 @@ self.addEventListener('push', (event) => {
     event.waitUntil(
       self.registration.showNotification(title, {
         body,
-        icon: '/icons/icon-192.svg',
-        badge: '/icons/icon-192.svg',
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
       })
     );
   }

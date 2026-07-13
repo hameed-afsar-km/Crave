@@ -8,7 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { formatPrice, generateTimeSlots, isOutletCurrentlyOpen, formatTime12, getNextOpenDate, parseTime, getOutletTodayHours } from '@/lib/utils';
 import { loadSettings, getTimeUntilOpen } from '@/lib/store';
 import { loadRazorpayScript } from '@/lib/razorpay';
-import { updateLoyaltyPoints, subscribeOutlets } from '@/lib/firestore-service';
+import { updateLoyaltyPoints, subscribeOutlets, subscribeOrdersByOutlet } from '@/lib/firestore-service';
 import { sanitizeString, sanitizePhone, sanitizeEmail } from '@/lib/sanitize';
 import { loadOutlets, getOutlet } from '@/lib/outlets';
 import StoreStatusBanner from '@/components/StoreStatusBanner';
@@ -31,6 +31,7 @@ export default function CheckoutPage() {
   const [storeStatus, setStoreStatus] = useState(() => loadSettings());
   const [timeUntilOpen, setTimeUntilOpen] = useState('');
   const [countdown, setCountdown] = useState('');
+  const [slotBookings, setSlotBookings] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const unsub = subscribeOutlets((allOutlets) => {
@@ -56,6 +57,22 @@ export default function CheckoutPage() {
     const interval = setInterval(update, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!selectedOutletId) { setSlotBookings({}); return; }
+    const unsub = subscribeOrdersByOutlet((orders) => {
+      const counts: Record<string, number> = {};
+      const todayStr = new Date().toISOString().slice(0, 10);
+      for (const o of orders) {
+        if (o.status === 'cancelled') continue;
+        if (!o.pickupTime) continue;
+        if (!o.createdAt || !o.createdAt.startsWith(todayStr)) continue;
+        counts[o.pickupTime] = (counts[o.pickupTime] || 0) + 1;
+      }
+      setSlotBookings(counts);
+    }, selectedOutletId);
+    return unsub;
+  }, [selectedOutletId]);
 
   const canOrder = storeStatus.storeOpen && storeStatus.acceptingOrders;
 
@@ -88,6 +105,19 @@ export default function CheckoutPage() {
       : generateTimeSlots(storeStatus.openingTime, storeStatus.closingTime, preparationTime),
     [todayHours?.open, todayHours?.close, todayHours?.closed, storeStatus.openingTime, storeStatus.closingTime, preparationTime]
   );
+
+  const slotCapacity = useMemo(() => {
+    const max = selectedOutlet?.maxOrdersPerSlot ?? 10;
+    const result: Record<string, { color: 'green' | 'yellow' | 'red'; full: boolean }> = {};
+    for (const slot of timeSlots) {
+      const booked = slotBookings[slot.time] || 0;
+      const full = booked >= max;
+      const ratio = booked / max;
+      const color = full ? 'red' : ratio >= 0.8 ? 'red' : ratio >= 0.5 ? 'yellow' : 'green';
+      result[slot.time] = { color, full };
+    }
+    return result;
+  }, [timeSlots, slotBookings, selectedOutlet?.maxOrdersPerSlot]);
 
   const asapReadyTime = useMemo(() => {
     const now = new Date();
@@ -508,21 +538,22 @@ export default function CheckoutPage() {
               </div>
 
               {!shopIsOpen && todayHours && (
-                <div className="space-y-3 mb-4">
-                  <div className="flex items-center gap-2.5 p-3 rounded-2xl border border-amber-500/20 bg-amber-500/5">
-                    <Ban className="w-4 h-4 text-amber-400 shrink-0" />
-                    <p className="text-xs text-amber-300">
-                      Store is currently closed. Opens at <strong>{formatTime12(todayHours.open)}</strong>
-                    </p>
-                  </div>
-                  {countdown && (
-                    <div className="flex items-center gap-2.5 p-3 rounded-2xl border border-gold/20 bg-gold/5">
-                      <Clock className="w-4 h-4 text-gold shrink-0" />
-                      <p className="text-xs text-gold">
-                        Opens in <strong>{countdown}</strong>
-                      </p>
+                <div className="p-4 rounded-2xl border border-amber-500/15 bg-gradient-to-br from-amber-500/[0.06] to-transparent mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-6 h-6 rounded-md bg-amber-500/10 flex items-center justify-center">
+                      <Ban className="w-3.5 h-3.5 text-amber-400" />
                     </div>
-                  )}
+                    <p className="text-[11px] font-bold text-amber-400/70 uppercase tracking-wider">Currently Closed</p>
+                  </div>
+                  <p className="text-sm text-zinc-400">
+                    Opens at <span className="font-black text-amber-300">{formatTime12(todayHours.open)}</span>
+                    {countdown && (
+                      <span className="ml-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/15 text-amber-300 font-black text-[11px]">
+                        <Clock className="w-3 h-3" />
+                        {countdown}
+                      </span>
+                    )}
+                  </p>
                 </div>
               )}
 
@@ -582,21 +613,30 @@ export default function CheckoutPage() {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
+                      data-lenis-prevent
                       className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-44 overflow-y-auto p-3 rounded-2xl border border-white/5 bg-black/30"
                     >
-                      {timeSlots.map(slot => (
-                        <button
-                          key={slot.time}
-                          onClick={() => setSelectedTime(slot.time)}
-                          className={`py-2 px-2.5 rounded-xl text-[11px] font-black transition-all duration-200 ${
-                            selectedTime === slot.time
-                              ? 'bg-gradient-to-r from-gold to-amber-600 text-white shadow-md'
-                              : 'bg-zinc-900/50 text-zinc-400 border border-white/5 hover:border-gold/25 hover:text-gold'
-                          }`}
-                        >
-                          {slot.label}
-                        </button>
-                      ))}
+                      {timeSlots.map(slot => {
+                        const cap = slotCapacity[slot.time] || { color: 'green', full: false };
+                        const isSelected = selectedTime === slot.time && !cap.full;
+                        return (
+                          <button
+                            key={slot.time}
+                            disabled={cap.full}
+                            onClick={() => setSelectedTime(slot.time)}
+                            className={`relative py-2 px-2.5 rounded-xl text-[11px] font-black transition-all duration-200 ${
+                              cap.full
+                                ? 'bg-zinc-900/30 text-zinc-600 border border-white/[0.02] cursor-not-allowed opacity-50'
+                                : isSelected
+                                  ? 'bg-gradient-to-r from-gold to-amber-600 text-white shadow-md'
+                                  : 'bg-zinc-900/50 text-zinc-400 border border-white/5 hover:border-gold/25 hover:text-gold'
+                            }`}
+                          >
+                            {!cap.full && <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isSelected ? 'rgba(255,255,255,0.7)' : cap.color === 'red' ? '#f87171' : cap.color === 'yellow' ? '#fbbf24' : '#34d399' }} />}
+                            {cap.full ? 'Full' : slot.label}
+                          </button>
+                        );
+                      })}
                     </motion.div>
                   )}
 
@@ -622,7 +662,7 @@ export default function CheckoutPage() {
               <h2 className="text-[11px] font-black text-zinc-500 uppercase tracking-widest mb-5">Order Summary</h2>
 
               {/* Items list */}
-              <div className="space-y-3 max-h-52 overflow-y-auto mb-5 pr-1">
+              <div data-lenis-prevent className="space-y-3 max-h-52 overflow-y-auto mb-5 pr-1">
                 {items.map(item => (
                   <div key={item.id}>
                     <div className="flex justify-between text-xs gap-3">

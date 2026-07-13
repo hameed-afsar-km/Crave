@@ -39,7 +39,10 @@
 ::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.15); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(212,175,55,0.35); }
 
-html { scroll-behavior: smooth; }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
 
 body {
   background: #06060A;

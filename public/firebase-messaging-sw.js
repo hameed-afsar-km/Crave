@@ -19,8 +19,8 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = data.title || payload.notification?.title || 'Crave';
   const notificationOptions = {
     body: data.body || payload.notification?.body || '',
-    icon: '/icons/icon-192.svg',
-    badge: '/icons/icon-192.svg',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
     vibrate: [200, 100, 200],
     data: { url: data.url || '/orders' },
   };

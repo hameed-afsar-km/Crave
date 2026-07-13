@@ -10,6 +10,7 @@ import AddToCartPopup from './AddToCartPopup';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import PWARegister from './PWARegister';
+import LenisProvider from './LenisProvider';
 import { ADMIN_SLUG } from '@/lib/admin-slug';
 import { subscribeOutlets } from '@/lib/firestore-service';
 import { saveOutlets } from '@/lib/outlets';
@@ -38,13 +39,15 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
     <AuthProvider>
       <CartProvider>
         <AddToCartPopupProvider>
-          <PWARegister />
-          {!splashDone && <SplashScreen onFinish={handleSplashFinish} />}
-          {!isAuth && !isAdmin && <Navbar />}
-          <main id="main-content" className="flex-1">{children}</main>
-          {!isAuth && !isAdmin && <QueueWidget />}
-          {!isAuth && !isAdmin && <Footer />}
-          <AddToCartPopup />
+          <LenisProvider>
+            <PWARegister />
+            {!splashDone && <SplashScreen onFinish={handleSplashFinish} />}
+            {!isAuth && !isAdmin && <Navbar />}
+            <main id="main-content" className="flex-1">{children}</main>
+            {!isAuth && !isAdmin && <QueueWidget />}
+            {!isAuth && !isAdmin && <Footer />}
+            <AddToCartPopup />
+          </LenisProvider>
         </AddToCartPopupProvider>
       </CartProvider>
     </AuthProvider>

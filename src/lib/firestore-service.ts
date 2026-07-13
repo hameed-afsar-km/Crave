@@ -259,6 +259,33 @@ export function subscribeOrders(
   return unsubscribe;
 }
 
+export function subscribeOrdersByOutlet(
+  callback: (orders: Order[]) => void,
+  outletId: string,
+): () => void {
+  if (!isReady()) {
+    callback([]);
+    return () => {};
+  }
+
+  const q = query(
+    collection(db!, COLLECTIONS.ORDERS),
+    where('outletId', '==', outletId),
+  );
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const orders = snapshot.docs.map((d) => mapOrderDoc(d)).filter((o) => !o.deleted);
+      callback(orders);
+    },
+    (error) => {
+      console.warn('[subscribeOrdersByOutlet] Error:', String(error));
+      callback([]);
+    }
+  );
+}
+
 let paginationCursors: Record<string, any> = {};
 
 export function subscribeOrdersPaginated(
