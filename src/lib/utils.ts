@@ -105,13 +105,7 @@ export function getNextOpenDate(hours: { open: string; close: string; closed: bo
   }
 
   if (isOvernight) {
-    if (nowMin >= openMin || nowMin <= closeMin) {
-      return today;
-    }
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(Math.floor(openMin / 60), openMin % 60, 0, 0);
-    return tomorrow;
+    return today;
   }
 
   if (nowMin < openMin) {
@@ -151,7 +145,7 @@ export function generateTimeSlots(
   const openMin = parseTime(openingTime);
   const closeMin = parseTime(closingTime);
   const isOvernight = closeMin <= openMin;
-  const effectiveStart = Math.max(startMinutes, openMin);
+  const effectiveStart = Math.max(startMinutes, openMin + 1);
   const slotStart = Math.ceil(effectiveStart / 15) * 15;
   let wasInWindow = false;
 
