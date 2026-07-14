@@ -100,6 +100,7 @@ function mapMenuItemDoc(doc: any): MenuItem {
     addons: data.addons || undefined,
     inclusiveOfGst: data.inclusiveOfGst || false,
     reviewCount: data.reviewCount || 0,
+    orderCount: data.orderCount || 0,
     createdAt: typeof data.createdAt === 'string' ? data.createdAt : timestampToDate(data.createdAt),
   };
 }

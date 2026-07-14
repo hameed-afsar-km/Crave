@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import Razorpay from 'razorpay';
 import { requireAuth, getAdminDb } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { rateLimit } from '@/lib/rate-limiter';
 
 const razorpay = new Razorpay({
@@ -164,6 +165,13 @@ export async function POST(req: Request) {
         });
 
         transaction.update(lockRef, { orderId: orderRef.id });
+
+        for (const item of (body.items || [])) {
+          if (item.menuItemId) {
+            const menuRef = adminDb.collection('menu-items').doc(item.menuItemId);
+            transaction.update(menuRef, { orderCount: FieldValue.increment(item.quantity || 1) });
+          }
+        }
 
         return { orderId: orderRef.id, duplicate: false };
       });

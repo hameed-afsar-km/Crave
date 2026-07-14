@@ -4,15 +4,13 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
-  Settings as SettingsIcon, ArrowLeft, Store, Clock, Bell, Shield,
-  Save, AlertTriangle, X, Trash2,
-  Calendar
+  Settings as SettingsIcon, ArrowLeft, Store, Bell, Shield,
+  Save, AlertTriangle, X, Trash2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAdminOutlet } from '@/context/AdminOutletContext';
 import { loadSettings, saveSettings, StoreSettings } from '@/lib/store';
-import { generateTimeSlots } from '@/lib/utils';
-import { saveSettingsToFirestore, subscribeSettings, subscribeOrders } from '@/lib/firestore-service';
+import { saveSettingsToFirestore, subscribeSettings } from '@/lib/firestore-service';
 import { logAction } from '@/lib/audit';
 import { adminPath } from '@/lib/admin-slug';
 
@@ -72,18 +70,6 @@ export default function AdminSettings() {
     setShowClearDataConfirm(false);
     logAction('data.cleared', 'data', 'all', {}, { email: user?.email || '', role: user?.role || '', name: user?.name || '' });
   };
-
-  const [orders, setOrders] = useState<any[]>([]);
-  const slots = generateTimeSlots();
-  const maxSlotsToShow = 8;
-
-  useEffect(() => {
-    if (!canManageSettings) return;
-    const unsub = subscribeOrders((firestoreOrders) => {
-      setOrders(firestoreOrders);
-    });
-    return unsub;
-  }, [canManageSettings]);
 
   if (!canManageSettings) {
     return (
@@ -166,134 +152,6 @@ export default function AdminSettings() {
                 className={`relative w-11 h-6 rounded-full transition-all ${form.acceptingOrders ? 'bg-zinc-600' : 'bg-zinc-700'}`}>
                 <div className={`absolute top-0.5 w-5 h-5 rounded-full shadow-sm transition-all ${form.acceptingOrders ? 'left-5.5 bg-white' : 'left-0.5 bg-white'}`} />
               </button>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Store Details */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="bg-[#12121A] rounded-xl border border-zinc-800/60 p-5"
-        >
-          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-zinc-800/60">
-            <Store className="w-4 h-4 text-zinc-500" />
-            <h2 className="text-sm font-semibold text-white">Store Details</h2>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-1">Store Name</label>
-              <input type="text" value={form.storeName} onChange={(e) => update('storeName', e.target.value)}
-                className="w-full max-w-md px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-zinc-500 mb-1">Opening Time</label>
-                <input type="time" value={form.openingTime} onChange={(e) => update('openingTime', e.target.value)}
-                  className="w-full max-w-[200px] px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-zinc-500 mb-1">Closing Time</label>
-                <input type="time" value={form.closingTime} onChange={(e) => update('closingTime', e.target.value)}
-                  className="w-full max-w-[200px] px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" />
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Slot Capacity */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.08 }}
-          className="bg-[#12121A] rounded-xl border border-zinc-800/60 p-5"
-        >
-          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-zinc-800/60">
-            <Calendar className="w-4 h-4 text-zinc-500" />
-            <h2 className="text-sm font-semibold text-white">Slot Capacity Management</h2>
-          </div>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-zinc-500 mb-1">Max Orders Per Slot</label>
-                <input type="number" value={form.maxOrdersPerSlot} onChange={(e) => update('maxOrdersPerSlot', Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" min="1" max="100" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-zinc-500 mb-1">Slot Duration (min)</label>
-                <input type="number" value={form.slotDurationMinutes} onChange={(e) => update('slotDurationMinutes', Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" min="5" max="60" step="5" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-zinc-500 mb-1">Avg Prep Time (min)</label>
-                <input type="number" value={form.averagePrepTime} onChange={(e) => update('averagePrepTime', Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" min="1" max="60" />
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-zinc-500 mb-2">Slot Preview</p>
-              <div className="overflow-x-auto pb-1">
-                <div className="flex gap-2 min-w-max">
-                  {slots.slice(0, maxSlotsToShow).map((slot, i) => {
-                    const slotStart = slot.time;
-                    const [sh, sm] = slotStart.split(':').map(Number);
-                    const slotStartMin = sh * 60 + sm;
-                    const slotEndMin = slotStartMin + form.slotDurationMinutes;
-                    const booked = orders.filter((o: any) => {
-                      const pt = o.pickupTime || '';
-                      const [ph, pm] = pt.split(':').map(Number);
-                      if (isNaN(ph) || isNaN(pm)) return false;
-                      const orderMin = ph * 60 + pm;
-                      return orderMin >= slotStartMin && orderMin < slotEndMin;
-                    }).length;
-                    const full = booked >= form.maxOrdersPerSlot;
-                    return (
-                      <div key={i} className={`flex flex-col items-center gap-1 p-2.5 rounded-lg border min-w-[80px] ${full ? 'bg-red-500/10 border-red-500/20' : 'bg-zinc-800/30 border-zinc-800/60'}`}>
-                        <span className="text-xs font-medium text-zinc-300">{slot.label}</span>
-                        <div className="flex items-center gap-0.5">
-                          <span className={`text-sm font-semibold ${full ? 'text-red-400' : 'text-white'}`}>{booked}</span>
-                          <span className="text-[10px] text-zinc-500">/ {form.maxOrdersPerSlot}</span>
-                        </div>
-                        <div className="w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${full ? 'bg-red-500' : 'bg-zinc-600'}`} style={{ width: `${(booked / form.maxOrdersPerSlot) * 100}%` }} />
-                        </div>
-                        {full && <span className="text-[9px] font-semibold text-red-400">Full</span>}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Pickup Window */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-[#12121A] rounded-xl border border-zinc-800/60 p-5"
-        >
-          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-zinc-800/60">
-            <Clock className="w-4 h-4 text-zinc-500" />
-            <h2 className="text-sm font-semibold text-white">Pickup & Timing</h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-1">Pickup Window (minutes)</label>
-              <input type="number" value={form.pickupWindowMinutes} onChange={(e) => update('pickupWindowMinutes', Number(e.target.value))}
-                className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" min="5" max="60" />
-              <p className="text-xs text-zinc-600 mt-1">Customers must pick up within this window</p>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-1">Est. Wait Time (minutes)</label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500 pointer-events-none" />
-                <input type="number" value={form.estimatedWaitTime} onChange={(e) => update('estimatedWaitTime', Number(e.target.value))}
-                  className="w-full pl-8 pr-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-zinc-500" min="1" max="120" />
-              </div>
-              <p className="text-xs text-zinc-600 mt-1">Displayed during checkout</p>
             </div>
           </div>
         </motion.div>

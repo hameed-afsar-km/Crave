@@ -126,7 +126,7 @@ export function generateTimeSlots(
   const now = new Date();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
   const earliestPickup = currentMinutes + preparationTime;
-  const startMinutes = Math.ceil(earliestPickup / 15) * 15;
+  const startMinutes = Math.floor(earliestPickup / 15) * 15 + 15;
 
   if (!openingTime || !closingTime) {
     for (let i = 0; i < 40; i++) {
@@ -145,8 +145,8 @@ export function generateTimeSlots(
   const openMin = parseTime(openingTime);
   const closeMin = parseTime(closingTime);
   const isOvernight = closeMin <= openMin;
-  const effectiveStart = Math.max(startMinutes, openMin + 1);
-  const slotStart = Math.ceil(effectiveStart / 15) * 15;
+  const earliestReady = Math.max(currentMinutes, openMin) + preparationTime;
+  const slotStart = Math.floor(earliestReady / 15) * 15 + 15;
   let wasInWindow = false;
 
   for (let i = 0; i < 96; i++) {

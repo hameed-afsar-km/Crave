@@ -70,14 +70,15 @@ export function getTimeUntilOpen(): string {
   if (settings.storeOpen && settings.acceptingOrders) return '';
 
   const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
   const [openH, openM] = settings.openingTime.split(':').map(Number);
   const [closeH, closeM] = settings.closingTime.split(':').map(Number);
+  const openMin = openH * 60 + openM;
+  const closeMin = closeH * 60 + closeM;
+  const isOvernight = closeMin <= openMin;
 
   const openToday = new Date(now);
   openToday.setHours(openH, openM, 0, 0);
-
-  const closeToday = new Date(now);
-  closeToday.setHours(closeH, closeM, 0, 0);
 
   if (now < openToday) {
     const diff = openToday.getTime() - now.getTime();
@@ -86,11 +87,18 @@ export function getTimeUntilOpen(): string {
     return h > 0 ? `Opens in ${h}h ${m}m` : `Opens in ${m}m`;
   }
 
-  if (now > closeToday || !settings.storeOpen) {
-    const nextOpen = new Date(now);
-    nextOpen.setDate(nextOpen.getDate() + 1);
-    nextOpen.setHours(openH, openM, 0, 0);
-    const diff = nextOpen.getTime() - now.getTime();
+  if (isOvernight && nowMin > closeMin && nowMin < openMin) {
+    const diff = openToday.getTime() - now.getTime();
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    return h > 0 ? `Opens in ${h}h ${m}m` : `Opens in ${m}m`;
+  }
+
+  if (!settings.storeOpen) {
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(openH, openM, 0, 0);
+    const diff = tomorrow.getTime() - now.getTime();
     const h = Math.floor(diff / 3600000);
     const m = Math.floor((diff % 3600000) / 60000);
     return h > 0 ? `Opens tomorrow in ${h}h ${m}m` : `Opens tomorrow in ${m}m`;

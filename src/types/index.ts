@@ -48,6 +48,7 @@ export interface MenuItem {
   addons?: MenuItemAddon[];
   inclusiveOfGst?: boolean;
   reviewCount?: number;
+  orderCount?: number;
   createdAt?: string;
 }
 

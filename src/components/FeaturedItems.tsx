@@ -5,13 +5,12 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import FoodCard from './FoodCard';
 import Link from 'next/link';
 import { ArrowRight, Flame } from 'lucide-react';
-import { subscribeMenuItems, subscribeOrders } from '@/lib/firestore-service';
-import type { MenuItem, Order } from '@/types';
+import { subscribeMenuItems } from '@/lib/firestore-service';
+import type { MenuItem } from '@/types';
 
 export default function FeaturedItems() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<MenuItem[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -23,32 +22,18 @@ export default function FeaturedItems() {
     return unsub;
   }, []);
 
-  useEffect(() => {
-    const unsub = subscribeOrders((allOrders) => setOrders(allOrders));
-    return unsub;
-  }, []);
-
   const featured = useMemo(() => {
     if (items.length === 0) return [];
 
-    const counts: Record<string, number> = {};
-    for (const order of orders) {
-      if (order.status === 'cancelled') continue;
-      for (const item of order.items || []) {
-        const id = item.menuItemId || '';
-        if (id) counts[id] = (counts[id] || 0) + (item.quantity || 1);
-      }
-    }
+    const sorted = [...items].sort(
+      (a, b) => (b.orderCount || 0) - (a.orderCount || 0) || b.rating - a.rating
+    );
 
-    const sorted = [...items]
-      .map((item) => ({ item, count: counts[item.id] || 0 }))
-      .sort((a, b) => b.count - a.count || b.item.rating - a.item.rating);
-
-    const top = sorted.filter((s) => s.count > 0).slice(0, 6);
-    if (top.length >= 3) return top.map((s) => s.item);
+    const top = sorted.filter((s) => (s.orderCount || 0) > 0).slice(0, 6);
+    if (top.length >= 3) return top;
 
     return items.slice(0, 6);
-  }, [items, orders]);
+  }, [items]);
 
   const sectionParallax = useTransform(scrollYProgress, [0, 1], ['-18%', '18%']);
 

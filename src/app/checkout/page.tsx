@@ -6,7 +6,7 @@ import { Clock, ShoppingBag, ArrowLeft, User, CheckCircle, ArrowRight, Store, Ba
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { formatPrice, generateTimeSlots, isOutletCurrentlyOpen, formatTime12, getNextOpenDate, parseTime, getOutletTodayHours } from '@/lib/utils';
-import { loadSettings, getTimeUntilOpen } from '@/lib/store';
+import { loadSettings } from '@/lib/store';
 import { loadRazorpayScript } from '@/lib/razorpay';
 import { updateLoyaltyPoints, subscribeOutlets, subscribeOrdersByOutlet } from '@/lib/firestore-service';
 import { sanitizeString, sanitizePhone, sanitizeEmail } from '@/lib/sanitize';
@@ -29,7 +29,6 @@ export default function CheckoutPage() {
   const [confirmedOrder, setConfirmedOrder] = useState<any>(null);
   const [outlets, setOutlets] = useState(() => loadOutlets());
   const [storeStatus, setStoreStatus] = useState(() => loadSettings());
-  const [timeUntilOpen, setTimeUntilOpen] = useState('');
   const [countdown, setCountdown] = useState('');
   const [slotBookings, setSlotBookings] = useState<Record<string, number>>({});
 
@@ -51,7 +50,6 @@ export default function CheckoutPage() {
     const update = () => {
       const s = loadSettings();
       setStoreStatus(s);
-      setTimeUntilOpen(getTimeUntilOpen());
     };
     update();
     const interval = setInterval(update, 10000);
@@ -122,9 +120,8 @@ export default function CheckoutPage() {
   const asapReadyTime = useMemo(() => {
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const earliest = currentMinutes + preparationTime;
     const openMin = todayHours ? parseTime(todayHours.open) : 0;
-    const effectiveEarliest = Math.max(earliest, openMin);
+    const effectiveEarliest = Math.max(currentMinutes, openMin) + preparationTime;
     const rounded = Math.ceil(effectiveEarliest / 15) * 15;
     const h = Math.floor(rounded / 60) % 24;
     const m = rounded % 60;
@@ -786,8 +783,11 @@ export default function CheckoutPage() {
                   ? 'The store is currently closed. Please check back during operating hours.'
                   : 'We are not accepting orders at the moment. Your cart has been saved — come back soon!'}
               </p>
-              {timeUntilOpen && (
-                <p className="text-gold font-black text-sm mb-6">{timeUntilOpen}</p>
+              {countdown && (
+                <p className="text-gold font-black text-sm mb-6">{countdown}</p>
+              )}
+              {!countdown && !storeStatus.storeOpen && (
+                <p className="text-gold font-black text-sm mb-6">Check back during operating hours</p>
               )}
               <Link
                 href="/menu"
