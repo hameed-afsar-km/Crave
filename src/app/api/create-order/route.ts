@@ -55,7 +55,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid item in cart' }, { status: 400 });
     }
 
-    const pricing = await calculateOrderTotal(cartItems, body.outletId);
+    const couponCode = body.couponCode ? String(body.couponCode).toUpperCase().trim() : undefined;
+
+    const pricing = await calculateOrderTotal(cartItems, body.outletId, couponCode);
 
     if (pricing.errors.length > 0) {
       return NextResponse.json({ error: pricing.errors.join('. ') }, { status: 400 });
@@ -78,6 +80,8 @@ export async function POST(req: Request) {
         outletName: String(body.outletName || '').slice(0, 100),
         serverTotal: String(pricing.total),
         serverSubtotal: String(pricing.subtotal),
+        discount: String(pricing.discount),
+        couponCode: couponCode || '',
         itemCount: String(pricing.items.length),
         customerName: String(body.customerName || '').slice(0, 100),
         customerPhone: String(body.customerPhone || '').slice(0, 20),
@@ -96,6 +100,9 @@ export async function POST(req: Request) {
       total: pricing.total,
       subtotal: pricing.subtotal,
       tax: pricing.tax,
+      discount: pricing.discount,
+      couponCode: pricing.couponCode,
+      couponError: pricing.couponError,
       items: pricing.items,
     });
   } catch (err: any) {

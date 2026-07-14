@@ -83,6 +83,8 @@ export interface Order {
   pointsEarned?: number;
   cancelReason?: string;
   notes?: string;
+  discount?: number;
+  couponCode?: string;
   createdAt: string;
   deleted?: boolean;
   deletedAt?: string;
@@ -126,4 +128,21 @@ export interface TimeSlot {
   time: string;
   available: boolean;
   label: string;
+}
+
+export interface Coupon {
+  id: string;
+  code: string;
+  description: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  minOrderAmount: number;
+  maxDiscountAmount?: number;
+  usageLimit?: number;
+  usageCount: number;
+  validFrom: string;
+  validUntil: string;
+  isActive: boolean;
+  applicableOutlets?: string[];
+  createdAt?: string;
 }

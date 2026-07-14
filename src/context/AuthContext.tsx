@@ -29,6 +29,7 @@ interface AuthContextType {
   canManageSettings: boolean;
   canManageOutlets: boolean;
   canManageAnalytics: boolean;
+  canManageCoupons: boolean;
   canViewLogs: boolean;
   canManageBugs: boolean;
 }
@@ -230,6 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const canManageSettings = useMemo(() => isMasterAdmin, [isMasterAdmin]);
   const canManageOutlets = useMemo(() => isMasterAdmin, [isMasterAdmin]);
   const canManageAnalytics = useMemo(() => isMasterAdmin || isOutletManager, [isMasterAdmin, isOutletManager]);
+  const canManageCoupons = useMemo(() => isMasterAdmin || isOutletManager, [isMasterAdmin, isOutletManager]);
   const canViewLogs = useMemo(() => isMasterAdmin, [isMasterAdmin]);
   const canManageBugs = useMemo(() => isMasterAdmin, [isMasterAdmin]);
 
@@ -238,11 +240,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isOutletManager, isOutletStaff, isStaff,
     userRole, assignedOutletId, assignedOutletName, updateUser,
     canAccessDashboard, canManageOrders, canManageKitchen, canManageMenu,
-    canManageSettings, canManageOutlets, canManageAnalytics, canViewLogs, canManageBugs,
+    canManageSettings, canManageOutlets, canManageAnalytics, canManageCoupons, canViewLogs, canManageBugs,
   }), [user, loading, signIn, signOut, isAdmin, isMasterAdmin,
       isOutletManager, isOutletStaff, isStaff, userRole, assignedOutletId, assignedOutletName, updateUser,
       canAccessDashboard, canManageOrders, canManageKitchen, canManageMenu,
-      canManageSettings, canManageOutlets, canManageAnalytics, canViewLogs, canManageBugs]);
+      canManageSettings, canManageOutlets, canManageAnalytics, canManageCoupons, canViewLogs, canManageBugs]);
 
   return (
     <AuthContext.Provider value={value}>

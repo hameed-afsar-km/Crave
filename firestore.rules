@@ -184,6 +184,16 @@ service cloud.firestore {
       allow delete: if isAdmin() || (isAuth() && resource.data.userId == request.auth.uid);
     }
 
+    // ─── COUPONS ──────────────────────────────────────
+    // Public read for validation, admin/manager create/update, admin delete
+
+    match /coupons/{couponId} {
+      allow read: if isAuth();
+      allow create: if isAdmin() || isManager();
+      allow update: if isAdmin() || isManager();
+      allow delete: if isAdmin();
+    }
+
     // ─── DENY ALL ELSE ──────────────────────────────
     match /{document=**} {
       allow read, write: if false;

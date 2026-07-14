@@ -19,7 +19,7 @@ import {
   limit,
   startAfter,
 } from 'firebase/firestore';
-import { Order, MenuItem, UserProfile, Outlet, Review } from '@/types';
+import { Order, MenuItem, UserProfile, Outlet, Review, Coupon } from '@/types';
 import { logAction, AuditUser } from './audit';
 import { StoreSettings, loadSettings, saveSettings as saveLocalSettings } from '@/lib/store';
 import { getStoredOrders, getStoredMenuItems } from '@/lib/seed-data';
@@ -46,6 +46,7 @@ const COLLECTIONS = {
   USERS: 'users',
   OUTLETS: 'outlets',
   REVIEWS: 'reviews',
+  COUPONS: 'coupons',
 } as const;
 
 function isReady(): boolean {
@@ -79,6 +80,8 @@ function mapOrderDoc(doc: any): Order {
     pointsEarned: data.pointsEarned || 0,
     cancelReason: data.cancelReason || '',
     notes: data.notes || '',
+    discount: data.discount || 0,
+    couponCode: data.couponCode || '',
     createdAt: typeof data.createdAt === 'string' ? data.createdAt : timestampToDate(data.createdAt),
   };
 }
@@ -913,6 +916,120 @@ export function subscribeReviews(
       callback([]);
     }
   );
+}
+
+// ─── COUPONS ───
+
+function mapCouponDoc(docSnap: any): Coupon {
+  const data = docSnap.data ? docSnap.data() : docSnap;
+  return {
+    id: docSnap.id,
+    code: data.code || '',
+    description: data.description || '',
+    discountType: data.discountType || 'percentage',
+    discountValue: data.discountValue || 0,
+    minOrderAmount: data.minOrderAmount || 0,
+    maxDiscountAmount: data.maxDiscountAmount,
+    usageLimit: data.usageLimit,
+    usageCount: data.usageCount || 0,
+    validFrom: typeof data.validFrom === 'string' ? data.validFrom : timestampToDate(data.validFrom),
+    validUntil: typeof data.validUntil === 'string' ? data.validUntil : timestampToDate(data.validUntil),
+    isActive: data.isActive ?? true,
+    applicableOutlets: data.applicableOutlets,
+    createdAt: typeof data.createdAt === 'string' ? data.createdAt : timestampToDate(data.createdAt),
+  };
+}
+
+export function subscribeCoupons(callback: (coupons: Coupon[]) => void): () => void {
+  if (!isReady()) {
+    callback([]);
+    return () => {};
+  }
+
+  const q = query(collection(db!, COLLECTIONS.COUPONS), orderBy('createdAt', 'desc'));
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const coupons = snapshot.docs.map((d) => mapCouponDoc(d));
+      callback(coupons);
+    },
+    (error) => {
+      console.warn('[subscribeCoupons] Listener error:', error);
+      callback([]);
+    }
+  );
+}
+
+export async function addCoupon(data: Omit<Coupon, 'id' | 'usageCount'>): Promise<string> {
+  if (!isReady()) {
+    throw new Error('Unable to connect to server. Please check your connection and try again.');
+  }
+
+  try {
+    const docRef = await addDoc(collection(db!, COLLECTIONS.COUPONS), {
+      ...data,
+      usageCount: 0,
+      createdAt: serverTimestamp(),
+    });
+    return docRef.id;
+  } catch {
+    throw new Error('Failed to add coupon. Please try again.');
+  }
+}
+
+export async function updateCoupon(id: string, data: Partial<Coupon>): Promise<void> {
+  if (!isReady()) {
+    throw new Error('Unable to connect to server. Please check your connection and try again.');
+  }
+
+  try {
+    const docRef = doc(db!, COLLECTIONS.COUPONS, id);
+    await updateDoc(docRef, data);
+  } catch {
+    throw new Error('Failed to update coupon. Please try again.');
+  }
+}
+
+export async function deleteCoupon(id: string): Promise<void> {
+  if (!isReady()) {
+    throw new Error('Unable to connect to server. Please check your connection and try again.');
+  }
+
+  try {
+    await deleteDoc(doc(db!, COLLECTIONS.COUPONS, id));
+  } catch {
+    throw new Error('Failed to delete coupon. Please try again.');
+  }
+}
+
+export async function getCouponByCode(code: string): Promise<Coupon | null> {
+  if (!isReady()) return null;
+
+  try {
+    const q = query(collection(db!, COLLECTIONS.COUPONS), where('code', '==', code.toUpperCase()));
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return null;
+    return mapCouponDoc(snapshot.docs[0]);
+  } catch {
+    return null;
+  }
+}
+
+export async function incrementCouponUsage(couponId: string): Promise<void> {
+  if (!isReady()) return;
+
+  try {
+    const docRef = doc(db!, COLLECTIONS.COUPONS, couponId);
+    await runTransaction(db!, async (transaction) => {
+      const snapshot = await transaction.get(docRef);
+      if (!snapshot.exists()) return;
+      const current = snapshot.data()?.usageCount || 0;
+      transaction.update(docRef, { usageCount: current + 1 });
+    });
+  } catch {
+    // Non-critical — don't block order
+  }
 }
 
 export async function addReview(

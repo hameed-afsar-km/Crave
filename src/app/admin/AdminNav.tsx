@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, ClipboardList, CookingPot, UtensilsCrossed,
   BarChart3, Settings, LogOut, ExternalLink, Menu, X,
-  ChevronLeft, Store, Activity, Bug, Users
+  ChevronLeft, Store, Activity, Bug, Users, Tag
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { adminPath } from '@/lib/admin-slug';
@@ -23,6 +23,7 @@ export default function AdminNav() {
         { href: adminPath('orders'), label: 'Orders', icon: ClipboardList },
         { href: adminPath('kitchen'), label: 'Kitchen', icon: CookingPot },
         { href: adminPath('menu'), label: 'Menu', icon: UtensilsCrossed },
+        { href: adminPath('coupons'), label: 'Coupons', icon: Tag },
         { href: adminPath('analytics'), label: 'Analytics', icon: BarChart3 },
         { href: adminPath('outlets'), label: 'Outlets', icon: Store },
         { href: adminPath('users'), label: 'Users', icon: Users },
@@ -41,6 +42,7 @@ export default function AdminNav() {
         { href: adminPath('orders'), label: 'Orders', icon: ClipboardList },
         { href: adminPath('kitchen'), label: 'Kitchen', icon: CookingPot },
         { href: adminPath('menu'), label: 'Menu', icon: UtensilsCrossed },
+        { href: adminPath('coupons'), label: 'Coupons', icon: Tag },
         { href: adminPath('analytics'), label: 'Analytics', icon: BarChart3 },
       ];
 

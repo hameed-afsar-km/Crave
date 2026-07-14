@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ShoppingBag, ArrowLeft, User, CheckCircle, ArrowRight, Store, Ban, MapPin, ChefHat, Phone, Save } from 'lucide-react';
+import { Clock, ShoppingBag, ArrowLeft, User, CheckCircle, ArrowRight, Store, Ban, MapPin, ChefHat, Phone, Save, Tag, X } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { formatPrice, generateTimeSlots, isOutletCurrentlyOpen, formatTime12, getNextOpenDate, parseTime, getOutletTodayHours } from '@/lib/utils';
 import { loadSettings } from '@/lib/store';
 import { loadRazorpayScript } from '@/lib/razorpay';
-import { updateLoyaltyPoints, subscribeOutlets, subscribeOrdersByOutlet } from '@/lib/firestore-service';
+import { updateLoyaltyPoints, subscribeOutlets, subscribeOrdersByOutlet, incrementCouponUsage } from '@/lib/firestore-service';
 import { sanitizeString, sanitizePhone, sanitizeEmail } from '@/lib/sanitize';
 import { loadOutlets, getOutlet } from '@/lib/outlets';
 import StoreStatusBanner from '@/components/StoreStatusBanner';
@@ -31,6 +31,10 @@ export default function CheckoutPage() {
   const [storeStatus, setStoreStatus] = useState(() => loadSettings());
   const [countdown, setCountdown] = useState('');
   const [slotBookings, setSlotBookings] = useState<Record<string, number>>({});
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [couponError, setCouponError] = useState('');
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
 
   useEffect(() => {
     const unsub = subscribeOutlets((allOutlets) => {
@@ -90,7 +94,8 @@ export default function CheckoutPage() {
   }
   displaySubtotal = Math.round(displaySubtotal * 100) / 100;
   displayTax = Math.round(displayTax * 100) / 100;
-  const total = Math.round((displaySubtotal + displayTax) * 100) / 100;
+  const displayDiscount = appliedCoupon ? appliedCoupon.discount : 0;
+  const total = Math.round((displaySubtotal + displayTax - displayDiscount) * 100) / 100;
 
   const selectedOutlet = selectedOutletId ? getOutlet(selectedOutletId) : null;
   const todayHours = selectedOutlet ? getOutletTodayHours(selectedOutlet) : null;
@@ -225,6 +230,7 @@ export default function CheckoutPage() {
           customerName: sanitizeString(name, 100),
           customerPhone: sanitizePhone(phone),
           pickupTime: selectedTime,
+          couponCode: couponCode || undefined,
         }),
       });
       const razorpayOrder = await res.json();
@@ -232,9 +238,18 @@ export default function CheckoutPage() {
         throw new Error(razorpayOrder.error || 'Failed to initiate payment');
       }
 
+      if (razorpayOrder.couponError) {
+        setCouponError(razorpayOrder.couponError);
+        setAppliedCoupon(null);
+        setProcessing(false);
+        return;
+      }
+
       // Use server-calculated total
       const serverTotal = razorpayOrder.total;
       const serverItems = razorpayOrder.items || [];
+      const serverDiscount = razorpayOrder.discount || 0;
+      const serverCouponCode = razorpayOrder.couponCode || '';
       const pointsEarned = Math.floor(serverTotal / (settings.earnRate || 10));
 
       // 2. Load Razorpay checkout script
@@ -282,6 +297,10 @@ export default function CheckoutPage() {
                   subtotal: i.price * i.quantity,
                   addons: i.addons || undefined,
                 })),
+                subtotal: razorpayOrder.subtotal,
+                tax: razorpayOrder.tax,
+                discount: serverDiscount,
+                couponCode: serverCouponCode,
                 pickupTime: selectedTime,
                 pointsEarned,
               }),
@@ -323,6 +342,8 @@ export default function CheckoutPage() {
                 addons: i.addons || undefined,
               })),
               amount: serverTotal,
+              discount: serverDiscount,
+              couponCode: serverCouponCode,
               paymentStatus: 'paid' as const,
               paymentId: response.razorpay_payment_id,
               razorpayOrderId: response.razorpay_order_id,
@@ -335,6 +356,11 @@ export default function CheckoutPage() {
             };
 
             clearCart();
+
+            // Increment coupon usage if a coupon was applied
+            if (serverCouponCode && verifyData.couponId) {
+              incrementCouponUsage(verifyData.couponId).catch(() => {});
+            }
             setConfirmedOrder(order);
             setConfirmedOrderId(orderId);
             setShowConfirmation(true);
@@ -704,6 +730,72 @@ export default function CheckoutPage() {
 
               <div className="divider-gold mb-4" />
 
+              {/* Coupon Code Section */}
+              <div className="mb-5">
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
+                    <div className="flex items-center gap-2">
+                      <Tag className="w-3.5 h-3.5 text-emerald-400" />
+                      <div>
+                        <p className="text-xs font-bold text-emerald-400">{appliedCoupon.code}</p>
+                        <p className="text-[10px] text-emerald-400/70">-{formatPrice(appliedCoupon.discount)} off</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setAppliedCoupon(null);
+                        setCouponCode('');
+                        setCouponError('');
+                      }}
+                      className="p-1 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
+                        <input
+                          type="text"
+                          value={couponCode}
+                          onChange={(e) => {
+                            setCouponCode(e.target.value.toUpperCase());
+                            setCouponError('');
+                          }}
+                          placeholder="Coupon code"
+                          className="w-full pl-9 pr-3 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-xl text-xs font-medium text-zinc-300 placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-600 uppercase tracking-wider"
+                        />
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (!couponCode.trim()) return;
+                          setApplyingCoupon(true);
+                          setCouponError('');
+                          // Validate client-side by sending to server
+                          setAppliedCoupon(null);
+                          // Will be validated on order placement
+                          setApplyingCoupon(false);
+                          setAppliedCoupon({ code: couponCode.toUpperCase(), discount: 0 });
+                          setCouponError('');
+                        }}
+                        disabled={!couponCode.trim() || applyingCoupon}
+                        className="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-zinc-300 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed border border-zinc-700"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                    {couponError && (
+                      <p className="text-[10px] text-rose-400 font-semibold mt-1.5 flex items-center gap-1">
+                        <span className="w-1 h-1 rounded-full bg-rose-400" />
+                        {couponError}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div className="space-y-3 mb-5">
                 <div className="flex justify-between text-zinc-500 text-xs">
                   <span>Subtotal</span>
@@ -713,6 +805,14 @@ export default function CheckoutPage() {
                   <span>GST (18%)</span>
                   <span className="font-bold text-zinc-300">{formatPrice(displayTax)}</span>
                 </div>
+                {displayDiscount > 0 && (
+                  <div className="flex justify-between text-emerald-400 text-xs">
+                    <span className="flex items-center gap-1">
+                      <Tag className="w-3 h-3" /> Discount
+                    </span>
+                    <span className="font-bold">-{formatPrice(displayDiscount)}</span>
+                  </div>
+                )}
               </div>
 
               <div className="divider-gold mb-4" />
